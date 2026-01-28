@@ -140,3 +140,5 @@ git push origin feat/your-feature
 
 5. Open a pull request.
 
+
+- Telegram: https://t.me/+afM9uh7GGtVkYmZk
