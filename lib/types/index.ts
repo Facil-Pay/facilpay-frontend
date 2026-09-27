@@ -15,3 +15,5 @@ export * from "./apiKey";
 export * from "./merchant";
 export * from "./payout";
 export * from "./pagination";
+export * from "./analytics";
+export * from "./settings";

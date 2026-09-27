@@ -11,3 +11,5 @@ export * from "./useDashboard";
 export * from "./useRefunds";
 export * from "./useWebhooks";
 export * from "./useMerchant";
+export * from "./useAnalytics";
+export * from "./useSettings";
