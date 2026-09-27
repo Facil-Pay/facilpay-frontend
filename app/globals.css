@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ─── Brand design tokens ──────────────────────────────────────────────────── */
 :root {
   --ink: #1c2824;
   --muted: #77817c;
