@@ -19,6 +19,8 @@
 
 import type { PaymentListParams }  from "@/lib/types/payment";
 import type { PaginationParams }   from "@/lib/types/pagination";
+import type { RefundListParams }   from "@/lib/types/refund";
+import type { AnalyticsInsightsParams } from "@/lib/types/analytics";
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
@@ -42,7 +44,8 @@ export const paymentKeys = {
 export const refundKeys = {
   all: ()                          => ["refunds"]                            as const,
   lists: ()                        => [...refundKeys.all(), "list"]          as const,
-  list: (params: PaginationParams) => [...refundKeys.lists(), params]        as const,
+  list: (params: RefundListParams) => [...refundKeys.lists(), params]        as const,
+  summary: (params: RefundListParams) => [...refundKeys.all(), "summary", params] as const,
   details: ()                      => [...refundKeys.all(), "detail"]        as const,
   detail: (id: string)             => [...refundKeys.details(), id]          as const,
   byPayment: (paymentId: string)   => [...refundKeys.all(), "byPayment", paymentId] as const,
@@ -84,6 +87,10 @@ export const merchantKeys = {
   all: ()                          => ["merchant"]                           as const,
   profile: ()                      => [...merchantKeys.all(), "profile"]     as const,
   team: ()                         => [...merchantKeys.all(), "team"]        as const,
+  branding: ()                     => [...merchantKeys.all(), "branding"]    as const,
+  preferences: ()                  => [...merchantKeys.all(), "preferences"] as const,
+  sessions: ()                     => [...merchantKeys.all(), "sessions"]    as const,
+  wallets: ()                      => [...merchantKeys.all(), "wallets"]     as const,
   teamMember: (id: string)         => [...merchantKeys.team(), id]           as const,
 } as const;
 
@@ -101,6 +108,13 @@ export const payoutKeys = {
 export const dashboardKeys = {
   all: ()                          => ["dashboard"]                          as const,
   overview: ()                     => [...dashboardKeys.all(), "overview"]   as const,
+} as const;
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export const analyticsKeys = {
+  all: ()                          => ["analytics"]                          as const,
+  insights: (params: AnalyticsInsightsParams) => [...analyticsKeys.all(), "insights", params] as const,
 } as const;
 
 // ─── Stellar ──────────────────────────────────────────────────────────────────

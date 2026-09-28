@@ -11,6 +11,7 @@ import { getDashboardData } from "@/app/lib/api/dashboard";
 import type { Paginated, PaginationMeta } from "@/lib/types/pagination";
 import type { Payment }   from "@/lib/types/payment";
 import type { Refund }    from "@/lib/types/refund";
+import type { AnalyticsInsights, AnalyticsRange } from "@/lib/types/analytics";
 import type { Escrow }    from "@/lib/types/escrow";
 import type { Webhook }   from "@/lib/types/webhook";
 import type { ApiKey }    from "@/lib/types/apiKey";
@@ -86,6 +87,54 @@ export const REFUND_FIXTURES: Refund[] = [
     createdAt: "2026-08-21T09:00:00Z",
     updatedAt: "2026-08-21T10:00:00Z",
     completedAt: "2026-08-21T10:00:00Z",
+  },
+  {
+    id: "ref_03c4d5e6f7a8b9c0d1e2f3a4",
+    paymentId: "pay_04m2an5p6q7r8s9t0u1v2w3y",
+    reference: "REF-2026-00003",
+    status: "failed",
+    reason: "duplicate_payment",
+    reasonDetail: "Customer was charged twice at checkout.",
+    amount: 120,
+    currency: "XLM",
+    amountUsd: 14.4,
+    initiatedBy: "Ada Obi (admin)",
+    createdAt: "2026-09-24T12:05:00Z",
+    updatedAt: "2026-09-24T12:07:00Z",
+    failureReason: "Transaction expired before the merchant wallet signed it.",
+    events: [
+      { status: "pending", at: "2026-09-24T12:05:00Z", note: "Refund requested" },
+      { status: "processing", at: "2026-09-24T12:05:30Z", note: "Awaiting wallet signature" },
+      { status: "failed", at: "2026-09-24T12:07:00Z", note: "tx_too_late" },
+    ],
+  },
+  {
+    id: "ref_04d5e6f7a8b9c0d1e2f3a4b5",
+    paymentId: "pay_11t9hu2w3x4y5z6a7b8c9d0f",
+    reference: "REF-2026-00004",
+    status: "pending",
+    reason: "product_not_received",
+    amount: 45,
+    currency: "EURC",
+    amountUsd: 48.9,
+    initiatedBy: "Sam Lee (support)",
+    createdAt: "2026-09-26T08:15:00Z",
+    updatedAt: "2026-09-26T08:15:00Z",
+  },
+  {
+    id: "ref_05e6f7a8b9c0d1e2f3a4b5c6",
+    paymentId: "pay_04m2an5p6q7r8s9t0u1v2w3y",
+    reference: "REF-2026-00005",
+    status: "processing",
+    reason: "other",
+    reasonDetail: "Goodwill credit.",
+    amount: 25,
+    currency: "USDC",
+    amountUsd: 25,
+    txHash: "refund_tx_hash_005",
+    initiatedBy: "Ada Obi (admin)",
+    createdAt: "2026-09-26T16:40:00Z",
+    updatedAt: "2026-09-26T16:41:00Z",
   },
 ];
 
@@ -270,3 +319,61 @@ export const PAYOUT_FIXTURES: Payout[] = [
     note: "Weekly settlement",
   },
 ];
+
+// ─── Analytics insights ───────────────────────────────────────────────────────
+
+const RANGE_SCALE: Record<AnalyticsRange, number> = { "7d": 0.08, "30d": 0.33, "90d": 1, "1y": 4 };
+
+/** Deterministic insights scaled to the requested range so widgets visibly respond to it. */
+export function getAnalyticsInsightsFixture(range: AnalyticsRange, asset?: string): AnalyticsInsights {
+  const k = RANGE_SCALE[range] ?? 1;
+  const scale = (n: number) => Math.round(n * k * 100) / 100;
+  const count = (n: number) => Math.max(1, Math.round(n * k));
+
+  const allAssets = [
+    { asset: "USDC", volume: scale(61_400), txCount: count(1_420) },
+    { asset: "XLM", volume: scale(18_900), txCount: count(980) },
+    { asset: "EURC", volume: scale(9_650), txCount: count(310) },
+    { asset: "AQUA", volume: scale(1_200), txCount: count(64) },
+  ];
+  const assets = asset ? allAssets.filter((a) => a.asset === asset) : allAssets;
+  const share = asset ? (assets[0]?.volume ?? 0) / allAssets.reduce((s, a) => s + a.volume, 0) : 1;
+  const part = (n: number) => Math.max(0, Math.round(n * share * 100) / 100);
+
+  const now = Date.now();
+  const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString();
+
+  return {
+    assets,
+    funnel: [
+      { key: "link_opened", count: count(6_800 * share) },
+      { key: "wallet_connected", count: count(4_150 * share) },
+      { key: "transaction_signed", count: count(2_980 * share) },
+      { key: "payment_confirmed", count: count(2_774 * share) },
+    ],
+    topCustomers: [
+      { identifier: "GBT5PBINLNRI5RJPJBOPSMODBGIHALJQJ2ISTANRF54BGM2WVIBECCNB", email: "ops@northstar.io", paymentCount: count(48), total: part(scale(9_820)), lastPaymentAt: daysAgo(1) },
+      { identifier: "GAYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A", paymentCount: count(37), total: part(scale(7_410)), lastPaymentAt: daysAgo(2) },
+      { identifier: "billing@retailedge.com", email: "billing@retailedge.com", paymentCount: count(31), total: part(scale(6_055)), lastPaymentAt: daysAgo(3) },
+      { identifier: "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS674JZ", paymentCount: count(26), total: part(scale(5_300)), lastPaymentAt: daysAgo(1) },
+      { identifier: "GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37", paymentCount: count(22), total: part(scale(4_780)), lastPaymentAt: daysAgo(5) },
+      { identifier: "finance@neoncart.app", email: "finance@neoncart.app", paymentCount: count(19), total: part(scale(3_960)), lastPaymentAt: daysAgo(4) },
+      { identifier: "GBDEVU63Y6NTHJQQZIKVTC23NWLQVP3WJ2RI2OTSJTNYOIGICST6DUXR", paymentCount: count(17), total: part(scale(3_410)), lastPaymentAt: daysAgo(6) },
+      { identifier: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN", paymentCount: count(15), total: part(scale(2_990)), lastPaymentAt: daysAgo(8) },
+      { identifier: "hello@lumenbooks.co", email: "hello@lumenbooks.co", paymentCount: count(12), total: part(scale(2_455)), lastPaymentAt: daysAgo(2) },
+      { identifier: "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7STMAQSMTGG", paymentCount: count(11), total: part(scale(2_120)), lastPaymentAt: daysAgo(10) },
+    ],
+    paymentMethods: [
+      { method: "wallet_connect", count: count(1_690 * share), volume: part(scale(52_300)) },
+      { method: "qr_scan", count: count(820 * share), volume: part(scale(28_100)) },
+      { method: "manual_transfer", count: count(264 * share), volume: part(scale(10_750)) },
+    ],
+    geography: [
+      { country: "NG", volume: part(scale(24_600)), txCount: count(710 * share) },
+      { country: "US", volume: part(scale(19_300)), txCount: count(540 * share) },
+      { country: "BR", volume: part(scale(14_800)), txCount: count(480 * share) },
+      { country: "DE", volume: part(scale(9_900)), txCount: count(260 * share) },
+      { country: "KE", volume: part(scale(7_400)), txCount: count(250 * share) },
+    ],
+  };
+}
