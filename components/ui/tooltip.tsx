@@ -24,7 +24,7 @@ export function Tooltip({
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>
-          <TooltipPrimitive.Content side={side} sideOffset={5} className={cn("z-50 max-w-xs rounded-md bg-accent px-3 py-1.5 text-xs text-white shadow-md", className)}>
+          <TooltipPrimitive.Content side={side} sideOffset={5} className={cn("z-50 max-w-xs rounded-md bg-accent px-3 py-1.5 text-xs text-accent-foreground shadow-md", className)}>
             {content}
             <TooltipPrimitive.Arrow className="fill-accent" />
           </TooltipPrimitive.Content>
