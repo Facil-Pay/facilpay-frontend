@@ -15,11 +15,11 @@ export type ButtonProps = Omit<React.ComponentPropsWithoutRef<"button">, "onClic
 };
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-accent hover:bg-secondary",
-  secondary: "bg-secondary text-accent hover:bg-primary",
+  primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
   outline: "border border-border bg-card text-foreground hover:bg-muted/10",
   ghost: "bg-transparent text-foreground hover:bg-muted/10",
-  danger: "bg-danger text-white hover:bg-danger/90",
+  danger: "bg-danger text-danger-foreground hover:bg-danger/90",
 };
 
 const sizes: Record<ButtonSize, string> = {

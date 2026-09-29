@@ -11,13 +11,30 @@
   --green-dark: #105940;
   --green-wash: #e9f4ee;
   --red: #b84646;
+  --warning: #9a6b21;
+  --info: #3e758b;
 }
 
 @theme inline {
   --color-background: var(--paper);
   --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-border: var(--line);
+  --color-muted: var(--muted);
+  --color-primary: var(--green);
+  --color-primary-foreground: var(--surface);
+  --color-secondary: var(--green-wash);
+  --color-secondary-foreground: var(--green-dark);
+  --color-accent: var(--ink);
+  --color-accent-foreground: var(--surface);
+  --color-success: var(--green);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-danger: var(--red);
+  --color-danger-foreground: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
 }
 
 * { box-sizing: border-box; }
