@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
 
@@ -85,14 +86,7 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
 
       <NetworkBadge />
 
-      {/* Notifications bell — placeholder slot */}
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100"
-      >
-        <Bell className="h-5 w-5" />
-      </button>
+      <NotificationBell />
 
       {/* Account menu — placeholder slot */}
       <button
