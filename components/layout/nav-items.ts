@@ -4,6 +4,7 @@ import {
   CreditCard,
   LayoutDashboard,
   Lock,
+  Repeat,
   RotateCcw,
   Settings,
   Webhook,
@@ -19,6 +20,7 @@ export interface NavItem {
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/overview", icon: LayoutDashboard },
   { label: "Payments", href: "/payments", icon: CreditCard },
+  { label: "Subscriptions", href: "/subscriptions", icon: Repeat },
   { label: "Refunds", href: "/refunds", icon: RotateCcw },
   { label: "Escrow", href: "/escrow", icon: Lock },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
