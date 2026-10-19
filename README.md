@@ -303,10 +303,12 @@ NEXT_PUBLIC_REFUND_CONTRACT_ID=C...
 
 ## Contribution
 
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for detailed instructions on local setup, mock mode, branch conventions, commit formatting, project architecture, and testing guidelines.
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/your-feature`
 3. Commit: `git commit -m "feat: description"`
 4. Push: `git push origin feat/your-feature`
-5. Open a pull request
+5. Open a pull request using the [Pull Request Template](.github/pull_request_template.md)
 
 Community: https://t.me/+afM9uh7GGtVkYmZk
