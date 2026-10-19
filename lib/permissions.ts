@@ -43,6 +43,7 @@ export const ROUTE_PERMISSIONS: Record<string, Permission> = {
   "/settings/webhooks": "developers:manage",
   "/settings": "team:manage",
   "/settings/notifications": "payments:view",
+  "/reports/settlements": "payments:view",
 };
 
 export function requiredPermissionForPath(pathname: string): Permission | null {
