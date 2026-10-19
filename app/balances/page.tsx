@@ -7,6 +7,7 @@ import BalancesTable from '@/components/balances/BalancesTable';
 import TrustlinesCard from '@/components/balances/TrustlinesCard';
 import AccountActivityTable from '@/components/balances/AccountActivityTable';
 import AddTrustlineModal from '@/components/balances/AddTrustlineModal';
+import AccountSignersCard from '@/components/balances/AccountSignersCard';
 import {
   FormattedBalance,
   HorizonOperation,
@@ -14,6 +15,11 @@ import {
   fundWithFriendbot,
 } from '@/lib/stellar/horizon';
 import { calculateTotalPortfolioUsd } from '@/lib/stellar/prices';
+import {
+  DEMO_MULTISIG_ACCOUNT,
+  DEMO_MULTISIG_SIGNERS,
+  DEMO_MULTISIG_THRESHOLDS,
+} from '@/lib/stellar/multisig';
 
 const DEMO_MERCHANT_ACCOUNT = 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 const DEMO_UNFUNDED_ACCOUNT = 'GCRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
@@ -335,12 +341,23 @@ export default function BalancesPage() {
                 type="button"
                 onClick={() => handleToggleAccount(DEMO_MERCHANT_ACCOUNT)}
                 className={`rounded-lg px-3 py-1 font-semibold transition-colors ${
-                  !isUnfunded
+                  !isUnfunded && selectedAccount === DEMO_MERCHANT_ACCOUNT
                     ? 'bg-[#000F24] text-white dark:bg-[#55C2FF] dark:text-black'
                     : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400'
                 }`}
               >
                 Active Account
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleAccount(DEMO_MULTISIG_ACCOUNT)}
+                className={`rounded-lg px-3 py-1 font-semibold transition-colors ${
+                  selectedAccount === DEMO_MULTISIG_ACCOUNT
+                    ? 'bg-purple-600 text-white'
+                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400'
+                }`}
+              >
+                2-of-3 Multi-Sig (Treasury)
               </button>
               <button
                 type="button"
@@ -425,7 +442,16 @@ export default function BalancesPage() {
           isFunding={isFunding}
         />
 
-        {/* 2. Balances Table & Native XLM Reserve Breakdown */}
+        {/* 2. Account Signers & Multi-Signature Thresholds */}
+        {!isUnfunded && (
+          <AccountSignersCard
+            accountId={selectedAccount}
+            signers={selectedAccount === DEMO_MULTISIG_ACCOUNT ? DEMO_MULTISIG_SIGNERS : undefined}
+            thresholds={selectedAccount === DEMO_MULTISIG_ACCOUNT ? DEMO_MULTISIG_THRESHOLDS : undefined}
+          />
+        )}
+
+        {/* 3. Balances Table & Native XLM Reserve Breakdown */}
         {!isUnfunded && <BalancesTable balances={balances} />}
 
         {/* 3. Trustlines Card (List, Add, Zero-balance Remove) */}

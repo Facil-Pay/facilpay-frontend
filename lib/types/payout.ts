@@ -11,7 +11,9 @@ export type PayoutStatus =
   | "processing"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "awaiting_signatures"
+  | "expired";
 
 export type PayoutFrequency = "manual" | "daily" | "weekly" | "monthly";
 

@@ -22,11 +22,26 @@ export interface HorizonBalanceCredit {
 
 export type HorizonBalance = HorizonBalanceNative | HorizonBalanceCredit;
 
+export interface HorizonSigner {
+  key: string;
+  weight: number;
+  type: string;
+  sponsor?: string;
+}
+
+export interface HorizonThresholds {
+  low_threshold: number;
+  med_threshold: number;
+  high_threshold: number;
+}
+
 export interface HorizonAccountResponse {
   id: string;
   sequence: string;
   subentry_count: number;
   balances: HorizonBalance[];
+  thresholds?: HorizonThresholds;
+  signers?: HorizonSigner[];
 }
 
 export interface XlmReserveCalculation {

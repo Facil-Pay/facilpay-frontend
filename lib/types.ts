@@ -1,6 +1,6 @@
 export type PaymentStatus = 'COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED';
 export type RefundStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
-export type PayoutStatus = 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED';
+export type PayoutStatus = 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED' | 'AWAITING_SIGNATURES' | 'EXPIRED';
 export type AssetType = 'USDC' | 'XLM' | 'EURC';
 
 export interface MerchantInfo {
@@ -61,6 +61,29 @@ export interface SavedDestination {
   createdAt: string;
 }
 
+export interface PayoutSigner {
+  key: string;
+  weight: number;
+  signed: boolean;
+  signedAt?: string;
+  signature?: string;
+  label?: string;
+}
+
+export interface PayoutMultisigMeta {
+  isMultisig: boolean;
+  requiredThreshold: number;
+  currentWeight: number;
+  signers: PayoutSigner[];
+  xdr: string;
+  timeBounds?: {
+    minTime?: string;
+    maxTime?: string;
+  };
+  expiresAt?: string;
+  isExpired?: boolean;
+}
+
 export interface Payout {
   id: string;
   date: string; // ISO 8601
@@ -77,6 +100,7 @@ export interface Payout {
   sep24TransactionId?: string;
   anchorName?: string;
   bankDetailsSummary?: string;
+  multisig?: PayoutMultisigMeta;
 }
 
 export interface ExportColumn<T> {

@@ -7,8 +7,8 @@ describe('Payouts and Withdrawals Specification', () => {
   describe('StrKey.isValidEd25519PublicKey Validation', () => {
     test('validates authentic Stellar public keys', () => {
       // Real valid Stellar testnet / public keys
-      const validKey1 = 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A'; // 56 chars, valid checksum
-      const validKey2 = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5'; // 56 chars, valid checksum
+      const validKey1 = 'GDVO3CBDR37KRZFG5MKF5DKMMC5CXHPKMCQO3IAUU7MWW7IE4MP2SZLI'; // 56 chars, valid checksum
+      const validKey2 = 'GCFVJDKWXTKVSZGY5FWTXEGXV7APNPWFY7YXKIGEKODQK6G65GWRRAZA'; // 56 chars, valid checksum
 
       expect(StrKey.isValidEd25519PublicKey(validKey1)).toBe(true);
       expect(StrKey.isValidEd25519PublicKey(validKey2)).toBe(true);

@@ -6,6 +6,7 @@ import ExportModal from '@/components/ExportModal';
 import NewPayoutModal from '@/components/payouts/NewPayoutModal';
 import SavedDestinationsModal from '@/components/payouts/SavedDestinationsModal';
 import Sep24TrackerModal from '@/components/payouts/Sep24TrackerModal';
+import SignMultisigPayoutModal from '@/components/payouts/SignMultisigPayoutModal';
 import { Payout, AssetType, MerchantBalance, SavedDestination } from '@/lib/types';
 import {
   INITIAL_PAYOUTS,
@@ -26,13 +27,14 @@ export default function PayoutsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [assetFilter, setAssetFilter] = useState<string>('ALL');
   const [startDate, setStartDate] = useState<string>('2026-01-01');
-  const [endDate, setEndDate] = useState<string>('2026-02-28');
+  const [endDate, setEndDate] = useState<string>('2026-03-31');
 
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isNewPayoutOpen, setIsNewPayoutOpen] = useState(false);
   const [isSavedDestinationsOpen, setIsSavedDestinationsOpen] = useState(false);
   const [trackingPayout, setTrackingPayout] = useState<Payout | null>(null);
+  const [signingMultisigPayout, setSigningMultisigPayout] = useState<Payout | null>(null);
 
   // Filtered Payouts (strictly respects search, status, asset, and date range)
   const filteredPayouts = useMemo(() => {
@@ -108,6 +110,13 @@ export default function PayoutsPage() {
         },
       };
     });
+  };
+
+  const handleMultisigSigned = (updatedPayout: Payout) => {
+    setPayouts((prev) =>
+      prev.map((p) => (p.id === updatedPayout.id ? updatedPayout : p))
+    );
+    setSigningMultisigPayout(updatedPayout);
   };
 
   const handleAddSavedDestination = (dest: SavedDestination) => {
@@ -255,6 +264,8 @@ export default function PayoutsPage() {
               >
                 <option value="ALL">All Statuses</option>
                 <option value="COMPLETED">Completed</option>
+                <option value="AWAITING_SIGNATURES">Awaiting Signatures (Multi-Sig)</option>
+                <option value="EXPIRED">Expired</option>
                 <option value="PROCESSING">Processing</option>
                 <option value="PENDING">Pending</option>
                 <option value="FAILED">Failed</option>
@@ -393,20 +404,59 @@ export default function PayoutsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
-                            payout.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                              : payout.status === 'PROCESSING'
-                              ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
-                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                          }`}
-                        >
-                          {payout.status}
-                        </span>
+                        {payout.status === 'AWAITING_SIGNATURES' ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-0.5 text-[11px] font-bold text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse" />
+                              AWAITING SIGNATURES
+                            </span>
+                            {payout.multisig && (
+                              <div className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+                                {payout.multisig.signers.filter((s) => s.signed).length} of {payout.multisig.requiredThreshold} signed
+                              </div>
+                            )}
+                          </div>
+                        ) : payout.status === 'EXPIRED' ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-bold text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                              EXPIRED
+                            </span>
+                            <div className="text-[10px] text-rose-600 dark:text-rose-400">
+                              Time bound passed
+                            </div>
+                          </div>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
+                              payout.status === 'COMPLETED'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                : payout.status === 'PROCESSING'
+                                ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
+                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                            }`}
+                          >
+                            {payout.status}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-right space-x-2">
-                        {payout.payoutMethod.includes('SEP-24') ? (
+                        {payout.status === 'AWAITING_SIGNATURES' ? (
+                          <button
+                            type="button"
+                            onClick={() => setSigningMultisigPayout(payout)}
+                            className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                          >
+                            Review & Sign
+                          </button>
+                        ) : payout.status === 'EXPIRED' ? (
+                          <button
+                            type="button"
+                            onClick={() => setSigningMultisigPayout(payout)}
+                            className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300"
+                          >
+                            View Expiration
+                          </button>
+                        ) : payout.payoutMethod.includes('SEP-24') ? (
                           <button
                             type="button"
                             onClick={() => setTrackingPayout(payout)}
@@ -477,6 +527,14 @@ export default function PayoutsPage() {
         filterStartDate={startDate}
         filterEndDate={endDate}
         filterSummary={filterSummary}
+      />
+
+      {/* Multi-Signature Payout Review & Signing Modal */}
+      <SignMultisigPayoutModal
+        isOpen={!!signingMultisigPayout}
+        onClose={() => setSigningMultisigPayout(null)}
+        payout={signingMultisigPayout}
+        onSigned={handleMultisigSigned}
       />
     </DashboardLayout>
   );
