@@ -6,6 +6,7 @@ import { ChevronRight, Menu } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type StellarNetwork = "mainnet" | "testnet" | "futurenet";
 
@@ -85,6 +86,8 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
       </div>
 
       <NetworkBadge />
+
+      <LanguageSwitcher />
 
       <NotificationBell />
 

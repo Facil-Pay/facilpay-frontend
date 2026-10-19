@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/components/ui/utils";
 import logoHorizontal from "@/app/branding/logo/horizontal/facilpay-horizontal-logo-white.svg";
 import logoIcon from "@/app/branding/logo/icon/facilpay-icon.svg";
@@ -18,6 +19,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
+  const tNav = useTranslations("navigation");
 
   return (
     <>
@@ -74,13 +76,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
           <ul className="space-y-1">
             {DASHBOARD_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
               const active = isNavItemActive(pathname, href);
+              const navKey = href.replace("/reports/", "").replace("/", "");
+              const displayLabel = tNav.has(navKey) ? tNav(navKey) : label;
               return (
                 <li key={href}>
                   <Link
                     href={href}
                     onClick={onCloseMobile}
                     aria-current={active ? "page" : undefined}
-                    title={collapsed ? label : undefined}
+                    title={collapsed ? displayLabel : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       collapsed && "md:justify-center md:px-0",
@@ -90,7 +94,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
                     )}
                   >
                     <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <span className={cn("truncate", collapsed && "md:sr-only")}>{label}</span>
+                    <span className={cn("truncate", collapsed && "md:sr-only")}>{displayLabel}</span>
                   </Link>
                 </li>
               );
@@ -102,7 +106,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
           <button
             type="button"
             onClick={onToggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? tNav("expand") : tNav("collapse")}
             aria-expanded={!collapsed}
             aria-controls="dashboard-sidebar"
             className={cn(
@@ -111,7 +115,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
             )}
           >
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-            {!collapsed && <span>Collapse</span>}
+            {!collapsed && <span>{tNav("collapse")}</span>}
           </button>
         </div>
       </aside>
