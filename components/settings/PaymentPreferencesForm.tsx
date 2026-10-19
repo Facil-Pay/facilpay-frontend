@@ -142,6 +142,44 @@ function PaymentPreferencesForm({ preferences }: { preferences: PaymentPreferenc
                 {...register("defaultRedirectUrl")}
               />
             </Field>
+
+            <div className="sm:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="enablePathPayments" className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    Enable Stellar Path Payments
+                  </label>
+                  <p className="text-xs text-zinc-500">
+                    Allow customers to pay in any supported asset (e.g., XLM) while you receive your preferred settlement asset (e.g., USDC).
+                  </p>
+                </div>
+                <input
+                  id="enablePathPayments"
+                  type="checkbox"
+                  role="switch"
+                  className="h-5 w-5 accent-sky-500 rounded"
+                  {...register("enablePathPayments")}
+                />
+              </div>
+
+              <Field
+                id="maxSlippagePercent"
+                label="Maximum slippage tolerance (%)"
+                hint="Max allowed price difference before path payment reverts (default: 1.0%)."
+                error={errors.maxSlippagePercent?.message}
+              >
+                <input
+                  id="maxSlippagePercent"
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  max="10"
+                  defaultValue={1.0}
+                  className={fieldInputClass}
+                  {...register("maxSlippagePercent", { valueAsNumber: true })}
+                />
+              </Field>
+            </div>
           </div>
         </div>
         <div className="mt-6">
