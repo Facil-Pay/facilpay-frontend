@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import ExportModal from '@/components/ExportModal';
-import PaymentDetailModal from '@/components/PaymentDetailModal';
+import dynamic from 'next/dynamic';
 import { Payment, PaymentStatus, AssetType } from '@/lib/types';
+
+const ExportModal = dynamic(() => import('@/components/ExportModal'), { ssr: false });
+const PaymentDetailModal = dynamic(() => import('@/components/PaymentDetailModal'), { ssr: false });
 import {
   INITIAL_PAYMENTS,
   PAYMENT_EXPORT_COLUMNS,
