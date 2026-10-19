@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getDashboardData } from "@/app/lib/api/dashboard";
-import { KpiCards }              from "@/app/components/dashboard/KpiCards";
-import { RevenueTrendChart }     from "@/app/components/dashboard/RevenueTrendChart";
-import { StatusBreakdownChart }  from "@/app/components/dashboard/StatusBreakdown";
-import { NetworkDistribution }   from "@/app/components/dashboard/NetworkDistribution";
-import { RecentActivity }        from "@/app/components/dashboard/RecentActivity";
+import { KpiCards }              from "@/components/dashboard/KpiCards";
+import { RevenueTrendChart }     from "@/components/dashboard/RevenueTrendChart";
+import { StatusBreakdownChart }  from "@/components/dashboard/StatusBreakdown";
+import { NetworkDistribution }   from "@/components/dashboard/NetworkDistribution";
+import { RecentActivity }        from "@/components/dashboard/RecentActivity";
 
 export const metadata: Metadata = {
   title: "Dashboard — FacilPay",

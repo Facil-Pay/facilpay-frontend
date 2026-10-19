@@ -145,3 +145,26 @@ export const INITIAL_API_KEYS: ApiKeyItem[] = [
     expiresAt: null,
   },
 ];
+
+const API_KEYS_STORAGE_KEY = 'facilpay_api_keys_storage';
+
+export function getStoredApiKeys(): ApiKeyItem[] {
+  if (typeof window === 'undefined') return INITIAL_API_KEYS;
+  try {
+    const raw = window.localStorage.getItem(API_KEYS_STORAGE_KEY);
+    if (!raw) return INITIAL_API_KEYS;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_API_KEYS;
+  } catch {
+    return INITIAL_API_KEYS;
+  }
+}
+
+export function saveStoredApiKeys(keys: ApiKeyItem[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
