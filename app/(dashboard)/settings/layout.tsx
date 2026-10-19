@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/components/ui/utils";
+import { Can } from "@/components/auth/Can";
 
 const TABS = [
   { href: "/settings/profile", label: "Business Profile" },
@@ -12,6 +13,7 @@ const TABS = [
   { href: "/settings/security", label: "Security" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/notifications", label: "Notifications" },
+  { href: "/settings/audit-log", label: "Audit Log", permission: "team:manage" as const },
 ];
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
@@ -28,7 +30,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
         <ul className="flex min-w-max gap-1 border-b border-zinc-200">
           {TABS.map((tab) => {
             const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-            return (
+            const item = (
               <li key={tab.href}>
                 <Link
                   href={tab.href}
@@ -44,6 +46,15 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                 </Link>
               </li>
             );
+
+            if (tab.permission) {
+              return (
+                <Can key={tab.href} permission={tab.permission}>
+                  {item}
+                </Can>
+              );
+            }
+            return item;
           })}
         </ul>
       </nav>

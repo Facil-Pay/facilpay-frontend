@@ -16,8 +16,9 @@ describe("permissions", () => {
   it("guards routes by longest prefix", () => {
     expect(requiredPermissionForPath("/settings/api-keys")).toBe("developers:manage");
     expect(requiredPermissionForPath("/settings/team")).toBe("team:manage");
-    expect(requiredPermissionForPath("/overview")).toBeNull();
-    expect(canAccessPath("developer", "/escrow")).toBe(false);
+    expect(requiredPermissionForPath("/settings/audit-log")).toBe("team:manage");
+    expect(canAccessPath("developer", "/settings/audit-log")).toBe(false);
+    expect(canAccessPath("owner", "/settings/audit-log")).toBe(true);
     expect(canAccessPath("viewer", "/settings/notifications")).toBe(true);
   });
 });

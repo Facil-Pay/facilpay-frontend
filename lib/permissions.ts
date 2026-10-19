@@ -41,6 +41,7 @@ export const ROUTE_PERMISSIONS: Record<string, Permission> = {
   "/developers": "developers:manage",
   "/settings/api-keys": "developers:manage",
   "/settings/webhooks": "developers:manage",
+  "/settings/audit-log": "team:manage",
   "/settings": "team:manage",
   "/settings/notifications": "payments:view",
 };
