@@ -6,6 +6,7 @@ import {
   Lock,
   RotateCcw,
   Settings,
+  ShieldAlert,
   Webhook,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +21,7 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/overview", icon: LayoutDashboard },
   { label: "Payments", href: "/payments", icon: CreditCard },
   { label: "Refunds", href: "/refunds", icon: RotateCcw },
+  { label: "Disputes", href: "/disputes", icon: ShieldAlert },
   { label: "Escrow", href: "/escrow", icon: Lock },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Webhooks", href: "/webhooks", icon: Webhook },
