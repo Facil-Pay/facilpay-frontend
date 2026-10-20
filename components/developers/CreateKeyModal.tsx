@@ -8,6 +8,7 @@ import {
   generateSecretKeyString,
   maskSecretKey,
 } from '@/lib/apiKeys';
+import { useStepUp } from '@/components/security/use-step-up';
 
 interface CreateKeyModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export default function CreateKeyModal({
   const [customExpiry, setCustomExpiry] = useState('');
   const [newFullKey, setNewFullKey] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [stepUpError, setStepUpError] = useState<string | null>(null);
+  const { requestStepUp, stepUpDialog } = useStepUp();
 
   if (!isOpen) return null;
 
@@ -52,9 +55,18 @@ export default function CreateKeyModal({
     }));
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // The secret is shown in full exactly once, so revealing it needs a fresh 2FA code.
+    setStepUpError(null);
+    try {
+      if (!(await requestStepUp('reveal_api_key'))) return;
+    } catch (err) {
+      setStepUpError(err instanceof Error ? err.message : 'Could not verify two-factor authentication.');
+      return;
+    }
 
     const fullKey = generateSecretKeyString(network);
     const keyPrefix = `${fullKey.slice(0, 16)}...`;
@@ -146,7 +158,12 @@ export default function CreateKeyModal({
         {/* Content */}
         <div className="p-6">
           {step === 'form' ? (
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
+              {stepUpError && (
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {stepUpError}
+                </p>
+              )}
               {/* Key Name */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
@@ -353,6 +370,7 @@ export default function CreateKeyModal({
           )}
         </div>
       </div>
+      {stepUpDialog}
     </div>
   );
 }

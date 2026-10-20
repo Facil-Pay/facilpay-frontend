@@ -3,6 +3,7 @@
 
 import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
 import type { MonthlyRevenue } from "@/app/lib/api/dashboard";
+import { useFormat } from "@/lib/i18n/use-format";
 
 function ChartBarIcon() {
   return (
@@ -17,6 +18,7 @@ interface RevenueTrendChartProps {
 }
 
 export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
+  const f = useFormat();
   if (data.length === 0) return null;
 
   // Chart dimensions
@@ -37,13 +39,13 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
   const yLines = Array.from({ length: yTicks + 1 }, (_, i) => {
     const val = (yMax / yTicks) * i;
     const y   = PAD.top + chartH - (val / yMax) * chartH;
-    const label = val >= 1000 ? `$${(val / 1000).toFixed(0)}K` : `$${val}`;
+    const label = f.fiat(val, "USD", { compact: true, maximumFractionDigits: 0 });
     return { val, y, label };
   });
 
   // Format tooltip-style value on hover (SVG title)
   function fmtVol(v: number) {
-    return v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v.toFixed(0)}`;
+    return v >= 1000 ? f.fiat(v, "USD", { compact: true }) : f.fiat(v, "USD", { maximumFractionDigits: 0 });
   }
 
   return (
@@ -162,7 +164,7 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
           <span className="text-xs text-zinc-500">Previous months</span>
         </div>
         <div className="ml-auto text-xs text-zinc-400 tabular-nums">
-          Total: ${data.reduce((s, d) => s + d.volumeUsd, 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+          Total: {f.fiat(data.reduce((s, d) => s + d.volumeUsd, 0), "USD", { maximumFractionDigits: 0 })}
         </div>
       </div>
     </Card>

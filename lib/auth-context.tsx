@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MerchantUser } from '@/types/onboarding';
+import { logout as logoutAndRedirect } from '@/lib/api/client';
 import {
   getMerchantUser,
   saveMerchantUser,
@@ -22,6 +23,16 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Clears local auth state after the server has ended this session (e.g. the
+ * merchant revoked it from Security settings), then sends them to sign in.
+ * Usable outside AuthProvider.
+ */
+export function endLocalSession() {
+  saveMerchantUser({ ...getMerchantUser(), isLoggedIn: false });
+  logoutAndRedirect();
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<MerchantUser | null>(null);

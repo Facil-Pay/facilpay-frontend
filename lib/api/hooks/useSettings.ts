@@ -41,10 +41,17 @@ export function useBusinessProfile(
   });
 }
 
+export interface UpdateBusinessProfileInput {
+  profile: BusinessProfile;
+  /** Step-up headers; required by the API when the settlement address changes and 2FA is on */
+  headers?: Record<string, string>;
+}
+
 export function useUpdateBusinessProfile() {
   const qc = useQueryClient();
-  return useMutation<BusinessProfile, ApiError, BusinessProfile>({
-    mutationFn: (body) => apiClient.patch<BusinessProfile>("/merchant/profile", { body }),
+  return useMutation<BusinessProfile, ApiError, UpdateBusinessProfileInput>({
+    mutationFn: ({ profile, headers }) =>
+      apiClient.patch<BusinessProfile>("/merchant/profile", { body: profile, headers }),
     onSuccess: (updated) => {
       qc.setQueryData(profileKey, updated);
       void qc.invalidateQueries({ queryKey: merchantKeys.profile() });

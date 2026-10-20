@@ -1,4 +1,5 @@
 import { Payment, Refund, Payout, ExportColumn } from './types';
+import { roundTo, toDecimalString } from '@/lib/i18n/format';
 
 export const INITIAL_PAYMENTS: Payment[] = [
   {
@@ -292,7 +293,7 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
     key: 'amount',
     label: 'Amount',
     selected: true,
-    formatter: (val) => Number(val).toFixed(2),
+    formatter: (val) => toDecimalString(val, 2),
   },
   { key: 'asset', label: 'Asset', selected: true },
   { key: 'status', label: 'Status', selected: true },
@@ -317,7 +318,7 @@ export const REFUND_EXPORT_COLUMNS: ExportColumn<Refund>[] = [
     key: 'amount',
     label: 'Refund Amount',
     selected: true,
-    formatter: (val) => Number(val).toFixed(2),
+    formatter: (val) => toDecimalString(val, 2),
   },
   { key: 'asset', label: 'Asset', selected: true },
   { key: 'status', label: 'Status', selected: true },
@@ -337,7 +338,7 @@ export const PAYOUT_EXPORT_COLUMNS: ExportColumn<Payout>[] = [
     key: 'amount',
     label: 'Payout Amount',
     selected: true,
-    formatter: (val) => Number(val).toFixed(2),
+    formatter: (val) => toDecimalString(val, 2),
   },
   { key: 'asset', label: 'Asset', selected: true },
   { key: 'status', label: 'Status', selected: true },
@@ -369,7 +370,7 @@ export function generateLargePayments(count = 2500): Payment[] {
     const itemDate = new Date(baseTime + i * 3600 * 1000 * 0.7);
     const asset = assets[i % assets.length];
     const status = statuses[i % statuses.length];
-    const amount = Number((25 + (i * 13.37) % 4500).toFixed(2));
+    const amount = roundTo(25 + (i * 13.37) % 4500, 2);
     const hexHash = ((i * 1234567891).toString(16) + 'abcdef0123456789abcdef0123456789abcdef0123456789').slice(0, 64);
 
     results.push({

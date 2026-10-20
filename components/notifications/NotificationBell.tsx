@@ -8,8 +8,10 @@ import {
   isVisible, markAllRead, markRead, NOTIFICATION_TYPES, unreadLabel,
   useNotificationPolling, useNotificationPrefs, useNotifications, type AppNotification,
 } from "@/lib/notifications";
+import { useFormat } from "@/lib/i18n/use-format";
 
 export function NotificationItem({ n, onOpen }: { n: AppNotification; onOpen: (n: AppNotification) => void }) {
+  const f = useFormat();
   return (
     <button type="button" onClick={() => onOpen(n)} className={`flex w-full gap-3 px-4 py-3 text-left hover:bg-zinc-50 ${n.read ? "" : "bg-sky-50/60"}`}>
       <span className="text-lg" aria-hidden="true">{NOTIFICATION_TYPES[n.type].icon}</span>
@@ -19,7 +21,7 @@ export function NotificationItem({ n, onOpen }: { n: AppNotification; onOpen: (n
           {!n.read && <span className="h-2 w-2 rounded-full bg-[#20a7ee]" aria-label="Unread" />}
         </span>
         <span className="block text-xs text-zinc-500">{n.body}</span>
-        <span className="block text-[11px] text-zinc-400">{new Date(n.createdAt).toLocaleString()}</span>
+        <span className="block text-[11px] text-zinc-400"><time dateTime={n.createdAt} title={f.dateTime(n.createdAt)}>{f.relative(n.createdAt)}</time></span>
       </span>
     </button>
   );

@@ -24,8 +24,10 @@ import { truncateAddress } from '@/lib/stellar';
 import { generateQRSvg } from '@/lib/qr';
 import { PaymentStreamProvider, usePaymentStream } from '@/lib/payment-stream-context';
 import PaymentToast from '@/components/payments/PaymentToast';
+import { useFormat } from '@/lib/i18n/use-format';
 
 function OverviewContent() {
+  const f = useFormat();
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const { payments } = usePaymentStream();
@@ -37,10 +39,7 @@ function OverviewContent() {
   const liveUsdcVolume = payments
     .filter((p) => p.asset_code === 'USDC')
     .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
-  const totalSettledUsdc = (1250 + liveUsdcVolume).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const totalSettledUsdc = f.amount(1250 + liveUsdcVolume, 'USDC');
 
   useEffect(() => {
     const savedOnboarding = getOnboardingState();
@@ -188,8 +187,8 @@ function OverviewContent() {
         {[
           {
             label: 'Total Settled Volume',
-            value: `$${totalSettledUsdc} USDC`,
-            change: `+${payments.length} on-chain payments`,
+            value: totalSettledUsdc,
+            change: `${f.number(payments.length, { signDisplay: 'always' })} on-chain payments`,
             icon: '💰',
           },
           {
@@ -247,7 +246,7 @@ function OverviewContent() {
 
             <div className="flex items-center gap-2">
               <span className="font-mono text-lg font-bold text-zinc-900 dark:text-white">
-                ${paymentLink.amount} {paymentLink.currency}
+                {f.amount(paymentLink.amount, paymentLink.currency)}
               </span>
             </div>
           </div>
@@ -280,7 +279,7 @@ function OverviewContent() {
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                <span>Created: {new Date(paymentLink.createdAt || Date.now()).toLocaleDateString()}</span>
+                <span>Created: {f.date(paymentLink.createdAt || Date.now())}</span>
                 <span>•</span>
                 <span>Settles to: {truncateAddress(settlement.address, 4)}</span>
                 <span>•</span>

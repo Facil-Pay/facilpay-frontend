@@ -1,5 +1,6 @@
 import type { TimelineEvent, TimelineEventType, PaymentStatus } from "@/app/lib/types/payment";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { useFormat, type Formatters } from "@/lib/i18n/use-format";
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
@@ -75,20 +76,10 @@ function nodeStyle(status: PaymentStatus): string {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
+function formatTimestamp(iso: string, f: Formatters): { date: string; time: string } {
   return {
-    date: d.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
-    time: d.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "short",
-    }),
+    date: f.date(iso),
+    time: f.dateWith(iso, { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZoneName: "short" }),
   };
 }
 
@@ -100,7 +91,8 @@ interface TimelineNodeProps {
 }
 
 function TimelineNode({ event, isLast }: TimelineNodeProps) {
-  const { date, time } = formatTimestamp(event.timestamp);
+  const f = useFormat();
+  const { date, time } = formatTimestamp(event.timestamp, f);
   const colour = nodeStyle(event.status);
 
   return (

@@ -33,14 +33,6 @@ export function formatReason(reason: RefundReason): string {
   return REASON_LABEL[reason] ?? reason;
 }
 
-export function formatAmount(amount: number, asset: string): string {
-  return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 7 })} ${asset}`;
-}
-
-export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
-
 export function explorerTxUrl(refund: Refund): string | undefined {
   if (refund.explorerUrl) return refund.explorerUrl;
   if (!refund.txHash) return undefined;

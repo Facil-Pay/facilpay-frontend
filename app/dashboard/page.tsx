@@ -6,6 +6,7 @@ import { getDashboardData } from "@/app/lib/api/dashboard";
 import { KpiCards }              from "@/app/components/dashboard/KpiCards";
 import { NetworkDistribution }   from "@/app/components/dashboard/NetworkDistribution";
 import { RecentActivity }        from "@/app/components/dashboard/RecentActivity";
+import { useFormat } from "@/lib/i18n/use-format";
 
 const RevenueTrendChart = dynamic(
   () => import("@/app/components/dashboard/RevenueTrendChart").then((m) => m.RevenueTrendChart),
@@ -98,11 +99,8 @@ export default function DashboardPage() {
   const data = getDashboardData();
   const { kpi, monthlyRevenue, statusBreakdown, networkBreakdown, recentPayments } = data;
 
-  const generatedTime = new Date(data.generatedAt).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZoneName: "short",
-  });
+  const f = useFormat();
+  const generatedTime = f.dateWith(data.generatedAt, { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">

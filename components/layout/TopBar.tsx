@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Menu, FlaskConical, Zap } from "lucide-react";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
@@ -114,6 +115,8 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
       <NetworkModeToggle />
 
       <NetworkBadge />
+
+      <LanguageSwitcher variant="compact" id="topbar-language" className="hidden sm:inline-flex" />
 
       <NotificationBell />
 

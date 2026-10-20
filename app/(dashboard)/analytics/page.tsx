@@ -16,6 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { AnalyticsInsights } from "@/components/analytics/AnalyticsInsights";
+import { useFormat } from "@/lib/i18n/use-format";
 
 const palette = {
   primary: "#20a7ee",
@@ -75,17 +76,10 @@ const seriesByGranularity: Record<Granularity, ChartPoint[]> = {
   month: baseSeries,
 };
 
-const formatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMoney(value: number) {
-  return formatter.format(value);
-}
-
-function formatCompactMoney(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(value);
-}
-
 export default function AnalyticsPage() {
+  const f = useFormat();
+  const formatMoney = (value: number) => f.fiat(value, "USD", { maximumFractionDigits: 0 });
+  const formatCompactMoney = (value: number) => f.fiat(value, "USD", { compact: true });
   const [granularity, setGranularity] = useState<Granularity>("month");
   const [dateRange, setDateRange] = useState<RangePreset>("90d");
   const [asset, setAsset] = useState<Asset>("All");
@@ -189,10 +183,10 @@ export default function AnalyticsPage() {
         ) : (
           <>
             <section className="stats-grid">
-              <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta="+18.2%" tone="primary" />
-              <StatCard label="Transactions" value={String(stats.totalTx)} delta="+12.4%" tone="secondary" />
-              <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta="-4.1%" tone="warning" />
-              <StatCard label="Avg. order value" value={`$${stats.avgAov.toFixed(2)}`} delta="+9.7%" tone="success" />
+              <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta={f.percent(0.182, { signDisplay: "exceptZero" })} tone="primary" />
+              <StatCard label="Transactions" value={f.number(stats.totalTx)} delta={f.percent(0.124, { signDisplay: "exceptZero" })} tone="secondary" />
+              <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta={f.percent(-0.041, { signDisplay: "exceptZero" })} tone="warning" />
+              <StatCard label="Avg. order value" value={f.fiat(stats.avgAov, "USD")} delta={f.percent(0.097, { signDisplay: "exceptZero" })} tone="success" />
             </section>
 
             <div className="chart-grid">
@@ -211,7 +205,7 @@ export default function AnalyticsPage() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickFormatter={(value) => `$${Math.round(value / 1000)}k`} tickLine={false} axisLine={false} stroke="var(--muted)" />
+                    <YAxis tickFormatter={(value: number) => formatCompactMoney(value)} tickLine={false} axisLine={false} stroke="var(--muted)" />
                     <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
                     {visibleSeries.revenue && <Area type="monotone" dataKey="revenue" stroke={palette.primary} fill="url(#revenueFill)" strokeWidth={3} />}
                     {compareMode && visibleSeries.compareRevenue && <Line type="monotone" dataKey="compareRevenue" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />}
@@ -228,7 +222,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
                     <YAxis tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => [`${value}`, "Transactions"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
+                    <Tooltip formatter={(value: number) => [f.number(value), "Transactions"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
                     {visibleSeries.txCount && <Bar dataKey="txCount" radius={[8, 8, 0, 0]} fill={palette.secondary} />}
                   </BarChart>
                 </ResponsiveContainer>
@@ -281,8 +275,8 @@ export default function AnalyticsPage() {
                   <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, "AOV"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
+                    <YAxis tickFormatter={(value: number) => formatMoney(value)} tickLine={false} axisLine={false} stroke="var(--muted)" />
+                    <Tooltip formatter={(value: number) => [f.fiat(value, "USD"), "AOV"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
                     {visibleSeries.aov && <Line type="monotone" dataKey="aov" stroke={palette.purple} strokeWidth={3} dot={{ r: 4 }} />}
                     {compareMode && visibleSeries.compareAov && <Line type="monotone" dataKey="compareAov" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />}
                   </LineChart>

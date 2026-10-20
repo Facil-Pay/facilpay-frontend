@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat, Roboto_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
+import { TimeZoneSync } from "@/components/i18n/TimeZoneSync";
 import { Providers as WalletProviders } from "@/components/wallet/providers";
 import "./globals.css";
 import { Providers } from "@/app/providers";
@@ -29,17 +32,23 @@ export const metadata: Metadata = {
 
 // ─── Root layout ──────────────────────────────────────────────────────────────
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${montserrat.variable} ${inter.variable} ${robotoMono.variable} antialiased`}>
-        <Providers>
-          <WalletProviders>{children}</WalletProviders>
-        </Providers>
+        {/* Inherits locale, time zone and messages from i18n/request.ts */}
+        <NextIntlClientProvider>
+          <TimeZoneSync />
+          <Providers>
+            <WalletProviders>{children}</WalletProviders>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

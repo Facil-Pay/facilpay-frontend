@@ -3,6 +3,7 @@ import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
 import { PaymentStatusBadge } from "@/app/components/payments/PaymentStatusBadge";
 import type { RecentPayment } from "@/app/lib/api/dashboard";
 import type { PaymentNetwork } from "@/app/lib/types/payment";
+import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -31,19 +32,6 @@ const NETWORK_COLORS: Record<PaymentNetwork, string> = {
   bitcoin:  "bg-amber-500",
 };
 
-// ─── Relative time helper ─────────────────────────────────────────────────────
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days  = Math.floor(diff / 86_400_000);
-
-  if (mins < 60)  return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
-
 // ─── Avatar initials ──────────────────────────────────────────────────────────
 
 function initials(name: string): string {
@@ -58,10 +46,7 @@ function initials(name: string): string {
 // ─── Single row ───────────────────────────────────────────────────────────────
 
 function ActivityRow({ payment }: { payment: RecentPayment }) {
-  const fmtAmt = payment.amountUsd.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const f = useFormat();
 
   const networkDot =
     payment.network && NETWORK_COLORS[payment.network]
@@ -100,13 +85,15 @@ function ActivityRow({ payment }: { payment: RecentPayment }) {
           <span className="text-[10px] text-zinc-400 capitalize">{payment.network ?? "—"}</span>
         </div>
         <span className="text-[10px] text-zinc-400 tabular-nums">
-          {relativeTime(payment.createdAt)}
+          <time dateTime={payment.createdAt} title={f.dateTime(payment.createdAt)}>
+            {f.relative(payment.createdAt)}
+          </time>
         </span>
       </div>
 
       {/* Amount */}
       <div className="text-right shrink-0 w-24">
-        <span className="text-sm font-bold text-zinc-900 tabular-nums">${fmtAmt}</span>
+        <span className="text-sm font-bold text-zinc-900 tabular-nums">{f.fiat(payment.amountUsd, "USD")}</span>
       </div>
 
       {/* Arrow */}

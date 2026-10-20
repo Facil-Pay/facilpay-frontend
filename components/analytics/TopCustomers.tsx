@@ -1,5 +1,5 @@
 import type { TopCustomer } from "@/lib/types/analytics";
-import { InsightCard, InsightEmpty, usd } from "./InsightCard";
+import { InsightCard, InsightEmpty, useInsightFormat } from "./InsightCard";
 
 function displayIdentifier(customer: TopCustomer): string {
   if (customer.email) return customer.email;
@@ -8,6 +8,7 @@ function displayIdentifier(customer: TopCustomer): string {
 }
 
 export function TopCustomers({ customers }: { customers: TopCustomer[] }) {
+  const { usd, count, date } = useInsightFormat();
   const top10 = [...customers].sort((a, b) => b.total - a.total).slice(0, 10);
 
   return (
@@ -38,10 +39,10 @@ export function TopCustomers({ customers }: { customers: TopCustomer[] }) {
                       {displayIdentifier(customer)}
                     </span>
                   </td>
-                  <td className="py-2 pr-3 text-right text-zinc-700">{customer.paymentCount.toLocaleString()}</td>
-                  <td className="py-2 pr-3 text-right font-medium text-zinc-900">{usd.format(customer.total)}</td>
+                  <td className="py-2 pr-3 text-right text-zinc-700">{count(customer.paymentCount)}</td>
+                  <td className="py-2 pr-3 text-right font-medium text-zinc-900">{usd(customer.total)}</td>
                   <td className="py-2 text-right text-zinc-600">
-                    {new Date(customer.lastPaymentAt).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                    {date(customer.lastPaymentAt)}
                   </td>
                 </tr>
               ))}

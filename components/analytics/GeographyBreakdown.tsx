@@ -1,18 +1,16 @@
 import type { CountryVolume } from "@/lib/types/analytics";
-import { InsightCard, percent, usd } from "./InsightCard";
+import { InsightCard, useInsightFormat } from "./InsightCard";
 
-const regionNames =
-  typeof Intl !== "undefined" && "DisplayNames" in Intl ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
-
-function countryName(code: string): string {
+function countryName(code: string, locale: string): string {
   try {
-    return regionNames?.of(code) ?? code;
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
   } catch {
     return code;
   }
 }
 
 export function GeographyBreakdown({ countries }: { countries: CountryVolume[] }) {
+  const { locale, usd, percent } = useInsightFormat();
   const rows = [...countries].sort((a, b) => b.volume - a.volume);
   const total = rows.reduce((sum, row) => sum + row.volume, 0);
   if (total === 0) return null;
@@ -23,9 +21,9 @@ export function GeographyBreakdown({ countries }: { countries: CountryVolume[] }
         {rows.map((row) => (
           <li key={row.country}>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-900">{countryName(row.country)}</span>
+              <span className="text-zinc-900">{countryName(row.country, locale)}</span>
               <span className="text-zinc-600">
-                {usd.format(row.volume)} <span className="text-xs text-zinc-400">({percent(row.volume / total)})</span>
+                {usd(row.volume)} <span className="text-xs text-zinc-400">({percent(row.volume / total)})</span>
               </span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100">

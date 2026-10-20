@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { usePaymentStream } from '@/lib/payment-stream-context';
 import { PaymentItem } from '@/types/payments';
 import { truncateAddress } from '@/lib/stellar';
+import { useFormat } from '@/lib/i18n/use-format';
 
 export default function PaymentToast() {
+  const f = useFormat();
   const { latestPayment } = usePaymentStream();
   const [activeToast, setActiveToast] = useState<PaymentItem | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -34,7 +36,7 @@ export default function PaymentToast() {
 
         <div className="flex-1 pr-2">
           <div className="text-xs font-bold text-zinc-900 dark:text-white">
-            Received {activeToast.amount} {activeToast.asset_code}
+            Received {f.amount(activeToast.amount, activeToast.asset_code)}
           </div>
           <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">
             from {truncateAddress(activeToast.from, 4)}

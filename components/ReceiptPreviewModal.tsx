@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Payment } from '@/lib/types';
 import { downloadPaymentReceipt, printPaymentReceipt } from '@/lib/pdfReceipt';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface ReceiptPreviewModalProps {
   payment: Payment | null;
@@ -15,6 +16,7 @@ export default function ReceiptPreviewModal({
   isOpen,
   onClose,
 }: ReceiptPreviewModalProps) {
+  const f = useFormat();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !payment) return null;
@@ -121,10 +123,7 @@ export default function ReceiptPreviewModal({
                   Amount Paid
                 </span>
                 <div className="text-3xl font-extrabold text-[#000F24] dark:text-white mt-0.5">
-                  {payment.amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}{' '}
+                  {f.amount(payment.amount, payment.asset, { withCode: false })}{' '}
                   <span className="text-xl font-bold text-sky-600 dark:text-sky-400">
                     {payment.asset}
                   </span>

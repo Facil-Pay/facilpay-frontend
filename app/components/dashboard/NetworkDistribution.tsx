@@ -4,6 +4,7 @@
 import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
 import type { NetworkBreakdown } from "@/app/lib/api/dashboard";
 import type { PaymentNetwork } from "@/app/lib/types/payment";
+import { useFormat } from "@/lib/i18n/use-format";
 
 function GlobeIcon() {
   return (
@@ -40,13 +41,11 @@ interface NetworkDistributionProps {
 }
 
 export function NetworkDistribution({ data }: NetworkDistributionProps) {
+  const f = useFormat();
   const totalTxns = data.reduce((s, d) => s + d.count, 0);
   const totalVol  = data.reduce((s, d) => s + d.volumeUsd, 0);
 
-  const fmt = (v: number) =>
-    v >= 1_000_000
-      ? `$${(v / 1_000_000).toFixed(1)}M`
-      : `$${(v / 1_000).toFixed(1)}K`;
+  const fmt = (v: number) => f.fiat(v, "USD", { compact: true });
 
   return (
     <Card className="flex flex-col">
@@ -66,7 +65,7 @@ export function NetworkDistribution({ data }: NetworkDistributionProps) {
               width: `${d.pct}%`,
               backgroundColor: NETWORK_COLORS[d.network],
             }}
-            title={`${NETWORK_LABELS[d.network]}: ${d.pct.toFixed(1)}%`}
+            title={`${NETWORK_LABELS[d.network]}: ${f.percent(d.pct / 100)}`}
             className="transition-all"
           />
         ))}
@@ -90,7 +89,7 @@ export function NetworkDistribution({ data }: NetworkDistributionProps) {
                   {NETWORK_LABELS[d.network]}
                 </span>
                 <span className="text-xs font-semibold text-zinc-900 tabular-nums">
-                  {d.pct.toFixed(1)}%
+                  {f.percent(d.pct / 100)}
                 </span>
               </div>
               {/* Progress bar */}

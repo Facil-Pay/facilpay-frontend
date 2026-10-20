@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Payout } from '@/lib/types';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface Sep24TrackerModalProps {
   payout: Payout | null;
@@ -14,6 +15,7 @@ export default function Sep24TrackerModal({
   isOpen,
   onClose,
 }: Sep24TrackerModalProps) {
+  const f = useFormat();
   const [currentStep, setCurrentStep] = useState<number>(3);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -143,7 +145,7 @@ export default function Sep24TrackerModal({
               <div className="text-right">
                 <span className="text-xs text-zinc-500 block">Settlement Amount</span>
                 <span className="text-xl font-extrabold text-zinc-900 dark:text-white">
-                  {payout.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}{' '}
+                  {f.amount(payout.amount, payout.asset, { withCode: false })}{' '}
                   <span className="text-sky-600 dark:text-sky-400 text-sm font-bold">
                     {payout.asset}
                   </span>

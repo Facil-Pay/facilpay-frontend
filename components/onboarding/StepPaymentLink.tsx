@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useId } from 'react';
 import { PaymentLinkData, BrandingDetails } from '@/types/onboarding';
 import { generateQRSvg } from '@/lib/qr';
+import { toDecimalString } from '@/lib/i18n/format';
 
 interface StepPaymentLinkProps {
   branding: BrandingDetails;
@@ -53,7 +54,7 @@ export default function StepPaymentLink({
     const newPaymentLink: PaymentLinkData = {
       id: linkId,
       title: title.trim(),
-      amount: parseFloat(amount).toFixed(2),
+      amount: toDecimalString(amount, 2),
       currency,
       description: description.trim(),
       paymentUrl: payUrl,

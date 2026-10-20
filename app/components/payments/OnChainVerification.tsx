@@ -2,6 +2,7 @@ import type { OnChainData } from "@/app/lib/types/payment";
 import { Card, CardHeader, CardDivider, DetailRow } from "@/app/components/ui/Card";
 import { Badge } from "@/app/components/ui/Badge";
 import { CopyButton } from "./CopyButton";
+import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ interface OnChainVerificationProps {
 }
 
 export function OnChainVerification({ data }: OnChainVerificationProps) {
+  const f = useFormat();
   const isConfirmed = data.confirmations >= data.requiredConfirmations;
 
   return (
@@ -155,13 +157,13 @@ export function OnChainVerification({ data }: OnChainVerificationProps) {
         {data.blockNumber != null && (
           <DetailRow
             label="Block / Ledger"
-            value={`#${data.blockNumber.toLocaleString()}`}
+            value={`#${f.number(data.blockNumber)}`}
           />
         )}
         {data.ledgerSequence != null && data.blockNumber == null && (
           <DetailRow
             label="Ledger Sequence"
-            value={`#${data.ledgerSequence.toLocaleString()}`}
+            value={`#${f.number(data.ledgerSequence)}`}
           />
         )}
         <DetailRow label="Network Fee" value={`${data.fee} ${data.feeAsset}`} />
@@ -176,19 +178,13 @@ export function OnChainVerification({ data }: OnChainVerificationProps) {
         {data.broadcastAt && (
           <DetailRow
             label="Broadcast At"
-            value={new Date(data.broadcastAt).toLocaleString("en-GB", {
-              dateStyle: "medium",
-              timeStyle: "medium",
-            })}
+            value={f.dateWith(data.broadcastAt, { dateStyle: "medium", timeStyle: "medium" })}
           />
         )}
         {data.confirmedAt && (
           <DetailRow
             label="Confirmed At"
-            value={new Date(data.confirmedAt).toLocaleString("en-GB", {
-              dateStyle: "medium",
-              timeStyle: "medium",
-            })}
+            value={f.dateWith(data.confirmedAt, { dateStyle: "medium", timeStyle: "medium" })}
           />
         )}
       </dl>

@@ -14,6 +14,7 @@ import type {
   PaymentSortField,
   PaymentSortOrder,
 } from "@/app/lib/types/payment";
+import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,16 +184,9 @@ function FilterPill({ label, onRemove }: FilterPillProps) {
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function PaymentRow({ payment }: { payment: Payment }) {
-  const date = new Date(payment.createdAt).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  const fmtAmount = payment.amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: payment.currency === "BTC" ? 6 : 2,
-  });
+  const f = useFormat();
+  const date = f.date(payment.createdAt);
+  const fmtAmount = f.amount(payment.amount, payment.currency, { withCode: false });
 
   return (
     <Link
@@ -476,7 +470,7 @@ export function PaymentsListClient({
   if (filters.dateTo)   pills.push({ key: "dateTo",   label: `To: ${filters.dateTo}` });
 
   // ── Formatted helpers ───────────────────────────────────────────────────────
-  const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt2 = (n: number) => f.number(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ─────────────────────────────────────────────────────────────────────────────
 

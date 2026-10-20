@@ -10,6 +10,7 @@ import {
   TESTNET_ASSETS,
   STELLAR_FRIENDBOT_URL,
 } from '@/lib/stellar';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface StepTrustlinesProps {
   settlementAddress: string;
@@ -24,6 +25,7 @@ export default function StepTrustlines({
   onNext,
   onBack,
 }: StepTrustlinesProps) {
+  const f = useFormat();
   const [trustlines, setTrustlines] = useState<TrustlinesState>({
     usdc: initialData.usdc || false,
     eurc: initialData.eurc || false,
@@ -212,7 +214,7 @@ export default function StepTrustlines({
         <div className="flex items-center gap-1.5 font-mono">
           <span className="text-zinc-500">Balance:</span>
           <span className="font-semibold text-zinc-900 dark:text-white">
-            {parseFloat(trustlines.accountBalanceXlm || '0').toLocaleString()} XLM
+            {f.amount(trustlines.accountBalanceXlm || '0', 'XLM')}
           </span>
         </div>
       </div>

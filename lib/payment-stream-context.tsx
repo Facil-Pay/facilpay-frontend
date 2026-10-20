@@ -16,6 +16,7 @@ import {
 } from '@/types/payments';
 import { STELLAR_TESTNET_HORIZON, isValidStellarAddress } from '@/lib/stellar';
 import { DEFAULT_CONNECTED_WALLET } from '@/lib/storage';
+import { toDecimalString } from '@/lib/i18n/format';
 
 const PaymentStreamContext = createContext<PaymentStreamContextType | undefined>(undefined);
 
@@ -131,7 +132,7 @@ export function PaymentStreamProvider({
         asset_issuer: parsed.asset_issuer,
         from: parsed.from || parsed.source_account || 'GACCOUNT...',
         to: parsed.to || parsed.account || accountId,
-        amount: parseFloat(parsed.amount || '0').toFixed(2),
+        amount: toDecimalString(parsed.amount || '0', 2),
         isNew: true,
       };
 
@@ -260,7 +261,7 @@ export function PaymentStreamProvider({
             : 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
         from: custom?.from || randomSender,
         to: accountId,
-        amount: custom?.amount || (Math.floor(Math.random() * 95) + 5).toFixed(2),
+        amount: custom?.amount || toDecimalString(Math.floor(Math.random() * 95) + 5, 2),
         isNew: true,
       };
 

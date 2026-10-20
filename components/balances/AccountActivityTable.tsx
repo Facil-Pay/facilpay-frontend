@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { HorizonOperation } from '@/lib/stellar/horizon';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface AccountActivityTableProps {
   operations: HorizonOperation[];
@@ -12,6 +13,7 @@ export default function AccountActivityTable({
   operations,
   isLoading,
 }: AccountActivityTableProps) {
+  const f = useFormat();
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/60">
       <div className="border-b border-zinc-200 px-6 py-4 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40 flex items-center justify-between">
@@ -90,17 +92,14 @@ export default function AccountActivityTable({
                     <td className="px-6 py-4 font-semibold text-zinc-900 dark:text-white">
                       {op.details.amount ? (
                         <>
-                          {Number(op.details.amount).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 7,
-                          })}{' '}
+                          {f.amount(op.details.amount, op.details.assetCode || 'XLM', { withCode: false })}{' '}
                           <span className="text-zinc-500 font-normal">
                             {op.details.assetCode || 'XLM'}
                           </span>
                         </>
                       ) : op.details.startingBalance ? (
                         <>
-                          {Number(op.details.startingBalance).toLocaleString()}{' '}
+                          {f.amount(op.details.startingBalance, 'XLM', { withCode: false })}{' '}
                           <span className="text-zinc-500 font-normal">XLM</span>
                         </>
                       ) : (

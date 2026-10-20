@@ -1,6 +1,6 @@
 import { ArrowDown } from "lucide-react";
 import type { FunnelStep, FunnelStepKey } from "@/lib/types/analytics";
-import { InsightCard, InsightEmpty, percent } from "./InsightCard";
+import { InsightCard, InsightEmpty, useInsightFormat } from "./InsightCard";
 
 const STEP_LABEL: Record<FunnelStepKey, string> = {
   link_opened: "Link opened",
@@ -12,6 +12,7 @@ const STEP_LABEL: Record<FunnelStepKey, string> = {
 const STEP_ORDER: FunnelStepKey[] = ["link_opened", "wallet_connected", "transaction_signed", "payment_confirmed"];
 
 export function ConversionFunnel({ steps }: { steps: FunnelStep[] }) {
+  const { percent, count } = useInsightFormat();
   const ordered = STEP_ORDER.map((key) => steps.find((step) => step.key === key) ?? { key, count: 0 });
   const top = ordered[0].count;
 
@@ -35,7 +36,7 @@ export function ConversionFunnel({ steps }: { steps: FunnelStep[] }) {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-zinc-900">{STEP_LABEL[step.key]}</span>
                   <span className="text-zinc-600">
-                    {step.count.toLocaleString()} <span className="text-xs text-zinc-400">({percent(step.count / top)})</span>
+                    {count(step.count)} <span className="text-xs text-zinc-400">({percent(step.count / top)})</span>
                   </span>
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-zinc-100">

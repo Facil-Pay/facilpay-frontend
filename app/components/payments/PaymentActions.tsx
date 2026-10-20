@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/app/components/ui/Button";
 import { Card } from "@/app/components/ui/Card";
 import type { Payment } from "@/app/lib/types/payment";
+import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ const actionConfig: Record<
 };
 
 function ConfirmModal({ action, payment, onConfirm, onClose, loading }: ConfirmModalProps) {
+  const f = useFormat();
   if (!action) return null;
   const cfg = actionConfig[action];
 
@@ -110,10 +112,7 @@ function ConfirmModal({ action, payment, onConfirm, onClose, loading }: ConfirmM
           <div className="mt-4 rounded-xl bg-zinc-50 border border-zinc-200 px-4 py-3 flex items-center justify-between">
             <span className="text-xs text-zinc-500">Amount</span>
             <span className="text-sm font-bold text-zinc-900 tabular-nums">
-              {payment.amount.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{" "}
+              {f.amount(payment.amount, payment.currency, { withCode: false })}{" "}
               {payment.currency}
             </span>
           </div>

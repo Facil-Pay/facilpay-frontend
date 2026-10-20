@@ -9,11 +9,10 @@ import { RefundStatusBadge } from "./RefundStatusBadge";
 import {
   REFUND_STATUS_LABEL,
   explorerTxUrl,
-  formatAmount,
-  formatDateTime,
   formatReason,
   refundTimeline,
 } from "./refund-format";
+import { useFormat } from "@/lib/i18n/use-format";
 
 interface RefundDetailDrawerProps {
   refund: Refund | null;
@@ -23,6 +22,7 @@ interface RefundDetailDrawerProps {
 }
 
 export function RefundDetailDrawer({ refund, onClose, onRetry, isRetrying }: RefundDetailDrawerProps) {
+  const f = useFormat();
   const open = refund !== null;
 
   useEffect(() => {
@@ -78,9 +78,9 @@ export function RefundDetailDrawer({ refund, onClose, onRetry, isRetrying }: Ref
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <p className="text-xs text-zinc-500">Amount</p>
-                  <p className="text-2xl font-semibold text-zinc-900">{formatAmount(refund.amount, refund.currency)}</p>
+                  <p className="text-2xl font-semibold text-zinc-900">{f.amount(refund.amount, refund.currency)}</p>
                   {refund.amountUsd != null && (
-                    <p className="text-xs text-zinc-500">≈ ${refund.amountUsd.toFixed(2)} USD</p>
+                    <p className="text-xs text-zinc-500">≈ {f.fiat(refund.amountUsd, "USD")}</p>
                   )}
                 </div>
                 <RefundStatusBadge status={refund.status} />
@@ -113,8 +113,8 @@ export function RefundDetailDrawer({ refund, onClose, onRetry, isRetrying }: Ref
                   {refund.reasonDetail && <span className="block text-xs text-zinc-500">{refund.reasonDetail}</span>}
                 </Detail>
                 <Detail label="Initiated by">{refund.initiatedBy}</Detail>
-                <Detail label="Created">{formatDateTime(refund.createdAt)}</Detail>
-                {refund.completedAt && <Detail label="Completed">{formatDateTime(refund.completedAt)}</Detail>}
+                <Detail label="Created">{f.dateTime(refund.createdAt)}</Detail>
+                {refund.completedAt && <Detail label="Completed">{f.dateTime(refund.completedAt)}</Detail>}
                 <Detail label="On-chain transaction" wide>
                   {txUrl ? (
                     <a
@@ -144,7 +144,7 @@ export function RefundDetailDrawer({ refund, onClose, onRetry, isRetrying }: Ref
                         )}
                       />
                       <p className="text-sm font-medium text-zinc-900">{REFUND_STATUS_LABEL[event.status]}</p>
-                      <p className="text-xs text-zinc-500">{formatDateTime(event.at)}</p>
+                      <p className="text-xs text-zinc-500">{f.dateTime(event.at)}</p>
                       {event.note && <p className="mt-0.5 text-xs text-zinc-600">{event.note}</p>}
                     </li>
                   ))}

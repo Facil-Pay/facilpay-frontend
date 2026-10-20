@@ -8,7 +8,7 @@ import { cn } from "@/components/ui/utils";
 const TABS = [
   { href: "/settings/profile", label: "Business Profile" },
   { href: "/settings/branding", label: "Branding" },
-  { href: "/settings/preferences", label: "Payment Preferences" },
+  { href: "/settings/preferences", label: "Preferences" },
   { href: "/settings/security", label: "Security" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/notifications", label: "Notifications" },

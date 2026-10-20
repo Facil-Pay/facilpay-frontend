@@ -13,8 +13,10 @@ import {
   INITIAL_SAVED_DESTINATIONS,
   PAYOUT_EXPORT_COLUMNS,
 } from '@/lib/mockData';
+import { useFormat } from '@/lib/i18n/use-format';
 
 export default function PayoutsPage() {
+  const f = useFormat();
   const [payouts, setPayouts] = useState<Payout[]>(INITIAL_PAYOUTS);
   const [balances, setBalances] = useState<Record<AssetType, MerchantBalance>>(INITIAL_BALANCES);
   const [savedDestinations, setSavedDestinations] = useState<SavedDestination[]>(
@@ -160,7 +162,7 @@ export default function PayoutsPage() {
               </svg>
               <span>Export CSV</span>
               <span className="rounded-full bg-zinc-100 px-1.5 py-0.2 text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                {filteredPayouts.length.toLocaleString()}
+                {f.number(filteredPayouts.length)}
               </span>
             </button>
 
@@ -199,10 +201,7 @@ export default function PayoutsPage() {
 
                 <div className="mt-2 flex items-baseline justify-between">
                   <div className="text-2xl font-extrabold text-zinc-900 dark:text-white">
-                    {bal.available.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{' '}
+                    {f.amount(bal.available, asset, { withCode: false })}{' '}
                     <span className="text-sm font-bold text-sky-600 dark:text-sky-400">
                       {asset}
                     </span>
@@ -220,8 +219,8 @@ export default function PayoutsPage() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2 text-[11px] text-zinc-400 dark:border-zinc-800">
-                  <span>Escrow Locked: {bal.escrowLocked.toLocaleString()} {asset}</span>
-                  <span>Total: {bal.total.toLocaleString()} {asset}</span>
+                  <span>Escrow Locked: {f.amount(bal.escrowLocked, asset, { withCode: false })} {asset}</span>
+                  <span>Total: {f.amount(bal.total, asset, { withCode: false })} {asset}</span>
                 </div>
               </div>
             );
@@ -385,9 +384,7 @@ export default function PayoutsPage() {
                         )}
                       </td>
                       <td className="px-5 py-4 font-semibold text-zinc-900 dark:text-white">
-                        {payout.amount.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}{' '}
+                        {f.amount(payout.amount, payout.asset, { withCode: false })}{' '}
                         <span className="font-normal text-zinc-500">
                           {payout.asset}
                         </span>

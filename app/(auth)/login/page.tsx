@@ -3,28 +3,157 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { setToken } from '@/lib/api/client';
+import { useLogin, useLoginTwoFactor } from '@/lib/api/hooks/useTwoFactor';
+import { TwoFactorCodeInput, isCompleteTwoFactorCode } from '@/components/security/TwoFactorCodeInput';
+
+interface Identity {
+  email: string;
+  name: string;
+}
+
+interface PendingTwoFactor {
+  challengeId: string;
+  identity: Identity;
+}
 
 function LoginContent() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [mode, setMode] = useState<'new' | 'existing'>('new');
+  const signIn = useLogin();
+  const verifyCode = useLoginTwoFactor();
+  const [pending, setPending] = useState<PendingTwoFactor | null>(null);
+  const [code, setCode] = useState('');
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const finishSignIn = (token: string, identity: Identity) => {
+    setToken(token);
+    login({ isNewMerchant: mode === 'new', ...identity });
+  };
+
+  /** First factor; merchants with 2FA get a challenge instead of a token. */
+  const beginSignIn = async (identity: Identity) => {
+    setError(null);
+    try {
+      const result = await signIn.mutateAsync({ email: identity.email });
+      if (result.status === 'two_factor_required') {
+        setCode('');
+        setUseRecoveryCode(false);
+        setPending({ challengeId: result.challengeId, identity });
+        return;
+      }
+      finishSignIn(result.token, identity);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in. Please try again.');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({
-      isNewMerchant: mode === 'new',
+    void beginSignIn({
       email: email || (mode === 'new' ? 'newmerchant@example.com' : 'merchant@acme.com'),
       name: mode === 'new' ? 'New Merchant' : 'Acme Corporation',
     });
   };
 
   const handleWalletLogin = () => {
-    login({
-      isNewMerchant: mode === 'new',
+    void beginSignIn({
       email: 'wallet-merchant@stellar.org',
       name: mode === 'new' ? 'New Wallet Merchant' : 'Stellar Verified Merchant',
     });
   };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pending || !isCompleteTwoFactorCode(code, useRecoveryCode)) return;
+    setError(null);
+    try {
+      const { token } = await verifyCode.mutateAsync({ challengeId: pending.challengeId, code });
+      finishSignIn(token, pending.identity);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That code didn't work. Try again.");
+      setCode('');
+    }
+  };
+
+  if (pending) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <form
+          onSubmit={(e) => void handleVerifyCode(e)}
+          noValidate
+          className="w-full max-w-md space-y-6 rounded-3xl border border-zinc-200/80 bg-white/95 p-8 shadow-xl shadow-zinc-900/5 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/90"
+        >
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Two-factor authentication</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {useRecoveryCode
+                ? 'Enter one of your recovery codes. Each code works once.'
+                : 'Enter the 6-digit code from your authenticator app.'}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="login-two-factor-code"
+              className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300"
+            >
+              {useRecoveryCode ? 'Recovery code' : 'Authentication code'}
+            </label>
+            <TwoFactorCodeInput
+              id="login-two-factor-code"
+              value={code}
+              onChange={setCode}
+              allowRecoveryCode={useRecoveryCode}
+              invalid={Boolean(error)}
+              describedBy={error ? 'login-error' : undefined}
+              disabled={verifyCode.isPending}
+              autoFocus
+            />
+            {error && (
+              <p id="login-error" role="alert" className="text-xs text-red-600">
+                {error}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={!isCompleteTwoFactorCode(code, useRecoveryCode) || verifyCode.isPending}
+            className="w-full rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+          >
+            {verifyCode.isPending ? 'Verifying…' : 'Verify and sign in'}
+          </button>
+
+          <div className="flex items-center justify-between text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setUseRecoveryCode((value) => !value);
+                setCode('');
+                setError(null);
+              }}
+              className="font-medium text-sky-700 hover:text-sky-900 dark:text-sky-400"
+            >
+              {useRecoveryCode ? 'Use authenticator app' : 'Use a recovery code'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPending(null);
+                setError(null);
+              }}
+              className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+            >
+              Back
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -106,9 +235,16 @@ function LoginContent() {
             />
           </div>
 
+          {error && (
+            <p role="alert" className="text-xs text-red-600">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+            disabled={signIn.isPending}
+            className="w-full rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 hover:opacity-95 active:scale-95 disabled:opacity-60 transition-all cursor-pointer"
           >
             {mode === 'new' ? 'Sign In & Start Onboarding' : 'Sign In to Dashboard'}
           </button>
@@ -129,6 +265,7 @@ function LoginContent() {
         <button
           type="button"
           onClick={handleWalletLogin}
+          disabled={signIn.isPending}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
