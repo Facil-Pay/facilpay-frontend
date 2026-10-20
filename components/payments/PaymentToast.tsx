@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePaymentStream } from '@/lib/payment-stream-context';
-import { PaymentItem } from '@/types/payments';
+import { PaymentItem } from '@/lib/types';
 import { truncateAddress } from '@/lib/stellar';
 
 export default function PaymentToast() {

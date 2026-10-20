@@ -7,11 +7,13 @@
  */
 
 export type PayoutStatus =
-  | "scheduled"
+  | "pending"
   | "processing"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "scheduled"
+  | "cancelled"
+  | "expired";
 
 export type PayoutFrequency = "manual" | "daily" | "weekly" | "monthly";
 

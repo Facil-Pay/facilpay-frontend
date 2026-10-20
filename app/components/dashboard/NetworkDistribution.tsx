@@ -3,7 +3,7 @@
 
 import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
 import type { NetworkBreakdown } from "@/app/lib/api/dashboard";
-import type { PaymentNetwork } from "@/app/lib/types/payment";
+import type { PaymentNetwork } from "@/lib/types";
 
 function GlobeIcon() {
   return (

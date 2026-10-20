@@ -14,6 +14,7 @@ export type PaymentStatus =
   | "completed"
   | "failed"
   | "refunded"
+  | "partially_refunded"
   | "cancelled"
   | "expired";
 

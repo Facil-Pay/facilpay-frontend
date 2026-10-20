@@ -13,7 +13,7 @@ import {
   PaymentItem,
   StreamConnectionStatus,
   PaymentStreamContextType,
-} from '@/types/payments';
+} from '@/lib/types';
 import { STELLAR_TESTNET_HORIZON, isValidStellarAddress } from '@/lib/stellar';
 import { DEFAULT_CONNECTED_WALLET } from '@/lib/storage';
 
