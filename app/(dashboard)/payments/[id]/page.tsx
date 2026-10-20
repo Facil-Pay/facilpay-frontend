@@ -2,6 +2,7 @@
 
 import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
 import { Payment } from '@/lib/types';
 import { INITIAL_PAYMENTS } from '@/lib/mockData';
@@ -26,24 +27,7 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
     if (found) {
       setPayment(found);
     } else {
-      // Fallback dynamic payment if testing with arbitrary ID
-      setPayment({
-        id: paymentId,
-        date: new Date().toISOString(),
-        amount: 1250.0,
-        asset: 'USDC',
-        status: 'COMPLETED',
-        customerEmail: 'customer@example.com',
-        customerWallet: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
-        merchantId: 'merch_facilpay_01',
-        merchantName: 'FacilPay Global Merchant Ltd',
-        merchantEmail: 'billing@facilpay.io',
-        txHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        stellarExpertUrl: `https://stellar.expert/explorer/testnet/tx/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
-        fee: 0.00001,
-        description: 'Payment facilitation transaction',
-        memo: `MEMO-${paymentId}`,
-      });
+      notFound();
     }
   }, [paymentId]);
 

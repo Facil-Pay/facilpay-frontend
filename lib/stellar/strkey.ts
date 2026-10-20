@@ -97,6 +97,36 @@ export const StrKey = {
   },
 
   /**
+   * Validates if a string is a valid Stellar M-address (muxed account).
+   */
+  isValidMuxedAccount(address: unknown): boolean {
+    if (typeof address !== 'string') return false;
+    const trimmed = address.trim();
+    if (trimmed.length !== 69 || trimmed[0] !== 'M') {
+      return false;
+    }
+    const decoded = decodeBase32(trimmed);
+    if (!decoded || decoded.length !== 43) {
+      return false;
+    }
+    const versionByte = decoded[0];
+    if (versionByte !== (12 << 3)) {
+      return false;
+    }
+    const payload = decoded.slice(0, 41);
+    const expectedChecksum = crc16XModem(payload);
+    const actualChecksum = decoded[41] | (decoded[42] << 8);
+    return expectedChecksum === actualChecksum;
+  },
+
+  /**
+   * Validates either a G-address or an M-address.
+   */
+  isValidAddress(address: unknown): boolean {
+    return this.isValidEd25519PublicKey(address) || this.isValidMuxedAccount(address);
+  },
+
+  /**
    * Truncates a Stellar address for UI display (e.g. G...ABCD).
    */
   truncateAddress(address: string, start = 4, end = 4): string {

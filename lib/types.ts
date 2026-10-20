@@ -27,6 +27,9 @@ export interface Payment {
   fee: number;
   description: string;
   memo: string;
+  sourceAsset?: string;
+  sourceAmount?: number;
+  path?: string[];
 }
 
 export interface Refund {
