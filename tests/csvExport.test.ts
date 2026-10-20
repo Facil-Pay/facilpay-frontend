@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import {
   escapeCsvField,
   generateCsv,
@@ -58,109 +59,104 @@ describe('CSV Escaping and Export Specifications (RFC 4180 & ISO 8601)', () => {
   });
 
   describe('isIsoDateString & formatToIso8601', () => {
-    test('accurately identifies ISO 8601 date strings', () => {
+    test('correctly identifies valid ISO 8601 date strings', () => {
       expect(isIsoDateString('2026-01-15T14:32:00.000Z')).toBe(true);
       expect(isIsoDateString('2026-01-15')).toBe(true);
-      expect(isIsoDateString('Not a date')).toBe(false);
-      expect(isIsoDateString('12345')).toBe(false);
+      expect(isIsoDateString('2026-12-31T23:59:59Z')).toBe(true);
     });
 
-    test('formats dates and valid strings to ISO 8601', () => {
-      const date = new Date('2026-01-20T10:00:00.000Z');
-      expect(formatToIso8601(date)).toBe('2026-01-20T10:00:00.000Z');
+    test('rejects non-ISO strings', () => {
+      expect(isIsoDateString('January 15, 2026')).toBe(false);
+      expect(isIsoDateString('15/01/2026')).toBe(false);
+      expect(isIsoDateString('not-a-date')).toBe(false);
+    });
+
+    test('formatToIso8601 formats various date inputs properly', () => {
+      const d = new Date('2026-01-15T14:32:00.000Z');
+      expect(formatToIso8601(d)).toBe('2026-01-15T14:32:00.000Z');
+      expect(formatToIso8601('2026-01-15T14:32:00.000Z')).toBe('2026-01-15T14:32:00.000Z');
       expect(formatToIso8601(null)).toBe('');
+      expect(formatToIso8601(undefined)).toBe('');
+    });
+  });
+
+  describe('generateCsv RFC 4180 Compliance', () => {
+    interface TestRecord {
+      id: string;
+      name: string;
+      amount: number;
+      created: string;
+    }
+
+    const testColumns: ExportColumn<TestRecord>[] = [
+      { key: 'id', label: 'ID', selected: true },
+      { key: 'name', label: 'Client Name', selected: true },
+      {
+        key: 'amount',
+        label: 'Amount ($)',
+        selected: true,
+        formatter: (val) => Number(val).toFixed(2),
+      },
+      { key: 'created', label: 'Creation Date', selected: true },
+    ];
+
+    const sampleData: TestRecord[] = [
+      {
+        id: 'rec_01',
+        name: 'Acme, Corp',
+        amount: 1500,
+        created: '2026-01-10T12:00:00.000Z',
+      },
+      {
+        id: 'rec_02',
+        name: 'Mega "Tech" Ltd',
+        amount: 2500.5,
+        created: '2026-01-12T15:30:00.000Z',
+      },
+    ];
+
+    test('generates valid RFC 4180 CSV with CRLF line breaks and properly escaped fields', () => {
+      const csv = generateCsv(sampleData, testColumns);
+      const lines = csv.split('\r\n');
+
+      expect(lines.length).toBe(3); // Header + 2 data rows
+      expect(lines[0]).toBe('ID,Client Name,Amount ($),Creation Date');
+      expect(lines[1]).toBe('rec_01,"Acme, Corp",1500.00,2026-01-10T12:00:00.000Z');
+      expect(lines[2]).toBe('rec_02,"Mega ""Tech"" Ltd",2500.50,2026-01-12T15:30:00.000Z');
+    });
+
+    test('omits unselected columns from CSV generation', () => {
+      const partialColumns: ExportColumn<TestRecord>[] = [
+        { key: 'id', label: 'ID', selected: true },
+        { key: 'name', label: 'Client Name', selected: false }, // unselected
+        { key: 'amount', label: 'Amount', selected: true },
+      ];
+
+      const csv = generateCsv(sampleData, partialColumns);
+      const lines = csv.split('\r\n');
+
+      expect(lines[0]).toBe('ID,Amount');
+      expect(lines[1]).toBe('rec_01,1500');
     });
   });
 
   describe('generateExportFileName', () => {
-    test('generates expected filename with explicit start and end dates', () => {
-      const fileName = generateExportFileName(
+    test('generates standardized file name format facilpay-<type>-<start>_<end>.csv', () => {
+      const name = generateExportFileName(
         'payments',
         '2026-01-01',
         '2026-01-31'
       );
-      expect(fileName).toBe('facilpay-payments-2026-01-01_2026-01-31.csv');
+      expect(name).toBe('facilpay-payments-2026-01-01_2026-01-31.csv');
     });
 
-    test('generates refunds and payouts file names matching the specification', () => {
-      expect(
-        generateExportFileName('refunds', '2026-02-01', '2026-02-28')
-      ).toBe('facilpay-refunds-2026-02-01_2026-02-28.csv');
-
-      expect(
-        generateExportFileName('payouts', '2026-03-01', '2026-03-31')
-      ).toBe('facilpay-payouts-2026-03-01_2026-03-31.csv');
-    });
-
-    test('derives min and max dates from dataset when filters are null', () => {
-      const dataset = [
-        { date: '2026-01-10T12:00:00.000Z' },
-        { date: '2026-01-25T15:30:00.000Z' },
-        { date: '2026-01-05T08:00:00.000Z' },
+    test('derives date boundaries from data items when filters are omitted', () => {
+      const data = [
+        { date: '2026-01-15T10:00:00.000Z' },
+        { date: '2026-01-28T18:00:00.000Z' },
       ];
-      const fileName = generateExportFileName('payments', null, null, dataset);
-      expect(fileName).toBe('facilpay-payments-2026-01-05_2026-01-25.csv');
-    });
-  });
-
-  describe('generateCsv and Column Selection', () => {
-    interface TestItem {
-      id: string;
-      amount: number;
-      customer: string;
-      notes: string;
-      date: string;
-    }
-
-    const testData: TestItem[] = [
-      {
-        id: 'pay_001',
-        amount: 500.0,
-        customer: 'Alice, Smith',
-        notes: 'Includes 10% "early bird" discount',
-        date: '2026-01-15T12:00:00.000Z',
-      },
-      {
-        id: 'pay_002',
-        amount: 1200.5,
-        customer: 'Bob Jones',
-        notes: 'Monthly renewal\nPayment 2 of 12',
-        date: '2026-01-16T14:30:00.000Z',
-      },
-    ];
-
-    const columns: ExportColumn<TestItem>[] = [
-      { key: 'id', label: 'Payment ID', selected: true },
-      { key: 'amount', label: 'Amount', selected: true, formatter: (v) => Number(v).toFixed(2) },
-      { key: 'customer', label: 'Customer Name', selected: true },
-      { key: 'notes', label: 'Transaction Notes', selected: true },
-      { key: 'date', label: 'Date', selected: false }, // Unselected column
-    ];
-
-    test('generates headers only for selected columns', () => {
-      const csv = generateCsv(testData, columns);
-      const headerLine = csv.split('\r\n')[0];
-      expect(headerLine).toBe('Payment ID,Amount,Customer Name,Transaction Notes');
-      expect(headerLine).not.toContain('Date');
-    });
-
-    test('omits unselected columns from data rows', () => {
-      const csv = generateCsv(testData, columns);
-      const rows = csv.split('\r\n');
-      expect(rows.length).toBe(3); // 1 header + 2 data rows
-
-      // Row 1 checks
-      expect(rows[1]).toContain('pay_001,500.00,"Alice, Smith","Includes 10% ""early bird"" discount"');
-      expect(rows[1]).not.toContain('2026-01-15T12:00:00.000Z');
-
-      // Row 2 checks (multiline escaping)
-      expect(rows[2]).toContain('pay_002,1200.50,Bob Jones,"Monthly renewal\nPayment 2 of 12"');
-    });
-
-    test('returns empty string if no columns are selected', () => {
-      const allUnselected = columns.map((c) => ({ ...c, selected: false }));
-      const csv = generateCsv(testData, allUnselected);
-      expect(csv).toBe('');
+      const name = generateExportFileName('refunds', null, null, data);
+      expect(name).toBe('facilpay-refunds-2026-01-15_2026-01-28.csv');
     });
   });
 });

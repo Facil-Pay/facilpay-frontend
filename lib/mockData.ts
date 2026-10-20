@@ -1,3 +1,4 @@
+import { calculatePaymentFeeBreakdown } from './feeCalculation';
 import { Payment, Refund, Payout, ExportColumn } from './types';
 
 export const INITIAL_PAYMENTS: Payment[] = [
@@ -17,6 +18,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Enterprise Tier License, "Q1 Renewal", priority SLA',
     memo: 'INV-2026-001',
+    grossAmount: 1250.0,
+    facilPayFee: 12.50,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 12.500001,
+    netAmount: 1237.499999,
+    conversionRate: 'Direct (1:1)',
+    isConverted: false,
   },
   {
     id: 'pay_20260118_8d7e6f',
@@ -34,6 +43,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'API Usage Pack: 50,000 requests',
     memo: 'MEMO-50K-API',
+    grossAmount: 450.5,
+    facilPayFee: 4.505,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 4.505001,
+    netAmount: 445.994999,
+    conversionRate: 'Direct (1:1)',
+    isConverted: false,
   },
   {
     id: 'pay_20260122_3b4c5d',
@@ -51,6 +68,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Custom Smart Contract Audit & Escrow setup\nPhase 1 Milestone',
     memo: 'ESCROW-DEPOSIT-99',
+    grossAmount: 3200.0,
+    facilPayFee: 32.0,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 32.00001,
+    netAmount: 3167.99999,
+    conversionRate: '1 XLM = 0.1250 USDC',
+    isConverted: true,
   },
   {
     id: 'pay_20260125_1a2b3c',
@@ -68,6 +93,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Consultation fee, "EU Cross-Border Setup"',
     memo: 'CONSULT-REF',
+    grossAmount: 150.0,
+    facilPayFee: 1.50,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 1.500001,
+    netAmount: 148.499999,
+    conversionRate: '1 EURC = 1.0850 USDC',
+    isConverted: true,
   },
   {
     id: 'pay_20260129_7f6e5d',
@@ -85,6 +118,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Merchant Onboarding Kit, hardware module',
     memo: 'HW-KIT-01',
+    grossAmount: 890.0,
+    facilPayFee: 8.90,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 8.900001,
+    netAmount: 881.099999,
+    conversionRate: 'Direct (1:1)',
+    isConverted: false,
   },
   {
     id: 'pay_20260202_4d5e6f',
@@ -102,6 +143,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Bulk Payout Facilitation credits, batch #41',
     memo: 'BATCH-CR-41',
+    grossAmount: 2100.0,
+    facilPayFee: 21.00,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 21.000001,
+    netAmount: 2078.999999,
+    conversionRate: 'Direct (1:1)',
+    isConverted: false,
   },
   {
     id: 'pay_20260206_8a9b0c',
@@ -119,6 +168,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Test micropayment (simulated slippage failure)',
     memo: 'TEST-TX-FAIL',
+    grossAmount: 75.0,
+    facilPayFee: 0.75,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 0.75001,
+    netAmount: 74.24999,
+    conversionRate: '1 XLM = 0.1280 USDC',
+    isConverted: true,
   },
   {
     id: 'pay_20260210_5c6d7e',
@@ -136,6 +193,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Nordic expansion setup, anchor integration support',
     memo: 'NORDIC-EXP',
+    grossAmount: 1850.0,
+    facilPayFee: 18.50,
+    networkFeeXlm: 0.00001,
+    networkFeeFiat: 0.000001,
+    totalFees: 18.500001,
+    netAmount: 1831.499999,
+    conversionRate: '1 EURC = 1.0820 USDC',
+    isConverted: true,
   },
 ];
 
@@ -296,6 +361,60 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
   },
   { key: 'asset', label: 'Asset', selected: true },
   { key: 'status', label: 'Status', selected: true },
+  {
+    key: 'grossAmount',
+    label: 'Gross Amount',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.grossAmount.toFixed(2);
+    },
+  },
+  {
+    key: 'facilPayFee',
+    label: 'FacilPay Fee',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.facilPayFee.toFixed(2);
+    },
+  },
+  {
+    key: 'networkFeeXlm',
+    label: 'Stellar Network Fee (XLM)',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.networkFeeXlm.toString();
+    },
+  },
+  {
+    key: 'networkFeeFiat',
+    label: 'Stellar Network Fee (Fiat)',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.networkFeeFiat.toFixed(6);
+    },
+  },
+  {
+    key: 'netAmount',
+    label: 'Net Amount Received',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.netAmount.toFixed(2);
+    },
+  },
+  {
+    key: 'conversionRate',
+    label: 'Conversion Rate',
+    selected: true,
+    formatter: (val, item) => {
+      const breakdown = calculatePaymentFeeBreakdown(item);
+      return breakdown.conversionRate;
+    },
+  },
   { key: 'customerEmail', label: 'Customer Email', selected: true },
   { key: 'customerWallet', label: 'Customer Wallet', selected: true },
   { key: 'merchantName', label: 'Merchant Name', selected: true },
@@ -372,6 +491,8 @@ export function generateLargePayments(count = 2500): Payment[] {
     const amount = Number((25 + (i * 13.37) % 4500).toFixed(2));
     const hexHash = ((i * 1234567891).toString(16) + 'abcdef0123456789abcdef0123456789abcdef0123456789').slice(0, 64);
 
+    const breakdown = calculatePaymentFeeBreakdown({ amount, asset, fee: 0.00001 });
+
     results.push({
       id: `pay_2026_${String(i).padStart(6, '0')}`,
       date: itemDate.toISOString(),
@@ -388,6 +509,14 @@ export function generateLargePayments(count = 2500): Payment[] {
       fee: 0.00001,
       description: `Automated settlement #${i}, "Standard terms applied"`,
       memo: `MEMO-AUTO-${i}`,
+      grossAmount: breakdown.grossAmount,
+      facilPayFee: breakdown.facilPayFee,
+      networkFeeXlm: breakdown.networkFeeXlm,
+      networkFeeFiat: breakdown.networkFeeFiat,
+      totalFees: breakdown.totalFees,
+      netAmount: breakdown.netAmount,
+      conversionRate: breakdown.conversionRate,
+      isConverted: breakdown.isConverted,
     });
   }
 

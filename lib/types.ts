@@ -27,6 +27,16 @@ export interface Payment {
   fee: number;
   description: string;
   memo: string;
+
+  // Fee breakdown & merchant net settlement (#77)
+  grossAmount?: number;
+  facilPayFee?: number;
+  networkFeeXlm?: number;
+  networkFeeFiat?: number;
+  totalFees?: number;
+  netAmount?: number;
+  conversionRate?: string;
+  isConverted?: boolean;
 }
 
 export interface Refund {
