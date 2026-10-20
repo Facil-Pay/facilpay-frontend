@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
+import { useTestMode } from '@/lib/test-mode-context';
 import {
   ApiKeyItem,
   NetworkMode,
@@ -12,7 +13,7 @@ import {
 } from '@/lib/apiKeys';
 
 export default function ApiKeysPage() {
-  const [network, setNetwork] = useState<NetworkMode>('testnet');
+  const { mode: network, setMode: setNetwork } = useTestMode();
   const [keys, setKeys] = useState<ApiKeyItem[]>(INITIAL_API_KEYS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);

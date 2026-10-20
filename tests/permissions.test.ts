@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAccessPath, hasPermission, requiredPermissionForPath } from "@/lib/permissions";
+import { canAccessPath, hasPermission, requiredPermissionForPath } from "../lib/permissions";
 
 describe("permissions", () => {
   it("matches the role matrix", () => {

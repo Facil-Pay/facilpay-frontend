@@ -6,6 +6,8 @@ import { ChevronRight, Menu } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
+import { useTestMode } from "@/lib/test-mode-context";
+import { TestModeSwitch } from "./TestModeSwitch";
 
 type StellarNetwork = "mainnet" | "testnet" | "futurenet";
 
@@ -32,20 +34,21 @@ function useBreadcrumbs() {
 }
 
 export function NetworkBadge() {
-  const network = getConfiguredNetwork();
-  const isMainnet = network === "mainnet";
+  const { mode } = useTestMode();
+  const isMainnet = mode === "mainnet";
+  const displayNet = isMainnet ? "Mainnet" : "Testnet";
   return (
     <span
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
         isMainnet
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : "border-amber-200 bg-amber-50 text-amber-800",
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+          : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
       )}
-      title={`Connected to Stellar ${network}`}
+      title={`Connected to Stellar ${displayNet}`}
     >
       <span className={cn("h-2 w-2 rounded-full", isMainnet ? "bg-emerald-500" : "bg-amber-500")} aria-hidden="true" />
-      {network.charAt(0).toUpperCase() + network.slice(1)}
+      {displayNet}
     </span>
   );
 }
@@ -84,7 +87,10 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         <h1 className="truncate text-base font-semibold text-zinc-900">{title}</h1>
       </div>
 
-      <NetworkBadge />
+      <div className="flex items-center gap-3">
+        <TestModeSwitch />
+        <NetworkBadge />
+      </div>
 
       <NotificationBell />
 

@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { TestModeBanner } from "./TestModeBanner";
+import { WalletNetworkWarning } from "@/components/wallet/network-warning";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -19,6 +21,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onOpenMobileNav={() => setMobileOpen(true)} />
+        <TestModeBanner />
+        <WalletNetworkWarning />
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>

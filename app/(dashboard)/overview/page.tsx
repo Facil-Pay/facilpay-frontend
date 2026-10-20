@@ -14,6 +14,7 @@ import { OnboardingState } from '@/types/onboarding';
 import { truncateAddress } from '@/lib/stellar';
 import { generateQRSvg } from '@/lib/qr';
 import { PaymentStreamProvider, usePaymentStream } from '@/lib/payment-stream-context';
+import { useTestMode } from '@/lib/test-mode-context';
 import RecentPaymentsTable from '@/components/payments/RecentPaymentsTable';
 import PaymentToast from '@/components/payments/PaymentToast';
 
@@ -21,15 +22,21 @@ function OverviewContent() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const { payments } = usePaymentStream();
+  const { isTestMode, simulatedPayments, reloadKey } = useTestMode();
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [isChecklistDismissed, setIsChecklistDismissed] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
 
+  const simulatedUsdcVolume = simulatedPayments
+    .filter((p) => p.asset_code === 'USDC')
+    .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
+
   const liveUsdcVolume = payments
     .filter((p) => p.asset_code === 'USDC')
     .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
-  const totalSettledUsdc = (1250 + liveUsdcVolume).toLocaleString(undefined, {
+  const baseVolume = isTestMode ? 1250 : 28450;
+  const totalSettledUsdc = (baseVolume + liveUsdcVolume + (isTestMode ? simulatedUsdcVolume : 0)).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
