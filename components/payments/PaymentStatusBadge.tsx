@@ -1,4 +1,4 @@
-import { Badge, type BadgeVariant } from "@/app/components/ui/Badge";
+import { Badge, type BadgeVariant } from "@/components/ui";
 import type { PaymentStatus } from "@/app/lib/types/payment";
 
 interface PaymentStatusBadgeProps {

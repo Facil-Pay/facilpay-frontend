@@ -210,6 +210,55 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
           </div>
         </div>
 
+        {/* Fee Breakdown */}
+        {(payment.facilpayFee != null || payment.netAmount != null) && (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+              Fee Breakdown
+            </h2>
+            <div className="space-y-0 text-xs divide-y divide-zinc-100 dark:divide-zinc-800">
+              <div className="flex justify-between py-2.5">
+                <span className="text-zinc-500">Gross Amount</span>
+                <span className="font-semibold text-zinc-900 dark:text-white tabular-nums">
+                  {payment.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}{' '}
+                  {payment.asset}
+                </span>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <span className="text-zinc-500">FacilPay Fee (1.25%)</span>
+                <span className="font-medium text-rose-600 dark:text-rose-400 tabular-nums">
+                  −{(payment.facilpayFee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}{' '}
+                  {payment.asset}
+                </span>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <span className="text-zinc-500">
+                  Stellar Network Fee
+                </span>
+                <span className="font-medium text-zinc-600 dark:text-zinc-400 tabular-nums">
+                  −{(payment.networkFeeXlm ?? payment.fee ?? 0.00001).toFixed(5)} XLM
+                </span>
+              </div>
+              {payment.conversionRate != null && (
+                <div className="flex justify-between py-2.5">
+                  <span className="text-zinc-500">Conversion Rate</span>
+                  <span className="font-medium text-zinc-900 dark:text-white tabular-nums">
+                    1 {payment.sourceAsset ?? payment.asset} ={' '}
+                    {payment.conversionRate} USDC
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between py-2.5 font-semibold">
+                <span className="text-zinc-900 dark:text-white">Net Amount (You Received)</span>
+                <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {(payment.netAmount ?? payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}{' '}
+                  {payment.asset}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Blockchain Verification Box with Stellar Expert Link */}
         <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-6 dark:border-sky-900/50 dark:bg-sky-950/20 space-y-3">
           <div className="flex items-center justify-between">
