@@ -5,8 +5,8 @@ import Link from "next/link";
 
 import { getPaymentsSync } from "@/app/lib/api/payments";
 import { PaymentStatusBadge } from "@/components/payments/PaymentStatusBadge";
-import { NativeSelect as Select } from "@/components/ui";
-import { DateRangeInput } from "@/components/ui";
+import { SimpleSelect as Select } from "@/components/ui/select";
+import { DateRangeInput } from "@/components/ui/date-range-input";
 import type {
   Payment,
   PaymentStatus,

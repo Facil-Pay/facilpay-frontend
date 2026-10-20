@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui";
-import { Card } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { Payment } from "@/app/lib/types/payment";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

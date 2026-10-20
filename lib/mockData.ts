@@ -1,16 +1,7 @@
-import { Payment, Refund, Payout, ExportColumn, AssetType, MerchantBalance } from './types';
-
-// FacilPay fee rate: 1.25% of gross amount
-const FP_FEE_RATE = 0.0125;
-
-function withFees(p: Omit<Payment, 'facilpayFee' | 'netAmount' | 'networkFeeXlm'>): Payment {
-  const facilpayFee = parseFloat((p.amount * FP_FEE_RATE).toFixed(6));
-  const netAmount = parseFloat((p.amount - facilpayFee).toFixed(6));
-  return { ...p, facilpayFee, netAmount, networkFeeXlm: 0.00001 };
-}
+import { Payment, Refund, Payout, ExportColumn } from './types';
 
 export const INITIAL_PAYMENTS: Payment[] = [
-  withFees({
+  {
     id: 'pay_20260115_9f8a2c',
     date: '2026-01-15T14:32:00.000Z',
     amount: 1250.0,
@@ -26,8 +17,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Enterprise Tier License, "Q1 Renewal", priority SLA',
     memo: 'INV-2026-001',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260118_8d7e6f',
     date: '2026-01-18T09:15:22.000Z',
     amount: 450.5,
@@ -43,8 +34,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'API Usage Pack: 50,000 requests',
     memo: 'MEMO-50K-API',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260122_3b4c5d',
     date: '2026-01-22T18:45:00.000Z',
     amount: 3200.0,
@@ -60,9 +51,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Custom Smart Contract Audit & Escrow setup\nPhase 1 Milestone',
     memo: 'ESCROW-DEPOSIT-99',
-    conversionRate: 0.1124, // XLM→USDC rate at time of payment
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260125_1a2b3c',
     date: '2026-01-25T11:20:10.000Z',
     amount: 150.0,
@@ -78,8 +68,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Consultation fee, "EU Cross-Border Setup"',
     memo: 'CONSULT-REF',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260129_7f6e5d',
     date: '2026-01-29T16:04:30.000Z',
     amount: 890.0,
@@ -95,8 +85,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Merchant Onboarding Kit, hardware module',
     memo: 'HW-KIT-01',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260202_4d5e6f',
     date: '2026-02-02T10:11:45.000Z',
     amount: 2100.0,
@@ -112,8 +102,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Bulk Payout Facilitation credits, batch #41',
     memo: 'BATCH-CR-41',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260206_8a9b0c',
     date: '2026-02-06T13:22:15.000Z',
     amount: 75.0,
@@ -129,8 +119,8 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Test micropayment (simulated slippage failure)',
     memo: 'TEST-TX-FAIL',
-  }),
-  withFees({
+  },
+  {
     id: 'pay_20260210_5c6d7e',
     date: '2026-02-10T17:50:30.000Z',
     amount: 1850.0,
@@ -146,7 +136,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'Nordic expansion setup, anchor integration support',
     memo: 'NORDIC-EXP',
-  }),
+  },
 ];
 
 export const INITIAL_REFUNDS: Refund[] = [
@@ -311,24 +301,35 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
   { key: 'merchantName', label: 'Merchant Name', selected: true },
   { key: 'txHash', label: 'Transaction Hash', selected: true },
   { key: 'stellarExpertUrl', label: 'Stellar Expert Link', selected: true },
+  { key: 'fee', label: 'Network Fee', selected: true },
   {
-    key: 'facilpayFee',
-    label: 'FacilPay Fee',
+    key: 'grossAmount' as any,
+    label: 'Gross Amount',
     selected: true,
-    formatter: (val) => (val != null ? Number(val).toFixed(6) : ''),
+    formatter: (_val, row) => Number(row.amount).toFixed(2),
   },
   {
-    key: 'netAmount',
-    label: 'Net Amount (Merchant Received)',
+    key: 'facilpayFee' as any,
+    label: 'FacilPay Fee (1%)',
     selected: true,
-    formatter: (val) => (val != null ? Number(val).toFixed(6) : ''),
+    formatter: (_val, row) => (Number(row.amount) * 0.01).toFixed(2),
   },
-  { key: 'fee', label: 'Stellar Network Fee (XLM)', selected: true },
   {
-    key: 'conversionRate',
+    key: 'netAmount' as any,
+    label: 'Net Amount',
+    selected: true,
+    formatter: (_val, row) => (Number(row.amount) * 0.99).toFixed(2),
+  },
+  {
+    key: 'conversionRate' as any,
     label: 'Conversion Rate',
-    selected: false,
-    formatter: (val) => (val != null ? String(val) : ''),
+    selected: true,
+    formatter: (_val, row) =>
+      row.asset === 'USDC'
+        ? '1.0000 USD/USDC'
+        : row.asset === 'XLM'
+        ? '0.1250 USD/XLM'
+        : '1.0800 USD/EURC',
   },
   { key: 'description', label: 'Description', selected: true },
   { key: 'memo', label: 'Memo', selected: true },

@@ -129,6 +129,59 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
           </div>
         </div>
 
+        {/* Fee Breakdown & Settlement Card (Issue #77) */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+              Fee Breakdown & Net Settlement
+            </h2>
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              Settled Non-Custodial
+            </span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+              <span className="text-zinc-500">Gross Payment Amount</span>
+              <span className="font-semibold text-zinc-900 dark:text-white">
+                ${Number(payment.amount).toFixed(2)} {payment.asset}
+              </span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+              <span className="text-zinc-500">FacilPay Platform Fee (1.0%)</span>
+              <span className="font-medium text-rose-600 dark:text-rose-400">
+                -${(Number(payment.amount) * 0.01).toFixed(2)} {payment.asset}
+              </span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+              <span className="text-zinc-500">Stellar Network Fee</span>
+              <span className="font-medium text-zinc-900 dark:text-white">
+                {(payment.fee ?? 0.00001).toFixed(5)} XLM (~$0.00012 USD)
+              </span>
+            </div>
+
+            <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+              <span className="text-zinc-500">Conversion Rate</span>
+              <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                {payment.asset === 'USDC'
+                  ? '1 USDC = 1.0000 USD'
+                  : payment.asset === 'XLM'
+                  ? '1 XLM = 0.1250 USD'
+                  : '1 EURC = 1.0800 USD'}
+              </span>
+            </div>
+
+            <div className="flex justify-between pt-2 text-sm font-bold border-t border-zinc-200 dark:border-zinc-700">
+              <span className="text-zinc-900 dark:text-white">Net Merchant Received</span>
+              <span className="text-emerald-600 dark:text-emerald-400">
+                ${(Number(payment.amount) * 0.99).toFixed(2)} {payment.asset}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Payment & Merchant Information Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Transaction Metadata */}

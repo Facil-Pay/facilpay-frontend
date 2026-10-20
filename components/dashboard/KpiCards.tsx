@@ -1,4 +1,4 @@
-import { Sparkline } from "./Sparkline";
+import { Sparkline } from "@/components/dashboard/Sparkline";
 import type { KpiMetrics, MonthlyRevenue } from "@/app/lib/api/dashboard";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // Pure-SVG bar chart for monthly revenue trend.
 // Server-renderable — no client hooks required.
 
-import { Card, CardHeader, CardDivider } from "@/components/ui";
+import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { MonthlyRevenue } from "@/app/lib/api/dashboard";
 
 function ChartBarIcon() {

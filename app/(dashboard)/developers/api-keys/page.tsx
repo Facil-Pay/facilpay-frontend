@@ -9,21 +9,29 @@ import {
   ApiKeyItem,
   NetworkMode,
   PUBLISHABLE_KEYS,
+  INITIAL_API_KEYS,
+  getStoredApiKeys,
+  saveStoredApiKeys,
 } from '@/lib/apiKeys';
-import { useApiKeys } from '@/lib/useApiKeys';
 
 export default function ApiKeysPage() {
   const [network, setNetwork] = useState<NetworkMode>('testnet');
-  const { keys, addKey, revokeKey, rollKey, filterByNetwork } = useApiKeys();
+  const [keys, setKeys] = useState<ApiKeyItem[]>(INITIAL_API_KEYS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);
+
+  useEffect(() => {
+    setKeys(getStoredApiKeys());
+  }, []);
 
   // Active publishable key based on network
   const activePublishableKey = PUBLISHABLE_KEYS[network];
 
   // Filter keys by environment (testnet vs mainnet)
-  const filteredKeys = useMemo(() => filterByNetwork(network), [filterByNetwork, network]);
+  const filteredKeys = useMemo(() => {
+    return keys.filter((k) => k.network === network);
+  }, [keys, network]);
 
   const handleCopyPublishableKey = async () => {
     try {
@@ -36,7 +44,11 @@ export default function ApiKeysPage() {
   };
 
   const handleKeyCreated = (newKey: ApiKeyItem) => {
-    addKey(newKey);
+    setKeys((prev) => {
+      const updated = [newKey, ...prev];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleRevokeKey = (keyId: string) => {
@@ -51,7 +63,11 @@ export default function ApiKeysPage() {
       return;
     }
 
-    revokeKey(keyId);
+    setKeys((prev) => {
+      const updated = prev.map((k) => (k.id === keyId ? { ...k, status: 'revoked' as const } : k));
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleKeyRolled = (
@@ -59,7 +75,34 @@ export default function ApiKeysPage() {
     newKey: ApiKeyItem,
     gracePeriod: 'now' | '1h' | '24h' | '7d'
   ) => {
-    rollKey(oldKeyId, newKey, gracePeriod);
+    const now = new Date();
+    let rollingExpiresAt: string = now.toISOString();
+
+    if (gracePeriod === '1h') {
+      rollingExpiresAt = new Date(now.getTime() + 3600 * 1000).toISOString();
+    } else if (gracePeriod === '24h') {
+      rollingExpiresAt = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
+    } else if (gracePeriod === '7d') {
+      rollingExpiresAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
+    }
+
+    setKeys((prev) => {
+      const updated = [
+        newKey,
+        ...prev.map((k) =>
+          k.id === oldKeyId
+            ? {
+                ...k,
+                status: gracePeriod === 'now' ? ('revoked' as const) : ('rolling' as const),
+                rollingExpiresAt,
+                gracePeriod,
+              }
+            : k
+        ),
+      ];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   return (

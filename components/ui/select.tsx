@@ -63,3 +63,70 @@ export const SelectItem = React.forwardRef<
     </SelectPrimitive.Item>
   );
 });
+
+export interface SelectOption<T extends string = string> {
+  value: T;
+  label: string;
+  disabled?: boolean;
+}
+
+export function SimpleSelect<T extends string = string>({
+  options,
+  value,
+  onChange,
+  placeholder,
+  label,
+  icon,
+  className = "",
+  id,
+  ...rest
+}: {
+  options: SelectOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  placeholder?: string;
+  label?: string;
+  icon?: React.ReactNode;
+  className?: string;
+  id?: string;
+  "aria-label"?: string;
+}) {
+  const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
+
+  return (
+    <div className={cn("flex flex-col gap-1", className)}>
+      {label && (
+        <label
+          htmlFor={selectId}
+          className="text-xs font-medium text-zinc-500 uppercase tracking-wide"
+        >
+          {label}
+        </label>
+      )}
+      <div className="relative flex items-center">
+        {icon && (
+          <span className="pointer-events-none absolute left-3 text-zinc-400">
+            {icon}
+          </span>
+        )}
+        <select
+          id={selectId}
+          value={value}
+          onChange={(e) => onChange(e.target.value as T)}
+          className="w-full h-9 appearance-none rounded-xl border border-zinc-200 bg-white pr-8 pl-3 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#55C2FF] focus:border-transparent transition-shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          {...rest}
+        >
+          {placeholder && <option value="">{placeholder}</option>}
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <span className="pointer-events-none absolute right-3 text-zinc-400">
+          <ChevronDown className="size-4" />
+        </span>
+      </div>
+    </div>
+  );
+}
