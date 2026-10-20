@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useId } from 'react';
 import { useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { AuthProvider } from '@/lib/auth-context';
 import {
@@ -36,7 +37,11 @@ function WebhookDeliveriesContent() {
 
   // Load endpoint and deliveries
   useEffect(() => {
-    const ep = getEndpointById(endpointId) || DEFAULT_ENDPOINT;
+    const ep = getEndpointById(endpointId);
+    if (!ep) {
+      notFound();
+      return;
+    }
     setEndpoint(ep);
     const list = getStoredDeliveries(endpointId);
     setDeliveries(list);
