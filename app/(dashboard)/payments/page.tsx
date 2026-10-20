@@ -7,13 +7,13 @@ import { Payment, PaymentStatus, AssetType } from '@/lib/types';
 const ExportModal = dynamic(() => import('@/components/ExportModal'), { ssr: false });
 const PaymentDetailModal = dynamic(() => import('@/components/PaymentDetailModal'), { ssr: false });
 import {
-  INITIAL_PAYMENTS,
+  getPaymentFixtures,
   PAYMENT_EXPORT_COLUMNS,
   generateLargePayments,
-} from '@/lib/mockData';
+} from '@/lib/mocks/fixtures';
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  const [payments, setPayments] = useState<Payment[]>(getPaymentFixtures());
   const [isLargeDataSimulated, setIsLargeDataSimulated] = useState(false);
 
   // Filters State
@@ -23,6 +23,11 @@ export default function PaymentsPage() {
   const [startDate, setStartDate] = useState<string>('2026-01-01');
   const [endDate, setEndDate] = useState<string>('2026-01-31');
 
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkAction, setBulkAction] = useState<'export' | 'resend' | null>(null);
+
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -30,7 +35,7 @@ export default function PaymentsPage() {
   // Toggle large dataset simulation (>1,000 rows)
   const toggleLargeData = () => {
     if (isLargeDataSimulated) {
-      setPayments(INITIAL_PAYMENTS);
+      setPayments(getPaymentFixtures());
       setIsLargeDataSimulated(false);
     } else {
       const largeList = generateLargePayments(2500);
@@ -98,6 +103,56 @@ export default function PaymentsPage() {
     setEndDate('');
   };
 
+  // Bulk selection handlers
+  const handleSelectPayment = (paymentId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(paymentId)) {
+      newSelected.delete(paymentId);
+    } else {
+      newSelected.add(paymentId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredPayments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredPayments.map((p) => p.id)));
+    }
+  };
+
+  const selectedPayments = useMemo(() => {
+    return filteredPayments.filter((p) => selectedIds.has(p.id));
+  }, [filteredPayments, selectedIds]);
+
+  const totalSelectedAmount = useMemo(() => {
+    return selectedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  }, [selectedPayments]);
+
+  const handleBulkExport = () => {
+    if (selectedIds.size === 0) return;
+    setBulkAction('export');
+    setShowBulkConfirm(true);
+  };
+
+  const handleBulkResend = () => {
+    if (selectedIds.size === 0) return;
+    setBulkAction('resend');
+    setShowBulkConfirm(true);
+  };
+
+  const confirmBulkAction = () => {
+    if (bulkAction === 'export') {
+      setIsExportModalOpen(true);
+      setShowBulkConfirm(false);
+    } else if (bulkAction === 'resend') {
+      alert(`Resending receipts for ${selectedIds.size} payment(s)...`);
+      setSelectedIds(new Set());
+      setShowBulkConfirm(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -113,47 +168,89 @@ export default function PaymentsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Simulation button for Large Export (>1,000 rows) */}
-            <button
-              type="button"
-              onClick={toggleLargeData}
-              className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors ${
-                isLargeDataSimulated
-                  ? 'border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200'
-                  : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300'
-              }`}
-              title="Toggle a 2,500-row dataset to test large export progress tracking"
-            >
-              {isLargeDataSimulated
-                ? '⚡ Large Dataset Active (2,500 rows)'
-                : 'Simulate >1,000 Rows'}
-            </button>
+            {selectedIds.size > 0 && (
+              <>
+                <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                  {selectedIds.size} selected • ${totalSelectedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </div>
 
-            {/* Export CSV Button */}
-            <button
-              type="button"
-              id="export-payments-btn"
-              onClick={() => setIsExportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#000F24] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-zinc-800 dark:bg-[#55C2FF] dark:text-black dark:hover:bg-[#A5D4FF]"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              <span>Export CSV</span>
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-mono dark:bg-black/20">
-                {filteredPayments.length.toLocaleString()}
-              </span>
-            </button>
+                <button
+                  type="button"
+                  onClick={handleBulkExport}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Bulk Export
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBulkResend}
+                  className="inline-flex items-center gap-2 rounded-xl bg-sky-50 px-3.5 py-2.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Resend Receipts
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                >
+                  Clear Selection
+                </button>
+              </>
+            )}
+
+            {selectedIds.size === 0 && (
+              <>
+                {/* Simulation button for Large Export (>1,000 rows) */}
+                <button
+                  type="button"
+                  onClick={toggleLargeData}
+                  className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors ${
+                    isLargeDataSimulated
+                      ? 'border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200'
+                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300'
+                  }`}
+                  title="Toggle a 2,500-row dataset to test large export progress tracking"
+                >
+                  {isLargeDataSimulated
+                    ? '⚡ Large Dataset Active (2,500 rows)'
+                    : 'Simulate >1,000 Rows'}
+                </button>
+
+                {/* Export CSV Button */}
+                <button
+                  type="button"
+                  id="export-payments-btn"
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#000F24] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-zinc-800 dark:bg-[#55C2FF] dark:text-black dark:hover:bg-[#A5D4FF]"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  <span>Export CSV</span>
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-mono dark:bg-black/20">
+                    {filteredPayments.length.toLocaleString()}
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -284,6 +381,15 @@ export default function PaymentsPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-zinc-200 bg-zinc-50/80 uppercase tracking-wider text-[11px] font-semibold text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
                 <tr>
+                  <th className="px-5 py-3.5 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size === filteredPayments.length && filteredPayments.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-zinc-300 text-sky-600 focus:ring-sky-500 dark:border-zinc-600"
+                      title="Select all visible payments"
+                    />
+                  </th>
                   <th className="px-5 py-3.5">Payment ID</th>
                   <th className="px-5 py-3.5">Date (UTC)</th>
                   <th className="px-5 py-3.5">Customer</th>
@@ -328,8 +434,20 @@ export default function PaymentsPage() {
                     <tr
                       key={payment.id}
                       onClick={() => setSelectedPayment(payment)}
-                      className="cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+                      className={`cursor-pointer transition-colors ${
+                        selectedIds.has(payment.id)
+                          ? 'bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/30'
+                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                      }`}
                     >
+                      <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(payment.id)}
+                          onChange={() => handleSelectPayment(payment.id)}
+                          className="rounded border-zinc-300 text-sky-600 focus:ring-sky-500 dark:border-zinc-600"
+                        />
+                      </td>
                       <td className="px-5 py-4 font-mono font-semibold text-zinc-900 dark:text-white">
                         {payment.id}
                       </td>
@@ -409,13 +527,80 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* CSV Column Picker & Export Modal */}
+      {/* Bulk Action Confirmation Dialog */}
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl dark:bg-zinc-900 max-w-md mx-4">
+            <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+                {bulkAction === 'export' ? 'Bulk Export Payments' : 'Resend Receipt Emails'}
+              </h2>
+            </div>
+
+            <div className="px-6 py-4 space-y-3">
+              <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/40">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                  {bulkAction === 'export'
+                    ? `Ready to export ${selectedIds.size} payment(s) with a total of $${totalSelectedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}.`
+                    : `Ready to resend receipts for ${selectedIds.size} payment(s) with a total of $${totalSelectedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}.`}
+                </p>
+              </div>
+
+              {bulkAction === 'resend' && (
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Receipts will be sent to the customer email addresses on file. Verify they are current before proceeding.
+                </div>
+              )}
+
+              <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                <div className="text-xs font-semibold text-zinc-500 mb-2">Selected Payments:</div>
+                <div className="bg-zinc-50 rounded-lg p-2.5 max-h-32 overflow-y-auto dark:bg-zinc-800">
+                  <div className="text-[11px] text-zinc-600 dark:text-zinc-400 space-y-1">
+                    {selectedPayments.slice(0, 5).map((p) => (
+                      <div key={p.id} className="flex justify-between">
+                        <span>{p.id}</span>
+                        <span className="font-mono">${(p.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                    {selectedPayments.length > 5 && (
+                      <div className="text-zinc-500 italic">
+                        +{selectedPayments.length - 5} more...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <button
+                onClick={() => setShowBulkConfirm(false)}
+                className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBulkAction}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold text-white ${
+                  bulkAction === 'export'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700'
+                    : 'bg-sky-600 hover:bg-sky-700 dark:bg-sky-700'
+                }`}
+              >
+                {bulkAction === 'export' ? 'Export Now' : 'Resend Receipts'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Column Picker & Export Modal (for bulk selected) */}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         type="payments"
-        title="Payments"
-        data={filteredPayments}
+        title={selectedIds.size > 0 ? `Bulk Export (${selectedIds.size} selected)` : 'Payments'}
+        data={selectedIds.size > 0 ? selectedPayments : filteredPayments}
         columns={PAYMENT_EXPORT_COLUMNS}
         filterStartDate={startDate}
         filterEndDate={endDate}
