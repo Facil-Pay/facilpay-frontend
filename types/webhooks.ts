@@ -86,11 +86,13 @@ export interface WebhookEventDefinition {
   id: string;
   label: string;
   description: string;
-  group: 'payment' | 'refund' | 'escrow' | 'payout';
+  group: 'payment' | 'refund' | 'escrow' | 'payout' | 'account';
+  whenFires?: string;
+  samplePayload?: Record<string, unknown>;
 }
 
 export interface WebhookEventGroup {
-  id: 'payment' | 'refund' | 'escrow' | 'payout';
+  id: 'payment' | 'refund' | 'escrow' | 'payout' | 'account';
   name: string;
   description: string;
   events: WebhookEventDefinition[];
@@ -146,6 +148,12 @@ export const WEBHOOK_EVENT_GROUPS: WebhookEventGroup[] = [
         group: 'refund',
       },
       {
+        id: 'refund.processed',
+        label: 'refund.processed',
+        description: 'Triggered when a refund has been approved and queued for ledger execution',
+        group: 'refund',
+      },
+      {
         id: 'refund.failed',
         label: 'refund.failed',
         description: 'Triggered if a refund transaction fails on ledger',
@@ -188,6 +196,19 @@ export const WEBHOOK_EVENT_GROUPS: WebhookEventGroup[] = [
         label: 'payout.completed',
         description: 'Triggered when scheduled merchant payout transfer is confirmed',
         group: 'payout',
+      },
+    ],
+  },
+  {
+    id: 'account',
+    name: 'Account & Trustline Events',
+    description: 'Triggers related to Stellar account trustlines and asset authorizations',
+    events: [
+      {
+        id: 'trustline.added',
+        label: 'trustline.added',
+        description: 'Triggered when an account establishes a required trustline for an asset',
+        group: 'account',
       },
     ],
   },

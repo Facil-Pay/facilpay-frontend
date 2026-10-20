@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
+import DevelopersNav from '@/components/developers/DevelopersNav';
 import {
   ApiKeyItem,
   NetworkMode,
@@ -91,6 +92,7 @@ export default function ApiKeysPage() {
   return (
     <>
       <div className="space-y-6">
+        <DevelopersNav />
         {/* Header with Title and Network Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
