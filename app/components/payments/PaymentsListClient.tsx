@@ -13,7 +13,7 @@ import type {
   PaymentNetwork,
   PaymentSortField,
   PaymentSortOrder,
-} from "@/app/lib/types/payment";
+} from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

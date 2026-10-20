@@ -9,7 +9,9 @@ export type RefundStatus =
   | "processing"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "partially_refunded"
+  | "cancelled"
+  | "expired";
 
 export type RefundReason =
   | "customer_request"

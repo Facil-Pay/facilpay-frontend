@@ -1,4 +1,4 @@
-import type { TimelineEvent, TimelineEventType, PaymentStatus } from "@/app/lib/types/payment";
+import type { TimelineEvent, TimelineEventType, PaymentStatus } from "@/lib/types";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
 import type { StatusBreakdown } from "@/app/lib/api/dashboard";
-import type { PaymentStatus } from "@/app/lib/types/payment";
+import type { PaymentStatus } from "@/lib/types";
 
 function PieChartIcon() {
   return (

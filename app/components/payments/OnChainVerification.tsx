@@ -1,4 +1,4 @@
-import type { OnChainData } from "@/app/lib/types/payment";
+import type { OnChainData } from "@/lib/types";
 import { Card, CardHeader, CardDivider, DetailRow } from "@/app/components/ui/Card";
 import { Badge } from "@/app/components/ui/Badge";
 import { CopyButton } from "./CopyButton";
