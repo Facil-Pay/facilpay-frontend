@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { ISupportedWallet } from "@creit.tech/stellar-wallets-kit/types";
 import { useToast } from "@/components/ui";
+import { loadFromStorage, saveToStorage, removeFromStorage } from "@/lib/storage";
 
 const walletStorageKey = "facilpay.last-wallet";
 const supportedWalletIds = new Set(["freighter", "xbull", "albedo", "lobstr"]);
@@ -141,7 +142,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         setWallets(supportedWallets.filter((wallet) => supportedWalletIds.has(wallet.id)));
 
-        const storedWalletId = window.localStorage.getItem(walletStorageKey);
+        const storedWalletId = loadFromStorage<string | null>(walletStorageKey, null);
         if (!storedWalletId || !["freighter", "lobstr"].includes(storedWalletId)) return;
         const wallet = supportedWallets.find((item) => item.id === storedWalletId);
         if (!wallet?.isAvailable) return;
@@ -192,7 +193,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setWalletId(connectedWalletId);
       setNetwork(walletNetwork.name);
       setWalletNetworkPassphrase(walletNetwork.passphrase);
-      window.localStorage.setItem(walletStorageKey, connectedWalletId);
+      saveToStorage(walletStorageKey, connectedWalletId);
     } catch (error) {
       toast(
         isUserCancellation(error)
@@ -211,7 +212,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const kit = await getWalletKit();
       await kit.StellarWalletsKit.disconnect();
     } finally {
-      window.localStorage.removeItem(walletStorageKey);
+      removeFromStorage(walletStorageKey);
       setAddress(null);
       setWalletId(null);
       setNetwork(null);

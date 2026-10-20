@@ -122,9 +122,17 @@ export function saveMerchantUser(user: MerchantUser): void {
   saveToStorage(STORAGE_KEYS.MERCHANT_USER, user);
 }
 
-export function resetOnboardingProgress(): void {
+export function removeFromStorage(key: string): void {
   if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
-  window.localStorage.removeItem(STORAGE_KEYS.GETTING_STARTED);
-  window.localStorage.removeItem(STORAGE_KEYS.MERCHANT_USER);
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Storage unavailable (private mode) — ignore
+  }
+}
+
+export function resetOnboardingProgress(): void {
+  removeFromStorage(STORAGE_KEYS.ONBOARDING_DATA);
+  removeFromStorage(STORAGE_KEYS.GETTING_STARTED);
+  removeFromStorage(STORAGE_KEYS.MERCHANT_USER);
 }

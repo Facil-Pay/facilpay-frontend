@@ -1,12 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import dynamic from "next/dynamic";
 import { getDashboardData } from "@/app/lib/api/dashboard";
-import { KpiCards }              from "@/components/dashboard/KpiCards";
-import { RevenueTrendChart }     from "@/components/dashboard/RevenueTrendChart";
-import { StatusBreakdownChart }  from "@/components/dashboard/StatusBreakdown";
-import { NetworkDistribution }   from "@/components/dashboard/NetworkDistribution";
-import { RecentActivity }        from "@/components/dashboard/RecentActivity";
+import { KpiCards }              from "@/app/components/dashboard/KpiCards";
+import { NetworkDistribution }   from "@/app/components/dashboard/NetworkDistribution";
+import { RecentActivity }        from "@/app/components/dashboard/RecentActivity";
+
+const RevenueTrendChart = dynamic(
+  () => import("@/app/components/dashboard/RevenueTrendChart").then((m) => m.RevenueTrendChart),
+  {
+    loading: () => <div className="h-64 w-full animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />,
+  }
+);
+
+const StatusBreakdownChart = dynamic(
+  () => import("@/app/components/dashboard/StatusBreakdown").then((m) => m.StatusBreakdownChart),
+  {
+    loading: () => <div className="h-64 w-full animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />,
+  }
+);
 
 export const metadata: Metadata = {
   title: "Dashboard — FacilPay",

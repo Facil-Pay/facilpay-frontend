@@ -219,6 +219,29 @@ export default function PaymentDetailModal({
                   {payment.description}
                 </p>
               </div>
+
+              {payment.sourceAsset && (
+                <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3.5 dark:border-sky-900/50 dark:bg-sky-950/20 space-y-1 sm:col-span-2">
+                  <span className="text-xs font-semibold text-sky-800 dark:text-sky-300">
+                    Stellar Path Payment Details
+                  </span>
+                  <div className="text-xs text-zinc-700 dark:text-zinc-300 flex flex-wrap items-center gap-2">
+                    <span>Paid with:</span>
+                    <span className="font-mono font-semibold">
+                      {payment.sourceAmount ? `${payment.sourceAmount} ` : ''}{payment.sourceAsset}
+                    </span>
+                    <span>→ Settled in:</span>
+                    <span className="font-mono font-semibold">
+                      {payment.amount} {payment.asset}
+                    </span>
+                  </div>
+                  {payment.path && payment.path.length > 0 && (
+                    <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 pt-1">
+                      Path: {payment.sourceAsset} → {payment.path.join(' → ')} → {payment.asset}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Stellar Blockchain Verification */}
