@@ -27,6 +27,12 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+/**
+ * Issue #54: Consolidated routes under single URL per feature
+ * - Webhooks: use /webhooks (not /settings/webhooks)
+ * - API Keys: use /developers/api-keys (not /settings/api-keys)
+ */
+
 /** True when `pathname` is the nav item's route or one of its children. */
 export function isNavItemActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
