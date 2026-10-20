@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
 import { Payment } from '@/lib/types';
-import { INITIAL_PAYMENTS } from '@/lib/mockData';
+import { getPaymentFixtures } from '@/lib/mocks/fixtures';
 import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
 
 interface PaymentDetailPageProps {
@@ -23,7 +23,7 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const found = INITIAL_PAYMENTS.find((p) => p.id === paymentId);
+    const found = getPaymentFixtures().find((p) => p.id === paymentId);
     if (found) {
       setPayment(found);
     } else {
