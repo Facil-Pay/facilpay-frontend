@@ -60,6 +60,8 @@ export const paymentPreferencesSchema = z.object({
     .trim()
     .max(12, "Keep the prefix to 12 characters so it fits in a Stellar memo")
     .regex(/^[A-Za-z0-9 _-]*$/, "Use letters, numbers, spaces, - or _"),
+  enablePathPayments: z.boolean().optional(),
+  maxSlippagePercent: z.number().min(0.1, "Minimum slippage is 0.1%").max(50, "Maximum slippage is 50%").optional(),
 });
 
 export type BusinessProfileValues = z.infer<typeof businessProfileSchema>;

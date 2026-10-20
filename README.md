@@ -298,6 +298,15 @@ NEXT_PUBLIC_REFUND_CONTRACT_ID=C...
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 | `npm run lint` | Run ESLint |
+| `npm run format` | Format the codebase with Prettier |
+| `npm test` | Run unit tests with Vitest |
+
+### Pre-Commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged) to enforce code quality before commits are made:
+- Automatically runs `eslint --fix` and `prettier --write` on staged TypeScript/TSX files.
+- Commits containing unresolved lint errors are blocked automatically.
+- Initialize hooks locally with `npm run prepare`.
 
 ---
 

@@ -43,6 +43,10 @@ export interface PaymentPreferences {
   defaultRedirectUrl: string;
   /** Prepended to the Stellar memo / statement descriptor */
   memoPrefix: string;
+  /** Whether customers can pay with any asset via Stellar path payments */
+  enablePathPayments?: boolean;
+  /** Maximum acceptable slippage tolerance in percentage (e.g., 1.0 for 1%) */
+  maxSlippagePercent?: number;
 }
 
 export interface MerchantSession {
