@@ -3,7 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import GettingStartedCard from '@/components/overview/GettingStartedCard';
+import dynamic from 'next/dynamic';
+
+const GettingStartedCard = dynamic(() => import('@/components/overview/GettingStartedCard'), {
+  loading: () => <div className="h-48 w-full animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />,
+});
+
+const RecentPaymentsTable = dynamic(() => import('@/components/payments/RecentPaymentsTable'), {
+  loading: () => <div className="h-64 w-full animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />,
+});
+
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import {
   getOnboardingState,
@@ -14,7 +23,6 @@ import { OnboardingState } from '@/types/onboarding';
 import { truncateAddress } from '@/lib/stellar';
 import { generateQRSvg } from '@/lib/qr';
 import { PaymentStreamProvider, usePaymentStream } from '@/lib/payment-stream-context';
-import RecentPaymentsTable from '@/components/payments/RecentPaymentsTable';
 import PaymentToast from '@/components/payments/PaymentToast';
 
 function OverviewContent() {

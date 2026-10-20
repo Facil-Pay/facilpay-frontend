@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
@@ -91,6 +92,22 @@ export default function ApiKeysPage() {
   return (
     <>
       <div className="space-y-6">
+        {/* Sub-navigation Tabs */}
+        <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-1 text-xs dark:border-zinc-800 dark:bg-zinc-900 w-fit">
+          <Link
+            href="/developers/api-keys"
+            className="rounded-lg bg-[#000F24] px-3 py-1.5 font-semibold text-white shadow-sm dark:bg-[#55C2FF] dark:text-black"
+          >
+            API Keys
+          </Link>
+          <Link
+            href="/developers/events"
+            className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Event Catalog
+          </Link>
+        </div>
+
         {/* Header with Title and Network Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
