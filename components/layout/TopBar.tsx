@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu, FlaskConical, Zap } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
+import { useNetworkMode } from "@/lib/network-mode-context";
 
 type StellarNetwork = "mainnet" | "testnet" | "futurenet";
 
@@ -50,6 +51,32 @@ export function NetworkBadge() {
   );
 }
 
+export function NetworkModeToggle() {
+  const { mode, toggleMode } = useNetworkMode();
+  const isTestnet = mode === "testnet";
+  return (
+    <button
+      type="button"
+      onClick={toggleMode}
+      aria-label={isTestnet ? "Switch to live mode" : "Switch to test mode"}
+      title={isTestnet ? "Currently in testnet — click to switch to live" : "Currently live — click to switch to testnet"}
+      className={cn(
+        "hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+        isTestnet
+          ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+          : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+      )}
+    >
+      {isTestnet ? (
+        <FlaskConical className="h-3.5 w-3.5" aria-hidden="true" />
+      ) : (
+        <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+      {isTestnet ? "Test" : "Live"}
+    </button>
+  );
+}
+
 export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const crumbs = useBreadcrumbs();
   const title = crumbs.at(-1)?.label ?? "Dashboard";
@@ -83,6 +110,8 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         </nav>
         <h1 className="truncate text-base font-semibold text-zinc-900">{title}</h1>
       </div>
+
+      <NetworkModeToggle />
 
       <NetworkBadge />
 
