@@ -4,14 +4,14 @@ import {
   generateExportFileName,
 } from '@/lib/csvExport';
 import {
-  INITIAL_PAYMENTS,
-  INITIAL_REFUNDS,
-  INITIAL_PAYOUTS,
   PAYMENT_EXPORT_COLUMNS,
   REFUND_EXPORT_COLUMNS,
   PAYOUT_EXPORT_COLUMNS,
   generateLargePayments,
-} from '@/lib/mockData';
+  getPaymentFixtures,
+  REFUND_FIXTURES,
+  PAYOUT_FIXTURES,
+} from '@/lib/mocks/fixtures';
 import { ExportColumn } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
     let defaultColumns: ExportColumn<any>[] = [];
 
     if (type === 'payments') {
-      rawData = useLargeDataset ? generateLargePayments(2500) : INITIAL_PAYMENTS;
+      rawData = useLargeDataset ? generateLargePayments(2500) : getPaymentFixtures();
       defaultColumns = PAYMENT_EXPORT_COLUMNS;
     } else if (type === 'refunds') {
-      rawData = INITIAL_REFUNDS;
+      rawData = REFUND_FIXTURES;
       defaultColumns = REFUND_EXPORT_COLUMNS;
     } else if (type === 'payouts') {
-      rawData = INITIAL_PAYOUTS;
+      rawData = PAYOUT_FIXTURES;
       defaultColumns = PAYOUT_EXPORT_COLUMNS;
     } else {
       return NextResponse.json({ error: 'Invalid export type' }, { status: 400 });

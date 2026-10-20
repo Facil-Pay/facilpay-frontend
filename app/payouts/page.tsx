@@ -8,18 +8,52 @@ import SavedDestinationsModal from '@/components/payouts/SavedDestinationsModal'
 import Sep24TrackerModal from '@/components/payouts/Sep24TrackerModal';
 import { Payout, AssetType, MerchantBalance, SavedDestination } from '@/lib/types';
 import {
-  INITIAL_PAYOUTS,
-  INITIAL_BALANCES,
-  INITIAL_SAVED_DESTINATIONS,
+  PAYOUT_FIXTURES,
   PAYOUT_EXPORT_COLUMNS,
-} from '@/lib/mockData';
+} from '@/lib/mocks/fixtures';
 
 export default function PayoutsPage() {
-  const [payouts, setPayouts] = useState<Payout[]>(INITIAL_PAYOUTS);
-  const [balances, setBalances] = useState<Record<AssetType, MerchantBalance>>(INITIAL_BALANCES);
-  const [savedDestinations, setSavedDestinations] = useState<SavedDestination[]>(
-    INITIAL_SAVED_DESTINATIONS
-  );
+  const [payouts, setPayouts] = useState<Payout[]>(PAYOUT_FIXTURES);
+  const [balances, setBalances] = useState<Record<AssetType, MerchantBalance>>({
+    USDC: { asset: 'USDC', available: 42850.0, escrowLocked: 5000.0, total: 47850.0 },
+    XLM: { asset: 'XLM', available: 18400.0, escrowLocked: 2000.0, total: 20400.0 },
+    EURC: { asset: 'EURC', available: 12200.0, escrowLocked: 1500.0, total: 13700.0 },
+  });
+  const [savedDestinations, setSavedDestinations] = useState<SavedDestination[]>([
+    {
+      id: 'dest_binance_treasury',
+      label: 'Binance Treasury Deposit',
+      address: 'GCO2IP3MJNUOKS45K4MKDU6QKONKVI4ZXCUYTDN7TYGDM6ZFAKIRURCG',
+      memo: '109283741',
+      memoType: 'id',
+      isExchange: true,
+      exchangeName: 'Binance',
+      createdAt: '2026-01-10T08:00:00.000Z',
+    },
+    {
+      id: 'dest_coinbase_ops',
+      label: 'Coinbase Operational Reserve',
+      address: 'GBV4ZDEPNQYXVTHTT7QWC2SZNCYGHYLMR7NA52AAS2RXR2MGDF6ISXNV',
+      memo: 'CB-948201',
+      memoType: 'text',
+      isExchange: true,
+      exchangeName: 'Coinbase',
+      createdAt: '2026-01-12T14:20:00.000Z',
+    },
+    {
+      id: 'dest_internal_cold',
+      label: 'FacilPay Multi-sig Cold Storage',
+      address: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
+      createdAt: '2026-01-05T10:00:00.000Z',
+    },
+    {
+      id: 'dest_fed_treasury',
+      label: 'FacilPay Treasury (Federation)',
+      address: 'treasury*facilpay.io',
+      resolvedAddress: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+      createdAt: '2026-01-15T09:30:00.000Z',
+    },
+  ]);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
