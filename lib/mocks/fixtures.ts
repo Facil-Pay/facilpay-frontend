@@ -17,6 +17,7 @@ import type { Webhook }   from "@/lib/types/webhook";
 import type { ApiKey }    from "@/lib/types/apiKey";
 import type { Merchant, TeamMember } from "@/lib/types/merchant";
 import type { Payout }    from "@/lib/types/payout";
+import type { ExportColumn } from "@/lib/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -319,6 +320,85 @@ export const PAYOUT_FIXTURES: Payout[] = [
     note: "Weekly settlement",
   },
 ];
+
+// ─── Legacy mockData exports (for backward compatibility with pages) ──────────
+
+/** Payment export columns (RFC 4180 CSV) */
+export const PAYMENT_EXPORT_COLUMNS: ExportColumn<any>[] = [
+  { key: 'id', label: 'Payment ID', selected: true },
+  { key: 'date', label: 'Date (ISO 8601)', selected: true },
+  { key: 'amount', label: 'Amount', selected: true, formatter: (val) => Number(val).toFixed(2) },
+  { key: 'asset', label: 'Asset', selected: true },
+  { key: 'status', label: 'Status', selected: true },
+  { key: 'customerEmail', label: 'Customer Email', selected: true },
+  { key: 'customerWallet', label: 'Customer Wallet', selected: true },
+  { key: 'merchantName', label: 'Merchant Name', selected: true },
+  { key: 'txHash', label: 'Transaction Hash', selected: true },
+  { key: 'stellarExpertUrl', label: 'Stellar Expert Link', selected: true },
+  { key: 'fee', label: 'Network Fee', selected: true },
+  { key: 'description', label: 'Description', selected: true },
+  { key: 'memo', label: 'Memo', selected: true },
+];
+
+export const REFUND_EXPORT_COLUMNS: ExportColumn<any>[] = [
+  { key: 'id', label: 'Refund ID', selected: true },
+  { key: 'paymentId', label: 'Original Payment ID', selected: true },
+  { key: 'date', label: 'Date (ISO 8601)', selected: true },
+  { key: 'amount', label: 'Refund Amount', selected: true, formatter: (val) => Number(val).toFixed(2) },
+  { key: 'asset', label: 'Asset', selected: true },
+  { key: 'status', label: 'Status', selected: true },
+  { key: 'reason', label: 'Reason', selected: true },
+  { key: 'customerWallet', label: 'Customer Wallet', selected: true },
+  { key: 'txHash', label: 'Transaction Hash', selected: true },
+  { key: 'fee', label: 'Fee', selected: true },
+];
+
+export const PAYOUT_EXPORT_COLUMNS: ExportColumn<any>[] = [
+  { key: 'id', label: 'Payout ID', selected: true },
+  { key: 'date', label: 'Date (ISO 8601)', selected: true },
+  { key: 'amount', label: 'Payout Amount', selected: true, formatter: (val) => Number(val).toFixed(2) },
+  { key: 'asset', label: 'Asset', selected: true },
+  { key: 'status', label: 'Status', selected: true },
+  { key: 'payoutMethod', label: 'Payout Method', selected: true },
+  { key: 'destinationWallet', label: 'Destination Wallet', selected: true },
+  { key: 'txHash', label: 'Transaction Hash', selected: true },
+  { key: 'fee', label: 'Fee', selected: true },
+];
+
+/** Generate realistic large dataset for testing */
+export function generateLargePayments(count = 2500): any[] {
+  const assets: ('USDC' | 'XLM' | 'EURC')[] = ['USDC', 'XLM', 'EURC'];
+  const statuses: ('COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED')[] = [
+    'COMPLETED', 'COMPLETED', 'COMPLETED', 'PENDING', 'FAILED', 'REFUNDED',
+  ];
+  const results: any[] = [];
+  const baseTime = new Date('2026-01-01T08:00:00.000Z').getTime();
+  for (let i = 1; i <= count; i++) {
+    const itemDate = new Date(baseTime + i * 3600 * 1000 * 0.7);
+    const asset = assets[i % assets.length];
+    const status = statuses[i % statuses.length];
+    const amount = Number((25 + (i * 13.37) % 4500).toFixed(2));
+    const hexHash = ((i * 1234567891).toString(16) + 'abcdef0123456789abcdef0123456789abcdef0123456789').slice(0, 64);
+    results.push({
+      id: `pay_2026_${String(i).padStart(6, '0')}`,
+      date: itemDate.toISOString(),
+      amount,
+      asset,
+      status,
+      customerEmail: `customer${i % 250}@clientorg.com`,
+      customerWallet: `GD${String(i).padStart(4, '0')}QZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A`,
+      merchantId: 'merch_facilpay_01',
+      merchantName: 'FacilPay Global Merchant Ltd',
+      merchantEmail: 'billing@facilpay.io',
+      txHash: hexHash,
+      stellarExpertUrl: `https://stellar.expert/explorer/testnet/tx/${hexHash}`,
+      fee: 0.00001,
+      description: `Automated settlement #${i}, "Standard terms applied"`,
+      memo: `MEMO-AUTO-${i}`,
+    });
+  }
+  return results;
+}
 
 // ─── Analytics insights ───────────────────────────────────────────────────────
 
