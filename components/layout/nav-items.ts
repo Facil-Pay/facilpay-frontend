@@ -19,17 +19,21 @@ export interface NavItem {
 }
 
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "/overview", icon: LayoutDashboard },
-  { label: "Payments", href: "/payments", icon: CreditCard },
-  { label: "Subscriptions", href: "/subscriptions", icon: Repeat2 },
-  { label: "Refunds", href: "/refunds", icon: RotateCcw },
-  { label: "Escrow", href: "/escrow", icon: Lock },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
-  { label: "Webhooks", href: "/webhooks", icon: Webhook },
-  { label: "Developers", href: "/developers", icon: Code2 },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "overview", href: "/overview", icon: LayoutDashboard },
+  { label: "payments", href: "/payments", icon: CreditCard },
+  { label: "refunds", href: "/refunds", icon: RotateCcw },
+  { label: "escrow", href: "/escrow", icon: Lock },
+  { label: "analytics", href: "/analytics", icon: BarChart3 },
+  { label: "webhooks", href: "/webhooks", icon: Webhook },
+  { label: "developers", href: "/developers", icon: Code2 },
+  { label: "settings", href: "/settings", icon: Settings },
 ];
+
+/**
+ * Issue #54: Consolidated routes under single URL per feature
+ * - Webhooks: use /webhooks (not /settings/webhooks)
+ * - API Keys: use /developers/api-keys (not /settings/api-keys)
+ */
 
 /** True when `pathname` is the nav item's route or one of its children. */
 export function isNavItemActive(pathname: string, href: string): boolean {

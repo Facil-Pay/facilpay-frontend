@@ -22,6 +22,8 @@ import {
   useState,
   useEffect,
   useRef,
+  createContext,
+  useContext,
   type ReactNode,
 } from "react";
 import {
@@ -29,6 +31,32 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+// ─── Auth context (Issue #57) ─────────────────────────────────────────────────
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  setIsAuthenticated: (value: boolean) => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth() must be used inside <AuthProvider>");
+  }
+  return context;
+}
+
+function AuthProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
 // ─── Query client singleton ───────────────────────────────────────────────────
 
@@ -137,13 +165,15 @@ export function Providers({ children }: ProvidersProps) {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      {/* Devtools are tree-shaken in production builds automatically */}
-      <ReactQueryDevtools
-        initialIsOpen={false}
-        buttonPosition="bottom-right"
-      />
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        {/* Devtools are tree-shaken in production builds automatically */}
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-right"
+        />
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }

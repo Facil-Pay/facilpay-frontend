@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Navbar from '@/components/Navbar';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 
 function LoginContent() {
   const { login } = useAuth();
+  const t = useTranslations('auth');
   const [email, setEmail] = useState('');
   const [mode, setMode] = useState<'new' | 'existing'>('new');
 
@@ -37,10 +39,10 @@ function LoginContent() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Sign In to FacilPay
+            {t('signInTitle')}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Accept non-custodial crypto payments on Stellar
+            {t('signInDescription')}
           </p>
         </div>
 
@@ -56,7 +58,7 @@ function LoginContent() {
                   : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
-              New Merchant
+              {t('newMerchant')}
             </button>
             <button
               type="button"
@@ -67,7 +69,7 @@ function LoginContent() {
                   : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
               }`}
             >
-              Existing Merchant
+              {t('existingMerchant')}
             </button>
           </div>
         </div>
@@ -82,11 +84,11 @@ function LoginContent() {
         >
           {mode === 'new' ? (
             <p>
-              ✨ <strong>Trigger Requirement:</strong> Signing in as a new merchant without a completed profile will automatically send you directly to <strong>/onboarding</strong>.
+              ✨ <strong>Trigger Requirement:</strong> {t('newMerchantNotice')} <strong>/onboarding</strong>.
             </p>
           ) : (
             <p>
-              ✓ Signing in as an existing merchant with a completed profile takes you directly to the <strong>Overview</strong> dashboard.
+              ✓ {t('existingMerchantNotice')}
             </p>
           )}
         </div>
@@ -95,7 +97,7 @@ function LoginContent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Merchant Email Address
+              {t('merchantEmail')}
             </label>
             <input
               type="email"
@@ -110,7 +112,7 @@ function LoginContent() {
             type="submit"
             className="w-full rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
           >
-            {mode === 'new' ? 'Sign In & Start Onboarding' : 'Sign In to Dashboard'}
+            {mode === 'new' ? t('signInStartOnboarding') : t('signInDashboard')}
           </button>
         </form>
 
@@ -120,7 +122,7 @@ function LoginContent() {
           </div>
           <div className="relative flex justify-center text-[11px] uppercase">
             <span className="bg-white px-2 text-zinc-400 dark:bg-zinc-950">
-              Or connect wallet
+              {t('orConnectWallet')}
             </span>
           </div>
         </div>
@@ -132,7 +134,7 @@ function LoginContent() {
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span>Connect Freighter / Stellar Wallet</span>
+          <span>{t('connectStellarWallet')}</span>
         </button>
       </div>
     </div>

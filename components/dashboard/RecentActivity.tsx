@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
-import { PaymentStatusBadge } from "@/app/components/payments/PaymentStatusBadge";
+import { Card, CardHeader, CardDivider } from "@/components/ui/card";
+import { PaymentStatusBadge } from "@/components/payments/PaymentStatusBadge";
 import type { RecentPayment } from "@/app/lib/api/dashboard";
 import type { PaymentNetwork } from "@/app/lib/types/payment";
 

@@ -12,6 +12,8 @@ export type ButtonProps = Omit<React.ComponentPropsWithoutRef<"button">, "onClic
   loading?: boolean;
   asChild?: boolean;
   onClick?: React.MouseEventHandler<HTMLElement>;
+  icon?: React.ReactNode;
+  iconPosition?: "left" | "right";
 };
 
 const variants: Record<ButtonVariant, string> = {
@@ -38,6 +40,8 @@ export function Button({
   size = "md",
   type = "button",
   variant = "primary",
+  icon,
+  iconPosition = "left",
   ...props
 }: ButtonProps) {
   const classes = cn(
@@ -49,7 +53,9 @@ export function Button({
   const content = (
     <>
       {loading && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}
+      {!loading && icon && iconPosition === "left" && <span className="shrink-0">{icon}</span>}
       {children}
+      {!loading && icon && iconPosition === "right" && <span className="shrink-0">{icon}</span>}
     </>
   );
 

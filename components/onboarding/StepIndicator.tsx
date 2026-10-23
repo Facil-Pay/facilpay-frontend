@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -8,31 +9,31 @@ interface StepIndicatorProps {
   onStepClick: (step: number) => void;
 }
 
-export const ONBOARDING_STEPS = [
-  { id: 1, title: 'Welcome', subtitle: 'Introduction' },
-  { id: 2, title: 'Business Details', subtitle: 'Profile info' },
-  { id: 3, title: 'Settlement', subtitle: 'Wallet address' },
-  { id: 4, title: 'Trustlines', subtitle: 'USDC & EURC' },
-  { id: 5, title: 'Branding', subtitle: 'Logo & Color (Optional)' },
-  { id: 6, title: 'Payment Link', subtitle: 'QR checkout' },
-  { id: 7, title: 'Done', subtitle: 'Summary & links' },
-] as const;
-
 export default function StepIndicator({
   currentStep,
   completedSteps,
   onStepClick,
 }: StepIndicatorProps) {
-  const progressPercent = Math.round(((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100);
+  const t = useTranslations('onboarding');
+  const steps = [
+    { id: 1, title: t('welcome'), subtitle: t('introduction') },
+    { id: 2, title: t('businessDetails'), subtitle: t('profileInfo') },
+    { id: 3, title: t('settlement'), subtitle: t('walletAddress') },
+    { id: 4, title: t('trustlines'), subtitle: 'USDC & EURC' },
+    { id: 5, title: t('branding'), subtitle: t('brandingOptional') },
+    { id: 6, title: t('paymentLink'), subtitle: t('qrCheckout') },
+    { id: 7, title: t('done'), subtitle: t('summaryLinks') },
+  ];
+  const progressPercent = Math.round(((currentStep - 1) / (steps.length - 1)) * 100);
 
   return (
     <div className="w-full mb-8">
       {/* Mobile progress summary */}
       <div className="flex md:hidden items-center justify-between mb-3 text-sm">
         <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-          Step {currentStep} of {ONBOARDING_STEPS.length}:{' '}
+          {t('stepCount', { current: currentStep, total: steps.length })}:{' '}
           <span className="text-[#0088FF] dark:text-[#55C2FF]">
-            {ONBOARDING_STEPS[currentStep - 1].title}
+            {steps[currentStep - 1].title}
           </span>
         </span>
         <span className="text-xs font-mono text-zinc-500">{progressPercent}%</span>
@@ -48,7 +49,7 @@ export default function StepIndicator({
 
       {/* Desktop Stepper */}
       <div className="hidden md:grid grid-cols-7 gap-2">
-        {ONBOARDING_STEPS.map((step) => {
+        {steps.map((step) => {
           const isCompleted = completedSteps.includes(step.id);
           const isCurrent = currentStep === step.id;
           const isClickable = isCompleted || step.id <= currentStep;
