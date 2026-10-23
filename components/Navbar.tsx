@@ -3,16 +3,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const tNavigation = useTranslations('navigation');
+  const tShell = useTranslations('shell');
 
   const navItems = [
-    { name: 'Balances', href: '/balances' },
-    { name: 'Payments', href: '/payments' },
-    { name: 'Refunds', href: '/refunds' },
-    { name: 'Payouts', href: '/payouts' },
-    { name: 'Developers', href: '/developers/api-keys' },
+    { name: 'balances', href: '/balances' },
+    { name: 'payments', href: '/payments' },
+    { name: 'refunds', href: '/refunds' },
+    { name: 'payouts', href: '/payouts' },
+    { name: 'developers', href: '/developers/api-keys' },
   ];
 
   return (
@@ -45,7 +48,7 @@ export default function Navbar() {
                 Facil<span className="text-[#55C2FF]">Pay</span>
               </span>
               <span className="text-[10px] font-medium tracking-wider text-zinc-500 uppercase">
-                Merchant Portal
+                {tNavigation('merchantPortal')}
               </span>
             </div>
           </Link>
@@ -66,7 +69,7 @@ export default function Navbar() {
                       : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'
                   }`}
                 >
-                  {item.name}
+                  {tNavigation(item.name)}
                 </Link>
               );
             })}
@@ -77,12 +80,12 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300">
             <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse"></span>
-            Stellar Testnet
+            {tShell('networkTestnet')}
           </div>
 
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
             <span className="font-semibold text-zinc-900 dark:text-white">
-              FacilPay Merchant
+              {tShell('merchant')}
             </span>
             <span className="text-zinc-400">•</span>
             <span className="font-mono text-[11px] text-zinc-500">merch_01</span>
@@ -105,7 +108,7 @@ export default function Navbar() {
                     : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400'
                 }`}
               >
-                {item.name}
+                {tNavigation(item.name)}
               </Link>
             );
           })}

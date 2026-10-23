@@ -312,10 +312,6 @@ This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](h
 
 ## Contribution
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit: `git commit -m "feat: description"`
-4. Push: `git push origin feat/your-feature`
-5. Open a pull request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, development checks, branch and commit conventions, and code placement guidance. Use the issue templates in `.github/ISSUE_TEMPLATE/` when reporting bugs or proposing features, and the pull request template when opening a change.
 
 Community: https://t.me/+afM9uh7GGtVkYmZk

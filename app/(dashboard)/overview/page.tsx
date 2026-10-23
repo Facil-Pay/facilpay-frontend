@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
 const GettingStartedCard = dynamic(() => import('@/components/overview/GettingStartedCard'), {
@@ -27,6 +28,8 @@ import PaymentToast from '@/components/payments/PaymentToast';
 
 function OverviewContent() {
   const router = useRouter();
+  const t = useTranslations('overview');
+  const tPage = useTranslations('overviewPage');
   const { user, isLoading } = useAuth();
   const { payments } = usePaymentStream();
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
@@ -94,7 +97,7 @@ function OverviewContent() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          <span>Loading merchant overview...</span>
+          <span>{t('loading')}</span>
         </div>
       </div>
     );
@@ -111,10 +114,10 @@ function OverviewContent() {
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Merchant Profile Incomplete
+            {t('profileIncomplete')}
           </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Merchants without a completed profile are automatically sent to the onboarding wizard. Redirecting you now...
+            {t('profileIncompleteDescription')}
           </p>
         </div>
         <div className="pt-2">
@@ -122,7 +125,7 @@ function OverviewContent() {
             href="/onboarding"
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-500/20 hover:opacity-95"
           >
-            <span>Go to Onboarding Wizard</span>
+            <span>{t('goToOnboarding')}</span>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
@@ -143,14 +146,14 @@ function OverviewContent() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-              {business.name || 'Merchant Dashboard'}
+              {business.name || t('merchantDashboard')}
             </h1>
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              Verified Merchant
+              {t('verified')}
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            {business.category || 'E-Commerce'} • {business.country || 'Global'} • Settling to{' '}
+            {business.category || t('ecommerce')} • {business.country || t('global')} • {t('settlesToPrefix')}{' '}
             <span className="font-mono text-zinc-700 dark:text-zinc-300">
               {truncateAddress(settlement.address, 6)}
             </span>
@@ -164,7 +167,7 @@ function OverviewContent() {
               onClick={handleRestoreChecklist}
               className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 cursor-pointer"
             >
-              Show Getting Started Checklist
+              {t('showChecklist')}
             </button>
           )}
 
@@ -175,7 +178,7 @@ function OverviewContent() {
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            <span>Revisit Onboarding</span>
+            <span>{t('revisitOnboarding')}</span>
           </Link>
         </div>
       </div>
@@ -187,27 +190,27 @@ function OverviewContent() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: 'Total Settled Volume',
+            label: t('totalSettledVolume'),
             value: `$${totalSettledUsdc} USDC`,
-            change: `+${payments.length} on-chain payments`,
+            change: tPage('paymentsCount', { count: payments.length }),
             icon: '💰',
           },
           {
-            label: 'Active Payment Links',
-            value: paymentLink.id ? '1 Active Link' : '0 Links',
-            change: paymentLink.title || 'Ready to share',
+            label: t('activePaymentLinks'),
+            value: paymentLink.id ? t('activeLink') : t('noLinks'),
+            change: paymentLink.title || t('readyToShare'),
             icon: '🔗',
           },
           {
-            label: 'Trustline Assets',
+            label: t('trustlineAssets'),
             value: 'USDC & EURC',
-            change: 'Stellar Testnet',
+            change: t('stellarTestnet'),
             icon: '⚡',
           },
           {
-            label: 'Avg Settlement Time',
+            label: t('averageSettlementTime'),
             value: '3.2 seconds',
-            change: 'Non-custodial',
+            change: t('nonCustodial'),
             icon: '⏱️',
           },
         ].map((stat, idx) => (
@@ -237,11 +240,11 @@ function OverviewContent() {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                  Active Payment Link: {paymentLink.title}
+                  {tPage('activePaymentLink', { title: paymentLink.title })}
                 </h3>
               </div>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Share this link or QR code with customers to collect payments on Stellar.
+                {tPage('sharePaymentLink')}
               </p>
             </div>
 
@@ -257,7 +260,7 @@ function OverviewContent() {
             {qrCodeSvg && (
               <div className="flex flex-col items-center p-2 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 shrink-0">
                 <div dangerouslySetInnerHTML={{ __html: qrCodeSvg }} />
-                <span className="text-[10px] text-zinc-400 font-mono mt-1">Scan to Pay</span>
+                <span className="text-[10px] text-zinc-400 font-mono mt-1">{tPage('scanToPay')}</span>
               </div>
             )}
 
@@ -275,16 +278,16 @@ function OverviewContent() {
                   onClick={handleCopyLink}
                   className="shrink-0 rounded-lg bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-200 dark:bg-sky-900 dark:text-sky-200 transition-colors cursor-pointer"
                 >
-                  {copiedLink ? 'Copied!' : 'Copy Link'}
+                  {copiedLink ? tPage('copied') : tPage('copyLink')}
                 </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                <span>Created: {new Date(paymentLink.createdAt || Date.now()).toLocaleDateString()}</span>
+                <span>{tPage('created', { date: new Date(paymentLink.createdAt || Date.now()).toLocaleDateString() })}</span>
                 <span>•</span>
-                <span>Settles to: {truncateAddress(settlement.address, 4)}</span>
+                <span>{tPage('settlesTo', { address: truncateAddress(settlement.address, 4) })}</span>
                 <span>•</span>
-                <span className="text-emerald-600 font-medium">Status: Live</span>
+                <span className="text-emerald-600 font-medium">{tPage('liveStatus')}</span>
               </div>
             </div>
           </div>
@@ -305,10 +308,10 @@ function OverviewContent() {
           </div>
           <div>
             <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
-              Webhook Endpoints
+              {tPage('webhookEndpoints')}
             </h4>
             <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-              Configure endpoints to receive automated notifications when transactions are confirmed on the Stellar ledger.
+              {tPage('webhookEndpointsDescription')}
             </p>
           </div>
         </Link>
@@ -322,10 +325,10 @@ function OverviewContent() {
           </div>
           <div>
             <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
-              API Keys & SDK
+              {tPage('apiKeysSdk')}
             </h4>
             <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-              Create and manage authentication keys to integrate FacilPay into your e-commerce platform or custom frontend.
+              {tPage('apiKeysDescription')}
             </p>
           </div>
         </Link>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat, Roboto_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Providers as WalletProviders } from "@/components/wallet/providers";
 import "./globals.css";
 import { Providers } from "@/app/providers";
@@ -29,17 +31,22 @@ export const metadata: Metadata = {
 
 // ─── Root layout ──────────────────────────────────────────────────────────────
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${montserrat.variable} ${inter.variable} ${robotoMono.variable} antialiased`}>
-        <Providers>
-          <WalletProviders>{children}</WalletProviders>
-        </Providers>
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <Providers>
+            <WalletProviders>{children}</WalletProviders>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

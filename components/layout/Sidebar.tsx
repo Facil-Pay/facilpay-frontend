@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { cn } from "@/components/ui/utils";
 import logoHorizontal from "@/app/branding/logo/horizontal/facilpay-horizontal-logo-white.svg";
@@ -18,6 +19,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations("navigation");
 
   return (
     <>
@@ -33,7 +35,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
 
       <aside
         id="dashboard-sidebar"
-        aria-label="Sidebar"
+        aria-label={t("sidebar")}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#000F24] text-white transition-[transform,width] duration-200",
           // Mobile: slide-over drawer
@@ -44,7 +46,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
         )}
       >
         <div className={cn("flex h-16 shrink-0 items-center border-b border-white/10 px-4", collapsed ? "md:justify-center md:px-0" : "justify-between")}>
-          <Link href="/overview" onClick={onCloseMobile} aria-label="FacilPay overview" className="flex items-center">
+          <Link href="/overview" onClick={onCloseMobile} aria-label={`FacilPay ${t("overview")}`} className="flex items-center">
             <Image
               src={logoHorizontal}
               alt="FacilPay"
@@ -63,24 +65,25 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
           <button
             type="button"
             onClick={onCloseMobile}
-            aria-label="Close navigation"
+            aria-label={t("close")}
             className="rounded-md p-1.5 text-zinc-300 hover:bg-white/10 hover:text-white md:hidden"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav aria-label="Dashboard navigation" className="flex-1 overflow-y-auto px-3 py-4">
+        <nav aria-label={t("dashboard")} className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
             {DASHBOARD_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
               const active = isNavItemActive(pathname, href);
+              const translatedLabel = t(label);
               return (
                 <li key={href}>
                   <Link
                     href={href}
                     onClick={onCloseMobile}
                     aria-current={active ? "page" : undefined}
-                    title={collapsed ? label : undefined}
+                    title={collapsed ? translatedLabel : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       collapsed && "md:justify-center md:px-0",
@@ -90,7 +93,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
                     )}
                   >
                     <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <span className={cn("truncate", collapsed && "md:sr-only")}>{label}</span>
+                    <span className={cn("truncate", collapsed && "md:sr-only")}>{translatedLabel}</span>
                   </Link>
                 </li>
               );
@@ -102,7 +105,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
           <button
             type="button"
             onClick={onToggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("expand") : t("collapse")}
             aria-expanded={!collapsed}
             aria-controls="dashboard-sidebar"
             className={cn(
@@ -111,7 +114,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
             )}
           >
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-            {!collapsed && <span>Collapse</span>}
+            {!collapsed && <span>{t("collapse")}</span>}
           </button>
         </div>
       </aside>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { OnboardingState, BusinessDetails, SettlementAccount, TrustlinesState, BrandingDetails, PaymentLinkData } from '@/types/onboarding';
 import { getOnboardingState, saveOnboardingState, INITIAL_ONBOARDING_STATE } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
@@ -16,6 +17,7 @@ import StepDone from './StepDone';
 
 export default function OnboardingWizard() {
   const router = useRouter();
+  const t = useTranslations('onboarding');
   const { completeProfile } = useAuth();
   const [state, setState] = useState<OnboardingState>(INITIAL_ONBOARDING_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -153,7 +155,7 @@ export default function OnboardingWizard() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          <span>Resuming your onboarding session...</span>
+          <span>{t('resuming')}</span>
         </div>
       </div>
     );
