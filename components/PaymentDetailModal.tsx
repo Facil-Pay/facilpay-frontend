@@ -150,6 +150,32 @@ export default function PaymentDetailModal({
               </span>
             </div>
 
+            {/* Fee Breakdown & Net Settlement (Issue #77) */}
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-800/40 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800">
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">Fee Breakdown</span>
+                <span className="text-[11px] text-zinc-500">
+                  Rate: {payment.asset === 'USDC' ? '1 USDC = 1.00 USD' : payment.asset === 'XLM' ? '1 XLM = 0.125 USD' : '1 EURC = 1.08 USD'}
+                </span>
+              </div>
+              <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                <span>Gross Amount:</span>
+                <span className="font-medium text-zinc-900 dark:text-white">${Number(payment.amount).toFixed(2)} {payment.asset}</span>
+              </div>
+              <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                <span>FacilPay Fee (1.0%):</span>
+                <span className="font-medium text-rose-600 dark:text-rose-400">-${(Number(payment.amount) * 0.01).toFixed(2)} {payment.asset}</span>
+              </div>
+              <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                <span>Stellar Network Fee:</span>
+                <span className="font-medium text-zinc-900 dark:text-white">{(payment.fee ?? 0.00001).toFixed(5)} XLM</span>
+              </div>
+              <div className="flex justify-between pt-1.5 border-t border-zinc-200 dark:border-zinc-700 font-bold text-zinc-900 dark:text-white">
+                <span>Net Amount Received:</span>
+                <span className="text-emerald-600 dark:text-emerald-400">${(Number(payment.amount) * 0.99).toFixed(2)} {payment.asset}</span>
+              </div>
+            </div>
+
             {/* Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800 space-y-1">
@@ -193,6 +219,29 @@ export default function PaymentDetailModal({
                   {payment.description}
                 </p>
               </div>
+
+              {payment.sourceAsset && (
+                <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3.5 dark:border-sky-900/50 dark:bg-sky-950/20 space-y-1 sm:col-span-2">
+                  <span className="text-xs font-semibold text-sky-800 dark:text-sky-300">
+                    Stellar Path Payment Details
+                  </span>
+                  <div className="text-xs text-zinc-700 dark:text-zinc-300 flex flex-wrap items-center gap-2">
+                    <span>Paid with:</span>
+                    <span className="font-mono font-semibold">
+                      {payment.sourceAmount ? `${payment.sourceAmount} ` : ''}{payment.sourceAsset}
+                    </span>
+                    <span>→ Settled in:</span>
+                    <span className="font-mono font-semibold">
+                      {payment.amount} {payment.asset}
+                    </span>
+                  </div>
+                  {payment.path && payment.path.length > 0 && (
+                    <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 pt-1">
+                      Path: {payment.sourceAsset} → {payment.path.join(' → ')} → {payment.asset}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Stellar Blockchain Verification */}

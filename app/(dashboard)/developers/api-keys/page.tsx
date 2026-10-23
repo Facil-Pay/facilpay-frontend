@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
@@ -9,6 +10,8 @@ import {
   NetworkMode,
   PUBLISHABLE_KEYS,
   INITIAL_API_KEYS,
+  getStoredApiKeys,
+  saveStoredApiKeys,
 } from '@/lib/apiKeys';
 
 export default function ApiKeysPage() {
@@ -17,6 +20,10 @@ export default function ApiKeysPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);
+
+  useEffect(() => {
+    setKeys(getStoredApiKeys());
+  }, []);
 
   // Active publishable key based on network
   const activePublishableKey = PUBLISHABLE_KEYS[network];
@@ -37,7 +44,11 @@ export default function ApiKeysPage() {
   };
 
   const handleKeyCreated = (newKey: ApiKeyItem) => {
-    setKeys((prev) => [newKey, ...prev]);
+    setKeys((prev) => {
+      const updated = [newKey, ...prev];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleRevokeKey = (keyId: string) => {
@@ -52,9 +63,11 @@ export default function ApiKeysPage() {
       return;
     }
 
-    setKeys((prev) =>
-      prev.map((k) => (k.id === keyId ? { ...k, status: 'revoked' } : k))
-    );
+    setKeys((prev) => {
+      const updated = prev.map((k) => (k.id === keyId ? { ...k, status: 'revoked' as const } : k));
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleKeyRolled = (
@@ -73,24 +86,44 @@ export default function ApiKeysPage() {
       rollingExpiresAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
     }
 
-    setKeys((prev) => [
-      newKey,
-      ...prev.map((k) =>
-        k.id === oldKeyId
-          ? {
-              ...k,
-              status: gracePeriod === 'now' ? ('revoked' as const) : ('rolling' as const),
-              rollingExpiresAt,
-              gracePeriod,
-            }
-          : k
-      ),
-    ]);
+    setKeys((prev) => {
+      const updated = [
+        newKey,
+        ...prev.map((k) =>
+          k.id === oldKeyId
+            ? {
+                ...k,
+                status: gracePeriod === 'now' ? ('revoked' as const) : ('rolling' as const),
+                rollingExpiresAt,
+                gracePeriod,
+              }
+            : k
+        ),
+      ];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   return (
     <>
       <div className="space-y-6">
+        {/* Sub-navigation Tabs */}
+        <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-1 text-xs dark:border-zinc-800 dark:bg-zinc-900 w-fit">
+          <Link
+            href="/developers/api-keys"
+            className="rounded-lg bg-[#000F24] px-3 py-1.5 font-semibold text-white shadow-sm dark:bg-[#55C2FF] dark:text-black"
+          >
+            API Keys
+          </Link>
+          <Link
+            href="/developers/events"
+            className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Event Catalog
+          </Link>
+        </div>
+
         {/* Header with Title and Network Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

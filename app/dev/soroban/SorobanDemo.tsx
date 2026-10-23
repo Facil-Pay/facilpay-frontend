@@ -57,7 +57,7 @@ function explainError(error: unknown) {
   return `The refund could not be completed: ${message}`;
 }
 
-export default function SorobanDemo() {
+export default function Home() {
   const [payments, setPayments] = useState(initialPayments);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [refundPaymentId, setRefundPaymentId] = useState<string | null>(null);
