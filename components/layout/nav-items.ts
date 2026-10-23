@@ -1,9 +1,11 @@
 import {
   BarChart3,
+  ArrowLeftRight,
   Code2,
   CreditCard,
   LayoutDashboard,
   Lock,
+  Repeat2,
   RotateCcw,
   Settings,
   Webhook,
