@@ -91,6 +91,7 @@ export const merchantKeys = {
   preferences: ()                  => [...merchantKeys.all(), "preferences"] as const,
   sessions: ()                     => [...merchantKeys.all(), "sessions"]    as const,
   wallets: ()                      => [...merchantKeys.all(), "wallets"]     as const,
+  twoFactor: ()                    => [...merchantKeys.all(), "twoFactor"]   as const,
   teamMember: (id: string)         => [...merchantKeys.team(), id]           as const,
 } as const;
 

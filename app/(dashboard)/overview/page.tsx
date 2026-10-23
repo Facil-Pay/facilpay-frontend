@@ -25,8 +25,10 @@ import { truncateAddress } from '@/lib/stellar';
 import { generateQRSvg } from '@/lib/qr';
 import { PaymentStreamProvider, usePaymentStream } from '@/lib/payment-stream-context';
 import PaymentToast from '@/components/payments/PaymentToast';
+import { useFormat } from '@/lib/i18n/use-format';
 
 function OverviewContent() {
+  const f = useFormat();
   const router = useRouter();
   const t = useTranslations('overview');
   const tPage = useTranslations('overviewPage');
@@ -40,10 +42,7 @@ function OverviewContent() {
   const liveUsdcVolume = payments
     .filter((p) => p.asset_code === 'USDC')
     .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
-  const totalSettledUsdc = (1250 + liveUsdcVolume).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const totalSettledUsdc = f.amount(1250 + liveUsdcVolume, 'USDC');
 
   useEffect(() => {
     const savedOnboarding = getOnboardingState();
@@ -191,8 +190,8 @@ function OverviewContent() {
         {[
           {
             label: t('totalSettledVolume'),
-            value: `$${totalSettledUsdc} USDC`,
-            change: tPage('paymentsCount', { count: payments.length }),
+            value: totalSettledUsdc,
+            change: tPage('paymentsCount', { count: f.number(payments.length) }),
             icon: '💰',
           },
           {
@@ -250,7 +249,7 @@ function OverviewContent() {
 
             <div className="flex items-center gap-2">
               <span className="font-mono text-lg font-bold text-zinc-900 dark:text-white">
-                ${paymentLink.amount} {paymentLink.currency}
+                {f.amount(paymentLink.amount, paymentLink.currency)}
               </span>
             </div>
           </div>
@@ -283,7 +282,7 @@ function OverviewContent() {
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                <span>{tPage('created', { date: new Date(paymentLink.createdAt || Date.now()).toLocaleDateString() })}</span>
+                <span>{tPage('created', { date: f.date(paymentLink.createdAt || Date.now()) })}</span>
                 <span>•</span>
                 <span>{tPage('settlesTo', { address: truncateAddress(settlement.address, 4) })}</span>
                 <span>•</span>

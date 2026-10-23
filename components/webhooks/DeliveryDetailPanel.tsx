@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { WebhookDelivery } from '@/types/webhooks';
 import SyntaxHighlightedJson from './SyntaxHighlightedJson';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface DeliveryDetailPanelProps {
   delivery: WebhookDelivery | null;
@@ -19,6 +20,7 @@ export default function DeliveryDetailPanel({
   onResend,
   isResending = false,
 }: DeliveryDetailPanelProps) {
+  const f = useFormat();
   const [activeTab, setActiveTab] = useState<'request' | 'response' | 'attempts'>('request');
   const [copiedPayload, setCopiedPayload] = useState(false);
 
@@ -88,7 +90,7 @@ export default function DeliveryDetailPanel({
               </span>
               <span className="text-zinc-400 mx-1.5">•</span>
               <span className="text-zinc-500 font-mono">
-                {new Date(delivery.deliveredAt).toLocaleString()}
+                {f.dateWith(delivery.deliveredAt, { dateStyle: "medium", timeStyle: "medium" })}
               </span>
             </div>
 
@@ -326,7 +328,7 @@ export default function DeliveryDetailPanel({
                           <span>•</span>
                           <span>Latency: {attempt.responseTimeMs}ms</span>
                           <span>•</span>
-                          <span>{new Date(attempt.timestamp).toLocaleTimeString()}</span>
+                          <span>{f.time(attempt.timestamp, true)}</span>
                         </div>
 
                         {attempt.errorMessage && (

@@ -22,6 +22,8 @@ import {
   Sep24Anchor,
   createSep24Session,
 } from '@/lib/sep24/anchors';
+import { useFormat } from '@/lib/i18n/use-format';
+import { useStepUp } from '@/components/security/use-step-up';
 
 interface NewPayoutModalProps {
   isOpen: boolean;
@@ -44,6 +46,8 @@ export default function NewPayoutModal({
   onAddSavedDestination,
   onCompletePayout,
 }: NewPayoutModalProps) {
+  const f = useFormat();
+  const { requestStepUp, stepUpDialog } = useStepUp();
   const [tab, setTab] = useState<PayoutTab>('stellar');
 
   // Stellar Address Form State
@@ -184,7 +188,7 @@ export default function NewPayoutModal({
 
     if (numAmount > currentAvailableBalance) {
       setStellarError(
-        `Insufficient funds. Available balance is ${currentAvailableBalance.toLocaleString()} ${selectedAsset}.`
+        `Insufficient funds. Available balance is ${f.amount(currentAvailableBalance, selectedAsset)}.`
       );
       return;
     }
@@ -201,7 +205,16 @@ export default function NewPayoutModal({
   };
 
   // Handle Wallet Signing Simulation
-  const handleSignAndSubmitStellar = () => {
+  const handleSignAndSubmitStellar = async () => {
+    try {
+      const grant = await requestStepUp('create_payout');
+      if (!grant) return;
+    } catch (err) {
+      setStellarStep('form');
+      setStellarError(err instanceof Error ? err.message : 'Could not verify two-factor authentication.');
+      return;
+    }
+
     setStellarStep('signing');
 
     // Simulate wallet signature delay
@@ -262,7 +275,7 @@ export default function NewPayoutModal({
 
     if (numSep24Amount > currentSep24Balance) {
       setSep24Error(
-        `Insufficient balance. Available is ${currentSep24Balance.toLocaleString()} ${sep24Asset}.`
+        `Insufficient balance. Available is ${f.amount(currentSep24Balance, sep24Asset)}.`
       );
       return;
     }
@@ -270,7 +283,16 @@ export default function NewPayoutModal({
     setSep24Step('interactive');
   };
 
-  const handleConfirmSep24Interactive = () => {
+  const handleConfirmSep24Interactive = async () => {
+    try {
+      const grant = await requestStepUp('create_payout');
+      if (!grant) return;
+    } catch (err) {
+      setSep24Step('form');
+      setSep24Error(err instanceof Error ? err.message : 'Could not verify two-factor authentication.');
+      return;
+    }
+
     const { transaction } = createSep24Session(selectedAnchor, {
       amount: numSep24Amount,
       asset: sep24Asset,
@@ -451,7 +473,7 @@ export default function NewPayoutModal({
                           Asset *
                         </label>
                         <span className="text-[11px] text-zinc-500">
-                          Avail: {currentAvailableBalance.toLocaleString()} {selectedAsset}
+                          Avail: {f.amount(currentAvailableBalance, selectedAsset)}
                         </span>
                       </div>
                       <select
@@ -589,7 +611,7 @@ export default function NewPayoutModal({
                       <div>
                         <span className="text-zinc-500 block">Withdrawal Amount</span>
                         <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                          {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} {selectedAsset}
+                          {f.amount(numAmount, selectedAsset)}
                         </span>
                       </div>
                       <div>
@@ -630,7 +652,7 @@ export default function NewPayoutModal({
                     </button>
                     <button
                       type="button"
-                      onClick={handleSignAndSubmitStellar}
+                      onClick={() => void handleSignAndSubmitStellar()}
                       className="inline-flex items-center gap-2 rounded-xl bg-[#000F24] px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 dark:bg-[#55C2FF] dark:text-black"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -675,7 +697,7 @@ export default function NewPayoutModal({
                       Payout Successfully Submitted!
                     </h3>
                     <p className="text-xs text-zinc-500 mt-1">
-                      {numAmount.toLocaleString()} {selectedAsset} has been transmitted onto the Stellar ledger.
+                      {f.amount(numAmount, selectedAsset)} has been transmitted onto the Stellar ledger.
                     </p>
                   </div>
 
@@ -763,7 +785,7 @@ export default function NewPayoutModal({
                       >
                         {selectedAnchor.supportedAssets.map((ast) => (
                           <option key={ast} value={ast}>
-                            {ast} (Avail: {balances[ast]?.available.toLocaleString()})
+                            {ast} (Avail: {f.amount(balances[ast]?.available ?? 0, ast, { withCode: false })})
                           </option>
                         ))}
                       </select>
@@ -911,7 +933,7 @@ export default function NewPayoutModal({
                     </button>
                     <button
                       type="button"
-                      onClick={handleConfirmSep24Interactive}
+                      onClick={() => void handleConfirmSep24Interactive()}
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
                     >
                       <span>Authorize Bank Transfer ({numSep24Amount} {sep24Asset})</span>
@@ -967,6 +989,7 @@ export default function NewPayoutModal({
           )}
         </div>
       </div>
+      {stepUpDialog}
     </div>
   );
 }

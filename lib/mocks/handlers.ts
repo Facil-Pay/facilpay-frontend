@@ -534,7 +534,134 @@ const settingsHandlers = [
   }),
 ];
 
+// ─── Two-factor authentication ────────────────────────────────────────────────
+//
+// The mock accepts any 6-digit code except 000000 (use it to exercise the
+// error path) and each recovery code exactly once.
+
+const RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+let twoFactor = {
+  enabled: false,
+  enrolledAt: null as string | null,
+  pendingSecret: null as string | null,
+  recoveryCodes: [] as string[],
+};
+const loginChallenges = new Set<string>();
+const stepUpTokens = new Set<string>();
+
+function randomRecoveryCode(): string {
+  const pick = () => RECOVERY_ALPHABET[Math.floor(Math.random() * RECOVERY_ALPHABET.length)];
+  return `${Array.from({ length: 4 }, pick).join("")}-${Array.from({ length: 4 }, pick).join("")}`;
+}
+
+function acceptCode(raw: string, allowRecovery = true): boolean {
+  const code = raw.replace(/\s+/g, "").toUpperCase();
+  if (/^\d{6}$/.test(code)) return code !== "000000";
+  if (!allowRecovery) return false;
+  const dashed = code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+  const index = twoFactor.recoveryCodes.indexOf(dashed);
+  if (index === -1) return false;
+  twoFactor.recoveryCodes.splice(index, 1);
+  return true;
+}
+
+// 422, not 401: apiClient treats 401 as an expired session.
+const invalidCode = () =>
+  HttpResponse.json({ code: "invalid_two_factor_code", message: "That code is incorrect or has expired." }, { status: 422 });
+
+const twoFactorStatus = () => ({
+  enabled: twoFactor.enabled,
+  enrolledAt: twoFactor.enrolledAt,
+  recoveryCodesRemaining: twoFactor.recoveryCodes.length,
+});
+
+const twoFactorHandlers = [
+  http.get(`${base}/merchant/2fa`, async () => {
+    await delay(LATENCY);
+    return HttpResponse.json(twoFactorStatus());
+  }),
+
+  http.post(`${base}/merchant/2fa/enroll`, async () => {
+    await delay(LATENCY);
+    if (twoFactor.enabled) {
+      return HttpResponse.json({ code: "already_enabled", message: "Two-factor authentication is already on." }, { status: 409 });
+    }
+    const secret = Array.from({ length: 32 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)]).join("");
+    twoFactor.pendingSecret = secret;
+    const label = encodeURIComponent(`FacilPay:${businessProfile.supportEmail}`);
+    return HttpResponse.json({ secret, otpauthUrl: `otpauth://totp/${label}?secret=${secret}&issuer=FacilPay&digits=6&period=30` });
+  }),
+
+  http.post(`${base}/merchant/2fa/enroll/confirm`, async ({ request }) => {
+    await delay(LATENCY);
+    const { code } = (await request.json()) as { code: string };
+    if (!twoFactor.pendingSecret || !acceptCode(code, false)) return invalidCode();
+    const recoveryCodes = Array.from({ length: 10 }, randomRecoveryCode);
+    twoFactor = { enabled: true, enrolledAt: new Date().toISOString(), pendingSecret: null, recoveryCodes: [...recoveryCodes] };
+    return HttpResponse.json({ recoveryCodes });
+  }),
+
+  http.post(`${base}/merchant/2fa/disable`, async ({ request }) => {
+    await delay(LATENCY);
+    const { password, code } = (await request.json()) as { password: string; code: string };
+    if (!password) return HttpResponse.json({ code: "invalid_password", message: "Password is incorrect." }, { status: 422 });
+    if (!acceptCode(code)) return invalidCode();
+    twoFactor = { enabled: false, enrolledAt: null, pendingSecret: null, recoveryCodes: [] };
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${base}/merchant/2fa/verify`, async ({ request }) => {
+    await delay(LATENCY);
+    const { code } = (await request.json()) as { action: string; code: string };
+    if (!twoFactor.enabled || !acceptCode(code)) return invalidCode();
+    const token = `stepup_${Math.random().toString(36).slice(2)}`;
+    stepUpTokens.add(token);
+    return HttpResponse.json({ token, expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() });
+  }),
+];
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+const authHandlers = [
+  http.post(`${base}/auth/login`, async () => {
+    await delay(LATENCY);
+    if (twoFactor.enabled) {
+      const challengeId = `chal_${Math.random().toString(36).slice(2)}`;
+      loginChallenges.add(challengeId);
+      return HttpResponse.json({ status: "two_factor_required", challengeId });
+    }
+    return HttpResponse.json({ status: "authenticated", token: `mock_${Date.now()}` });
+  }),
+
+  http.post(`${base}/auth/login/2fa`, async ({ request }) => {
+    await delay(LATENCY);
+    const { challengeId, code } = (await request.json()) as { challengeId: string; code: string };
+    if (!loginChallenges.has(challengeId) || !acceptCode(code)) return invalidCode();
+    loginChallenges.delete(challengeId);
+    return HttpResponse.json({ token: `mock_${Date.now()}` });
+  }),
+];
+
+/** Mirrors the API: a changed settlement address needs a step-up token while 2FA is on. */
+const stepUpGuardHandlers = [
+  http.patch(`${base}/merchant/profile`, async ({ request }) => {
+    const body = (await request.clone().json()) as Partial<BusinessProfile>;
+    const changesSettlement = body.settlementAddress !== undefined && body.settlementAddress !== businessProfile.settlementAddress;
+    const token = request.headers.get("X-FacilPay-2FA-Token");
+    if (twoFactor.enabled && changesSettlement && !(token && stepUpTokens.delete(token))) {
+      await delay(LATENCY);
+      return HttpResponse.json({ code: "step_up_required", message: "Confirm this change with a two-factor code." }, { status: 403 });
+    }
+    // Fall through to the regular profile handler
+    return undefined;
+  }),
+];
+
 export const handlers = [
+  ...stepUpGuardHandlers,
+  ...authHandlers,
+  ...twoFactorHandlers,
   ...paymentHandlers,
   ...dashboardHandlers,
   ...refundHandlers,

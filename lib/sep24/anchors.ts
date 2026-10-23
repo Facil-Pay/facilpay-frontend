@@ -4,6 +4,7 @@
  */
 
 import { AssetType } from '../types';
+import { roundTo } from '@/lib/i18n/format';
 
 export interface Sep24Anchor {
   id: string;
@@ -126,8 +127,8 @@ export function createSep24Session(
   }
 ): { transaction: Sep24Transaction; interactiveUrl: string } {
   const txId = `sep24_${anchor.id}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  const fee = anchor.id === 'moneygram' ? 0.0 : Number((params.amount * 0.004).toFixed(2));
-  const amountOut = Number((params.amount - fee).toFixed(2));
+  const fee = anchor.id === 'moneygram' ? 0.0 : roundTo(params.amount * 0.004, 2);
+  const amountOut = roundTo(params.amount - fee, 2);
 
   const transaction: Sep24Transaction = {
     id: txId,

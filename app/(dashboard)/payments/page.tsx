@@ -11,8 +11,10 @@ import {
   PAYMENT_EXPORT_COLUMNS,
   generateLargePayments,
 } from '@/lib/mockData';
+import { useFormat } from '@/lib/i18n/use-format';
 
 export default function PaymentsPage() {
+  const f = useFormat();
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [isLargeDataSimulated, setIsLargeDataSimulated] = useState(false);
 
@@ -151,7 +153,7 @@ export default function PaymentsPage() {
               </svg>
               <span>Export CSV</span>
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-mono dark:bg-black/20">
-                {filteredPayments.length.toLocaleString()}
+                {f.number(filteredPayments.length)}
               </span>
             </button>
           </div>
@@ -252,9 +254,9 @@ export default function PaymentsPage() {
               <span>
                 Showing{' '}
                 <strong className="text-zinc-900 dark:text-white">
-                  {filteredPayments.length.toLocaleString()}
+                  {f.number(filteredPayments.length)}
                 </strong>{' '}
-                of {payments.length.toLocaleString()} transactions
+                of {f.number(payments.length)} transactions
               </span>
               {(searchTerm ||
                 statusFilter !== 'ALL' ||
@@ -273,7 +275,7 @@ export default function PaymentsPage() {
 
             <div className="text-[11px] text-zinc-400">
               CSV export will reflect these exact{' '}
-              {filteredPayments.length.toLocaleString()} filtered records
+              {f.number(filteredPayments.length)} filtered records
             </div>
           </div>
         </div>
@@ -348,9 +350,7 @@ export default function PaymentsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-4 font-semibold text-zinc-900 dark:text-white">
-                        {payment.amount.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}{' '}
+                        {f.amount(payment.amount, payment.asset, { withCode: false })}{' '}
                         <span className="font-normal text-zinc-500">
                           {payment.asset}
                         </span>
@@ -401,9 +401,9 @@ export default function PaymentsPage() {
 
           {filteredPayments.length > 50 && (
             <div className="border-t border-zinc-200 bg-zinc-50/50 px-5 py-3 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40">
-              Showing first 50 rows of {filteredPayments.length.toLocaleString()}{' '}
+              Showing first 50 rows of {f.number(filteredPayments.length)}{' '}
               matching records. Clicking <strong>Export CSV</strong> will export all{' '}
-              {filteredPayments.length.toLocaleString()} records!
+              {f.number(filteredPayments.length)} records!
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Payment } from '@/lib/types';
 import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface PaymentDetailModalProps {
   payment: Payment | null;
@@ -16,6 +17,7 @@ export default function PaymentDetailModal({
   isOpen,
   onClose,
 }: PaymentDetailModalProps) {
+  const f = useFormat();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!isOpen || !payment) return null;
@@ -128,9 +130,7 @@ export default function PaymentDetailModal({
               <div>
                 <span className="text-xs text-zinc-500 font-medium">Payment Amount</span>
                 <div className="text-2xl font-bold text-zinc-900 dark:text-white mt-0.5">
-                  {payment.amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}{' '}
+                  {f.amount(payment.amount, payment.asset, { withCode: false })}{' '}
                   <span className="text-lg text-sky-600 dark:text-sky-400">
                     {payment.asset}
                   </span>

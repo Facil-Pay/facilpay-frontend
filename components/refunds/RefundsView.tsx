@@ -16,10 +16,9 @@ import {
   REFUND_ASSETS,
   REFUND_STATUSES,
   REFUND_STATUS_LABEL,
-  formatAmount,
-  formatDateTime,
   formatReason,
 } from "./refund-format";
+import { useFormat } from "@/lib/i18n/use-format";
 
 const PAGE_SIZE = 20;
 const FILTER_KEYS = ["status", "asset", "from", "to", "q"] as const;
@@ -40,6 +39,7 @@ const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500";
 
 export function RefundsView() {
+  const f = useFormat();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -133,10 +133,7 @@ export function RefundsView() {
           loading={summaryQuery.isLoading}
           value={
             summaryQuery.data
-              ? summaryQuery.data.totalRefunded.toLocaleString(undefined, {
-                  style: "currency",
-                  currency: summaryQuery.data.currency,
-                })
+              ? f.fiat(summaryQuery.data.totalRefunded, summaryQuery.data.currency)
               : "—"
           }
         />
@@ -144,7 +141,7 @@ export function RefundsView() {
           label="Refund rate"
           hint="% of payment volume"
           loading={summaryQuery.isLoading}
-          value={summaryQuery.data ? `${(summaryQuery.data.refundRate * 100).toFixed(2)}%` : "—"}
+          value={summaryQuery.data ? f.percent(summaryQuery.data.refundRate, { digits: 2 }) : "—"}
         />
         <SummaryCard
           label="Pending refunds"
@@ -299,14 +296,14 @@ export function RefundsView() {
                       </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
-                      {formatAmount(refund.amount, refund.currency)}
+                      {f.amount(refund.amount, refund.currency)}
                     </td>
                     <td className="px-4 py-3">
                       <RefundStatusBadge status={refund.status} />
                     </td>
                     <td className="max-w-[180px] truncate px-4 py-3 text-zinc-600">{formatReason(refund.reason)}</td>
                     <td className="max-w-[160px] truncate px-4 py-3 text-zinc-600">{refund.initiatedBy}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-zinc-600">{formatDateTime(refund.createdAt)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-zinc-600">{f.dateTime(refund.createdAt)}</td>
                     <td className="px-4 py-3 text-right">
                       {refund.status === "failed" && (
                         <button

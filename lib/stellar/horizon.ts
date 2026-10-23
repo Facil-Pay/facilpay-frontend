@@ -3,6 +3,8 @@
  * Reads live account balances, subentries, trustlines, and recent operations directly from Horizon.
  */
 
+import { roundTo, toDecimalString } from "@/lib/i18n/format";
+
 export interface HorizonBalanceNative {
   asset_type: 'native';
   balance: string;
@@ -121,8 +123,8 @@ export function calculateXlmReserve(
   // Base accounts require 2 base reserves (1 for account entry + 1 for base transaction reserve)
   const baseReservesCount = 2;
   const totalSubentries = baseReservesCount + subentryCount;
-  const minReserve = Number((totalSubentries * STELLAR_BASE_RESERVE + sellingLiabilities).toFixed(7));
-  const available = Math.max(0, Number((totalXlm - minReserve).toFixed(7)));
+  const minReserve = roundTo(totalSubentries * STELLAR_BASE_RESERVE + sellingLiabilities, 7);
+  const available = Math.max(0, roundTo(totalXlm - minReserve, 7));
 
   const formulaExplanation = `Base Reserve: 2 × ${STELLAR_BASE_RESERVE} XLM + ${subentryCount} subentries (${subentryCount} × ${STELLAR_BASE_RESERVE} XLM) = ${minReserve} XLM required by Stellar protocol.`;
 
@@ -345,8 +347,8 @@ export async function findStrictReceiveQuote(params: {
           sourceAsset,
           destinationAsset,
           destinationAmount,
-          sourceAmount: srcAmt.toFixed(4),
-          rate: parseFloat(rate.toFixed(4)),
+          sourceAmount: toDecimalString(srcAmt, 4),
+          rate: roundTo(rate, 4),
           slippagePercent,
           path,
           expiresAt,
@@ -367,7 +369,7 @@ export async function findStrictReceiveQuote(params: {
     estimatedRate = 1.08;
   }
 
-  const calculatedSourceAmount = (destAmountNum / estimatedRate).toFixed(4);
+  const calculatedSourceAmount = toDecimalString(destAmountNum / estimatedRate, 4);
 
   return {
     sourceAsset,

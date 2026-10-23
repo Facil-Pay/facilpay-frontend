@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui/utils";
+import { useFormat } from "@/lib/i18n/use-format";
 
 export const INSIGHT_COLORS = ["#20a7ee", "#7c9cff", "#16a34a", "#f59e0b", "#8b5cf6", "#ef4444", "#94a3b8"];
 
-export const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-export function percent(value: number, digits = 1): string {
-  return `${(value * 100).toFixed(digits)}%`;
+/** Locale-aware formatters shared by the insight cards. */
+export function useInsightFormat() {
+  const f = useFormat();
+  return {
+    locale: f.locale,
+    usd: (value: number) => f.fiat(value, "USD", { maximumFractionDigits: 0 }),
+    percent: (ratio: number, digits = 1) => f.percent(ratio, { digits }),
+    count: (value: number) => f.number(value),
+    date: f.date,
+  };
 }
 
 export function InsightCard({

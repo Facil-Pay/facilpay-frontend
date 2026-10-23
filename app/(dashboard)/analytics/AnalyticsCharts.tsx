@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useFormat } from '@/lib/i18n/use-format';
 
 const palette = {
   primary: '#20a7ee',
@@ -23,11 +24,6 @@ const palette = {
   muted: '#94a3b8',
   purple: '#8b5cf6',
 };
-
-const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-function formatMoney(value: number) {
-  return formatter.format(value);
-}
 
 export type ChartPoint = {
   label: string;
@@ -95,6 +91,9 @@ function LegendToggle({
 }
 
 export default function AnalyticsCharts({ data, compareMode, visibleSeries, toggleSeries }: Props) {
+  const f = useFormat();
+  const formatMoney = (value: number) => f.fiat(value, 'USD', { maximumFractionDigits: 0 });
+
   return (
     <div className="chart-grid">
       <ChartCard title="Revenue over time" subtitle="Daily sales revenue">
@@ -114,7 +113,7 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <YAxis tickFormatter={(value) => `$${Math.round(value / 1000)}k`} tickLine={false} axisLine={false} stroke="var(--muted)" />
+            <YAxis tickFormatter={(value: number) => f.fiat(value, 'USD', { compact: true })} tickLine={false} axisLine={false} stroke="var(--muted)" />
             <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
             {visibleSeries.revenue && <Area type="monotone" dataKey="revenue" stroke={palette.primary} fill="url(#revenueFill)" strokeWidth={3} />}
             {compareMode && visibleSeries.compareRevenue && (
@@ -133,7 +132,7 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
             <YAxis tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <Tooltip formatter={(value: number) => [`${value}`, 'Transactions']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
+            <Tooltip formatter={(value: number) => [f.number(value), 'Transactions']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
             {visibleSeries.txCount && <Bar dataKey="txCount" radius={[8, 8, 0, 0]} fill={palette.secondary} />}
           </BarChart>
         </ResponsiveContainer>
@@ -188,8 +187,8 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, 'AOV']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
+            <YAxis tickFormatter={(value: number) => formatMoney(value)} tickLine={false} axisLine={false} stroke="var(--muted)" />
+            <Tooltip formatter={(value: number) => [f.fiat(value, 'USD'), 'AOV']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
             {visibleSeries.aov && <Line type="monotone" dataKey="aov" stroke={palette.purple} strokeWidth={3} dot={{ r: 4 }} />}
             {compareMode && visibleSeries.compareAov && (
               <Line type="monotone" dataKey="compareAov" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />

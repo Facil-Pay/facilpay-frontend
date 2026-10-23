@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { AnalyticsInsights } from "@/components/analytics/AnalyticsInsights";
+import { useFormat } from "@/lib/i18n/use-format";
 import type { ChartPoint, VisibleSeries } from "./AnalyticsCharts";
 
 // Lazy-load recharts so it doesn't inflate the initial JS bundle for other routes.
@@ -55,11 +56,9 @@ const seriesByGranularity: Record<Granularity, ChartPoint[]> = {
   month: baseSeries,
 };
 
-function formatCompactMoney(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(value);
-}
-
 export default function AnalyticsPage() {
+  const f = useFormat();
+  const formatCompactMoney = (value: number) => f.fiat(value, "USD", { compact: true });
   const [granularity, setGranularity] = useState<Granularity>("month");
   const [dateRange, setDateRange] = useState<RangePreset>("90d");
   const [asset, setAsset] = useState<Asset>("All");
@@ -147,10 +146,10 @@ export default function AnalyticsPage() {
         </div>
 
         <section className="stats-grid">
-          <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta="+18.2%" tone="primary" />
-          <StatCard label="Transactions" value={String(stats.totalTx)} delta="+12.4%" tone="secondary" />
-          <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta="-4.1%" tone="warning" />
-          <StatCard label="Avg. order value" value={`$${stats.avgAov.toFixed(2)}`} delta="+9.7%" tone="success" />
+          <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta={f.percent(0.182, { signDisplay: "exceptZero" })} tone="primary" />
+          <StatCard label="Transactions" value={f.number(stats.totalTx)} delta={f.percent(0.124, { signDisplay: "exceptZero" })} tone="secondary" />
+          <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta={f.percent(-0.041, { signDisplay: "exceptZero" })} tone="warning" />
+          <StatCard label="Avg. order value" value={f.fiat(stats.avgAov, "USD")} delta={f.percent(0.097, { signDisplay: "exceptZero" })} tone="success" />
         </section>
 
         {/* Charts are code-split: recharts loads only when this route is visited */}

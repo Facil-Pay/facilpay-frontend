@@ -13,3 +13,4 @@ export * from "./useWebhooks";
 export * from "./useMerchant";
 export * from "./useAnalytics";
 export * from "./useSettings";
+export * from "./useTwoFactor";
