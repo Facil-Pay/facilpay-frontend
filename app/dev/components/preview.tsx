@@ -47,6 +47,8 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  Spinner,
+  DateRangeInput,
   Switch,
   Textarea,
   ToastProvider,
@@ -180,6 +182,20 @@ function PreviewContent() {
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-4/5" />
           </div>
+          <div className="flex items-center gap-3">
+            <Spinner size="sm" />
+            <Spinner size="md" />
+            <Spinner size="lg" />
+          </div>
+        </div>
+        <div className="max-w-xs pt-3">
+          <DateRangeInput
+            label="Date Range Picker"
+            fromValue="2026-01-01"
+            toValue="2026-01-31"
+            onFromChange={() => {}}
+            onToChange={() => {}}
+          />
         </div>
       </section>
 

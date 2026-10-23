@@ -1,7 +1,7 @@
 // Horizontal stacked bar + breakdown for network distribution.
 // Pure SVG / Tailwind — no library.
 
-import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
+import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { NetworkBreakdown } from "@/app/lib/api/dashboard";
 import type { PaymentNetwork } from "@/app/lib/types/payment";
 

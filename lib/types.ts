@@ -30,6 +30,11 @@ export interface Payment {
   sourceAsset?: string;
   sourceAmount?: number;
   path?: string[];
+  // Fee breakdown (issue #77)
+  facilpayFee?: number;  // FacilPay platform fee in payment asset
+  netAmount?: number;    // Amount merchant actually received (amount − facilpayFee)
+  conversionRate?: number; // Exchange rate applied when asset was converted (e.g. XLM→USDC)
+  networkFeeXlm?: number;  // Stellar network fee in XLM (always 0.00001 per operation)
 }
 
 export interface Refund {
