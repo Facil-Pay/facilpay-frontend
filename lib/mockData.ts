@@ -303,6 +303,35 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
   { key: 'txHash', label: 'Transaction Hash', selected: true },
   { key: 'stellarExpertUrl', label: 'Stellar Expert Link', selected: true },
   { key: 'fee', label: 'Network Fee', selected: true },
+  {
+    key: 'grossAmount' as any,
+    label: 'Gross Amount',
+    selected: true,
+    formatter: (_val, row) => Number(row.amount).toFixed(2),
+  },
+  {
+    key: 'facilpayFee' as any,
+    label: 'FacilPay Fee (1%)',
+    selected: true,
+    formatter: (_val, row) => (Number(row.amount) * 0.01).toFixed(2),
+  },
+  {
+    key: 'netAmount' as any,
+    label: 'Net Amount',
+    selected: true,
+    formatter: (_val, row) => (Number(row.amount) * 0.99).toFixed(2),
+  },
+  {
+    key: 'conversionRate' as any,
+    label: 'Conversion Rate',
+    selected: true,
+    formatter: (_val, row) =>
+      row.asset === 'USDC'
+        ? '1.0000 USD/USDC'
+        : row.asset === 'XLM'
+        ? '0.1250 USD/XLM'
+        : '1.0800 USD/EURC',
+  },
   { key: 'description', label: 'Description', selected: true },
   { key: 'memo', label: 'Memo', selected: true },
 ];

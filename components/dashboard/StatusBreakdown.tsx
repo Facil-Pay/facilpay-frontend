@@ -1,6 +1,6 @@
 // Pure-SVG donut chart + legend for payment status distribution.
 
-import { Card, CardHeader, CardDivider } from "@/app/components/ui/Card";
+import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { StatusBreakdown } from "@/app/lib/api/dashboard";
 import type { PaymentStatus } from "@/app/lib/types/payment";
 import { useFormat } from "@/lib/i18n/use-format";

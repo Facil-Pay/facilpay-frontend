@@ -10,6 +10,8 @@ import {
   NetworkMode,
   PUBLISHABLE_KEYS,
   INITIAL_API_KEYS,
+  getStoredApiKeys,
+  saveStoredApiKeys,
 } from '@/lib/apiKeys';
 
 export default function ApiKeysPage() {
@@ -18,6 +20,10 @@ export default function ApiKeysPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);
+
+  useEffect(() => {
+    setKeys(getStoredApiKeys());
+  }, []);
 
   // Active publishable key based on network
   const activePublishableKey = PUBLISHABLE_KEYS[network];
@@ -38,7 +44,11 @@ export default function ApiKeysPage() {
   };
 
   const handleKeyCreated = (newKey: ApiKeyItem) => {
-    setKeys((prev) => [newKey, ...prev]);
+    setKeys((prev) => {
+      const updated = [newKey, ...prev];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleRevokeKey = (keyId: string) => {
@@ -53,9 +63,11 @@ export default function ApiKeysPage() {
       return;
     }
 
-    setKeys((prev) =>
-      prev.map((k) => (k.id === keyId ? { ...k, status: 'revoked' } : k))
-    );
+    setKeys((prev) => {
+      const updated = prev.map((k) => (k.id === keyId ? { ...k, status: 'revoked' as const } : k));
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   const handleKeyRolled = (
@@ -74,19 +86,23 @@ export default function ApiKeysPage() {
       rollingExpiresAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
     }
 
-    setKeys((prev) => [
-      newKey,
-      ...prev.map((k) =>
-        k.id === oldKeyId
-          ? {
-              ...k,
-              status: gracePeriod === 'now' ? ('revoked' as const) : ('rolling' as const),
-              rollingExpiresAt,
-              gracePeriod,
-            }
-          : k
-      ),
-    ]);
+    setKeys((prev) => {
+      const updated = [
+        newKey,
+        ...prev.map((k) =>
+          k.id === oldKeyId
+            ? {
+                ...k,
+                status: gracePeriod === 'now' ? ('revoked' as const) : ('rolling' as const),
+                rollingExpiresAt,
+                gracePeriod,
+              }
+            : k
+        ),
+      ];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
   };
 
   return (

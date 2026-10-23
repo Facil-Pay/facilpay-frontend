@@ -1,6 +1,6 @@
 import type { OnChainData } from "@/app/lib/types/payment";
-import { Card, CardHeader, CardDivider, DetailRow } from "@/app/components/ui/Card";
-import { Badge } from "@/app/components/ui/Badge";
+import { Card, CardHeader, CardDivider, DetailRow } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "./CopyButton";
 import { useFormat } from "@/lib/i18n/use-format";
 

@@ -368,6 +368,22 @@ const apiKeyHandlers = [
     return HttpResponse.json(stub, { status: 201 });
   }),
 
+  http.post(`${base}/api-keys/:id/roll`, async ({ params, request }) => {
+    await delay(LATENCY);
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const rolledKey = {
+      ...API_KEY_FIXTURES[0],
+      id: `key_rolled_${Date.now()}`,
+      prefix: "fp_live_sk_***",
+      key: `fp_live_sk_mock_rolled_${Date.now()}`,
+      status: "rolling",
+      createdAt: new Date().toISOString(),
+      rollingExpiresAt: new Date(Date.now() + 86400000).toISOString(),
+      ...body,
+    };
+    return HttpResponse.json(rolledKey, { status: 200 });
+  }),
+
   http.delete(`${base}/api-keys/:id`, async () => {
     await delay(LATENCY);
     return new HttpResponse(null, { status: 204 });

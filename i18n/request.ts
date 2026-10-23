@@ -15,9 +15,12 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const storedTimeZone = cookieStore.get(TIME_ZONE_COOKIE)?.value;
   const timeZone = isValidTimeZone(storedTimeZone) ? storedTimeZone : DEFAULT_TIME_ZONE;
 
-  return {
-    locale,
-    timeZone,
-    messages: (await import(`../messages/${locale}.json`)).default,
-  };
+  let messages;
+  try {
+    messages = (await import(`../messages/${locale}.json`)).default;
+  } catch {
+    messages = (await import("../messages/en.json")).default;
+  }
+
+  return { locale, timeZone, messages };
 });

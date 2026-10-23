@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components/ui/Button";
-import { Card } from "@/app/components/ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { Payment } from "@/app/lib/types/payment";
 import { useFormat } from "@/lib/i18n/use-format";
 

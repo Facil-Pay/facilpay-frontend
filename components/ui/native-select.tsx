@@ -8,18 +8,17 @@ export interface SelectOption<T extends string = string> {
   disabled?: boolean;
 }
 
-interface SelectProps<T extends string = string>
+interface NativeSelectProps<T extends string = string>
   extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "value" | "onChange"> {
   options: SelectOption<T>[];
   value: T;
   onChange: (value: T) => void;
   placeholder?: string;
   label?: string;
-  /** Shows a small dot or indicator before the label — useful for status selects */
   icon?: React.ReactNode;
 }
 
-export function Select<T extends string = string>({
+export function NativeSelect<T extends string = string>({
   options,
   value,
   onChange,
@@ -29,7 +28,7 @@ export function Select<T extends string = string>({
   className = "",
   id,
   ...rest
-}: SelectProps<T>) {
+}: NativeSelectProps<T>) {
   const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
@@ -44,36 +43,22 @@ export function Select<T extends string = string>({
       )}
       <div className="relative flex items-center">
         {icon && (
-          <span className="pointer-events-none absolute left-3 text-zinc-400">
-            {icon}
-          </span>
+          <span className="pointer-events-none absolute left-3 text-zinc-400">{icon}</span>
         )}
         <select
           id={selectId}
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
-          className={`
-            w-full h-9 appearance-none rounded-xl border border-zinc-200 bg-white
-            pr-8 text-sm text-zinc-800
-            focus:outline-none focus:ring-2 focus:ring-[#55C2FF] focus:border-transparent
-            transition-shadow cursor-pointer
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${icon ? "pl-9" : "pl-3"}
-          `}
+          className={`w-full h-9 appearance-none rounded-xl border border-zinc-200 bg-white pr-8 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#55C2FF] focus:border-transparent transition-shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${icon ? "pl-9" : "pl-3"}`}
           {...rest}
         >
-          {placeholder && (
-            <option value="" disabled={false}>
-              {placeholder}
-            </option>
-          )}
+          {placeholder && <option value="">{placeholder}</option>}
           {options.map((opt) => (
             <option key={opt.value} value={opt.value} disabled={opt.disabled}>
               {opt.label}
             </option>
           ))}
         </select>
-        {/* Custom chevron */}
         <span className="pointer-events-none absolute right-2.5 text-zinc-400">
           <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path

@@ -97,6 +97,23 @@ const nextConfig: NextConfig = {
   // Prevent Next.js / Turbopack from trying to bundle MSW on the server.
   serverExternalPackages: ["msw", "msw/node"],
 
+  async redirects() {
+    return [
+      // Issue #54: Consolidate webhooks routes
+      {
+        source: "/settings/webhooks",
+        destination: "/webhooks",
+        permanent: true,
+      },
+      // Issue #54: Consolidate API keys routes
+      {
+        source: "/settings/api-keys",
+        destination: "/developers/api-keys",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

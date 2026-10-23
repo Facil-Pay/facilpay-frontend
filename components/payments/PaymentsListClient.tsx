@@ -4,9 +4,9 @@ import { useState, useMemo, useCallback, useTransition } from "react";
 import Link from "next/link";
 
 import { getPaymentsSync } from "@/app/lib/api/payments";
-import { PaymentStatusBadge } from "@/app/components/payments/PaymentStatusBadge";
-import { Select } from "@/app/components/ui/Select";
-import { DateRangeInput } from "@/app/components/ui/DateRangeInput";
+import { PaymentStatusBadge } from "@/components/payments/PaymentStatusBadge";
+import { SimpleSelect as Select } from "@/components/ui/select";
+import { DateRangeInput } from "@/components/ui/date-range-input";
 import type {
   Payment,
   PaymentStatus,

@@ -2,6 +2,33 @@ export type PaymentStatus = 'COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED';
 export type RefundStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
 export type PayoutStatus = 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED';
 export type AssetType = 'USDC' | 'XLM' | 'EURC';
+export type BillingInterval = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type SubscriptionStatus = 'ACTIVE' | 'PAST_DUE' | 'PAUSED' | 'CANCELLED';
+
+export interface RecurringPlan {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  asset: AssetType;
+  interval: BillingInterval;
+  status: 'ACTIVE' | 'ARCHIVED';
+  createdAt: string;
+}
+
+export interface Subscription {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  planId: string;
+  amount: number;
+  asset: AssetType;
+  interval: BillingInterval;
+  status: SubscriptionStatus;
+  startedAt: string;
+  nextBillingAt: string | null;
+  lastPaymentStatus: 'PAID' | 'FAILED' | 'PENDING' | null;
+}
 
 export interface MerchantInfo {
   name: string;
@@ -30,6 +57,11 @@ export interface Payment {
   sourceAsset?: string;
   sourceAmount?: number;
   path?: string[];
+  // Fee breakdown (issue #77)
+  facilpayFee?: number;  // FacilPay platform fee in payment asset
+  netAmount?: number;    // Amount merchant actually received (amount − facilpayFee)
+  conversionRate?: number; // Exchange rate applied when asset was converted (e.g. XLM→USDC)
+  networkFeeXlm?: number;  // Stellar network fee in XLM (always 0.00001 per operation)
 }
 
 export interface Refund {
