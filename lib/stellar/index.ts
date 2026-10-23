@@ -150,6 +150,14 @@ export const contracts = {
   refund:  createContractHelper(env.NEXT_PUBLIC_REFUND_CONTRACT_ID),
 } as const;
 
+// ─── Network configuration ────────────────────────────────────────────────────
+
+export { STELLAR_HORIZON, STELLAR_FRIENDBOT_URL, STELLAR_NETWORK } from "./config";
+
+// ─── Assets ───────────────────────────────────────────────────────────────────
+
+export { TESTNET_ASSETS } from "./assets";
+
 // ─── Utility re-exports ───────────────────────────────────────────────────────
 
 export { xdr, TransactionBuilder, BASE_FEE, Networks, Contract } from "@stellar/stellar-sdk";
