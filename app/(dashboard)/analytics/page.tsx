@@ -1,47 +1,27 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { AnalyticsInsights } from "@/components/analytics/AnalyticsInsights";
+import type { ChartPoint, VisibleSeries } from "./AnalyticsCharts";
 
-const palette = {
-  primary: "#20a7ee",
-  secondary: "#7c9cff",
-  success: "#16a34a",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  muted: "#94a3b8",
-  purple: "#8b5cf6",
-};
+// Lazy-load recharts so it doesn't inflate the initial JS bundle for other routes.
+const AnalyticsCharts = dynamic(() => import("./AnalyticsCharts"), {
+  ssr: false,
+  loading: () => (
+    <div className="loading-grid" aria-busy="true" aria-label="Loading charts">
+      <div className="skeleton large" />
+      <div className="skeleton" />
+      <div className="skeleton" />
+      <div className="skeleton wide" />
+      <div className="skeleton wide" />
+    </div>
+  ),
+});
 
 type Granularity = "day" | "week" | "month";
 type Asset = "All" | "USDC" | "XLM" | "EURC";
 type RangePreset = "7d" | "30d" | "90d" | "1y";
-
-type ChartPoint = {
-  label: string;
-  revenue: number;
-  compareRevenue: number;
-  txCount: number;
-  successful: number;
-  failed: number;
-  refundVolume: number;
-  aov: number;
-  compareAov: number;
-};
 
 const baseSeries: ChartPoint[] = [
   { label: "Jan", revenue: 8200, compareRevenue: 7600, txCount: 210, successful: 180, failed: 30, refundVolume: 340, aov: 38.5, compareAov: 35.2 },
@@ -75,12 +55,6 @@ const seriesByGranularity: Record<Granularity, ChartPoint[]> = {
   month: baseSeries,
 };
 
-const formatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMoney(value: number) {
-  return formatter.format(value);
-}
-
 function formatCompactMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
@@ -90,7 +64,6 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<RangePreset>("90d");
   const [asset, setAsset] = useState<Asset>("All");
   const [compareMode, setCompareMode] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
 
   const data = useMemo(() => {
@@ -98,7 +71,7 @@ export default function AnalyticsPage() {
     return seriesByGranularity[granularity];
   }, [granularity]);
 
-  const visibleSeries = {
+  const visibleSeries: VisibleSeries = {
     revenue: !hiddenSeries.revenue,
     compareRevenue: !hiddenSeries.compareRevenue,
     txCount: !hiddenSeries.txCount,
@@ -118,12 +91,7 @@ export default function AnalyticsPage() {
     const totalTx = data.reduce((sum, item) => sum + item.txCount, 0);
     const totalRefunds = data.reduce((sum, item) => sum + item.refundVolume, 0);
     const avgAov = data.reduce((sum, item) => sum + item.aov, 0) / data.length;
-    return {
-      totalRevenue,
-      totalTx,
-      totalRefunds,
-      avgAov,
-    };
+    return { totalRevenue, totalTx, totalRefunds, avgAov };
   }, [data]);
 
   return (
@@ -178,121 +146,22 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="loading-grid">
-            <div className="skeleton large" />
-            <div className="skeleton" />
-            <div className="skeleton" />
-            <div className="skeleton wide" />
-            <div className="skeleton wide" />
-          </div>
-        ) : (
-          <>
-            <section className="stats-grid">
-              <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta="+18.2%" tone="primary" />
-              <StatCard label="Transactions" value={String(stats.totalTx)} delta="+12.4%" tone="secondary" />
-              <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta="-4.1%" tone="warning" />
-              <StatCard label="Avg. order value" value={`$${stats.avgAov.toFixed(2)}`} delta="+9.7%" tone="success" />
-            </section>
+        <section className="stats-grid">
+          <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta="+18.2%" tone="primary" />
+          <StatCard label="Transactions" value={String(stats.totalTx)} delta="+12.4%" tone="secondary" />
+          <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta="-4.1%" tone="warning" />
+          <StatCard label="Avg. order value" value={`$${stats.avgAov.toFixed(2)}`} delta="+9.7%" tone="success" />
+        </section>
 
-            <div className="chart-grid">
-              <ChartCard title="Revenue over time" subtitle="Daily sales revenue">
-                <div className="legend-row">
-                  <LegendToggle label="Revenue" active={visibleSeries.revenue} onToggle={() => toggleSeries("revenue")} color={palette.primary} />
-                  {compareMode && <LegendToggle label="Previous period" active={visibleSeries.compareRevenue} onToggle={() => toggleSeries("compareRevenue")} color={palette.muted} dashed />}
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="5%" stopColor={palette.primary} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={palette.primary} stopOpacity={0.04} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickFormatter={(value) => `$${Math.round(value / 1000)}k`} tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
-                    {visibleSeries.revenue && <Area type="monotone" dataKey="revenue" stroke={palette.primary} fill="url(#revenueFill)" strokeWidth={3} />}
-                    {compareMode && visibleSeries.compareRevenue && <Line type="monotone" dataKey="compareRevenue" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartCard>
+        {/* Charts are code-split: recharts loads only when this route is visited */}
+        <AnalyticsCharts
+          data={data}
+          compareMode={compareMode}
+          visibleSeries={visibleSeries}
+          toggleSeries={toggleSeries}
+        />
 
-              <ChartCard title="Transaction count" subtitle="Orders processed">
-                <div className="legend-row">
-                  <LegendToggle label="Transactions" active={visibleSeries.txCount} onToggle={() => toggleSeries("txCount")} color={palette.secondary} />
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => [`${value}`, "Transactions"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
-                    {visibleSeries.txCount && <Bar dataKey="txCount" radius={[8, 8, 0, 0]} fill={palette.secondary} />}
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              <ChartCard title="Successful vs failed payments" subtitle="Settlement outcomes">
-                <div className="legend-row">
-                  <LegendToggle label="Successful" active={visibleSeries.successful} onToggle={() => toggleSeries("successful")} color={palette.success} />
-                  <LegendToggle label="Failed" active={visibleSeries.failed} onToggle={() => toggleSeries("failed")} color={palette.danger} />
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
-                    {visibleSeries.successful && <Bar dataKey="successful" stackId="payments" fill={palette.success} radius={[6, 6, 0, 0]} />}
-                    {visibleSeries.failed && <Bar dataKey="failed" stackId="payments" fill={palette.danger} radius={[6, 6, 0, 0]} />}
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              <ChartCard title="Refund volume" subtitle="Chargebacks and refunds">
-                <div className="legend-row">
-                  <LegendToggle label="Refunds" active={visibleSeries.refundVolume} onToggle={() => toggleSeries("refundVolume")} color={palette.warning} />
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="refundFill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="5%" stopColor={palette.warning} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={palette.warning} stopOpacity={0.05} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
-                    {visibleSeries.refundVolume && <Area type="monotone" dataKey="refundVolume" stroke={palette.warning} fill="url(#refundFill)" strokeWidth={3} />}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              <ChartCard title="Average order value" subtitle="Mean basket size">
-                <div className="legend-row">
-                  <LegendToggle label="AOV" active={visibleSeries.aov} onToggle={() => toggleSeries("aov")} color={palette.purple} />
-                  {compareMode && <LegendToggle label="Previous AOV" active={visibleSeries.compareAov} onToggle={() => toggleSeries("compareAov")} color={palette.muted} dashed />}
-                </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <YAxis tickFormatter={(value) => `$${value}`} tickLine={false} axisLine={false} stroke="var(--muted)" />
-                    <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, "AOV"]} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: 12 }} />
-                    {visibleSeries.aov && <Line type="monotone" dataKey="aov" stroke={palette.purple} strokeWidth={3} dot={{ r: 4 }} />}
-                    {compareMode && visibleSeries.compareAov && <Line type="monotone" dataKey="compareAov" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />}
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            </div>
-
-            <AnalyticsInsights range={dateRange} asset={asset === "All" ? undefined : asset} />
-          </>
-        )}
+        <AnalyticsInsights range={dateRange} asset={asset === "All" ? undefined : asset} />
       </div>
     </div>
   );
@@ -308,28 +177,5 @@ function StatCard({ label, value, delta, tone }: { label: string; value: string;
         <small>{delta}</small>
       </div>
     </div>
-  );
-}
-
-function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return (
-    <section className="chart-card">
-      <div className="chart-header">
-        <div>
-          <h2>{title}</h2>
-          <p>{subtitle}</p>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function LegendToggle({ label, active, onToggle, color, dashed = false }: { label: string; active: boolean; onToggle: () => void; color: string; dashed?: boolean }) {
-  return (
-    <button className={active ? "legend-item active" : "legend-item"} onClick={onToggle}>
-      <span className={dashed ? "legend-swatch dashed" : "legend-swatch"} style={{ background: color }} />
-      {label}
-    </button>
   );
 }
