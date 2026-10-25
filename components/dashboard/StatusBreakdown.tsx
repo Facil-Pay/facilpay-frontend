@@ -3,6 +3,7 @@
 import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { StatusBreakdown } from "@/app/lib/api/dashboard";
 import type { PaymentStatus } from "@/app/lib/types/payment";
+import { useFormat } from "@/lib/i18n/use-format";
 
 function PieChartIcon() {
   return (
@@ -84,6 +85,7 @@ interface StatusBreakdownChartProps {
 }
 
 export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
+  const f = useFormat();
   const total = data.reduce((s, d) => s + d.count, 0);
 
   const segments = data.map((d) => ({
@@ -148,7 +150,7 @@ export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
                   {d.count}
                 </span>
                 <span className="text-xs text-zinc-400 tabular-nums w-10 text-right">
-                  {d.pct.toFixed(0)}%
+                  {f.percent(d.pct / 100, { digits: 0 })}
                 </span>
               </div>
             </li>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DEFAULT_PREFS, NOTIFICATION_TYPES, prefsStore, useNotificationPrefs, type NotificationType } from "@/lib/notifications";
+import { NOTIFICATION_TYPES, channelPrefs, prefsStore, useNotificationPrefs, type NotificationType } from "@/lib/notifications";
 
 export default function NotificationSettingsPage() {
   const saved = useNotificationPrefs();
@@ -9,7 +9,10 @@ export default function NotificationSettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
 
   const toggle = (type: NotificationType, channel: "inApp" | "email") =>
-    setDraft((d) => ({ ...d, channels: { ...d.channels, [type]: { ...d.channels[type], [channel]: !d.channels[type][channel] } } }));
+    setDraft((d) => {
+      const current = channelPrefs(d, type);
+      return { ...d, channels: { ...d.channels, [type]: { ...current, [channel]: !current[channel] } } };
+    });
 
   return (
     <form
@@ -26,7 +29,7 @@ export default function NotificationSettingsPage() {
               <td className="py-2.5">{NOTIFICATION_TYPES[t].icon} {NOTIFICATION_TYPES[t].label}</td>
               {(["inApp", "email"] as const).map((c) => (
                 <td key={c} className="text-center">
-                  <input type="checkbox" aria-label={`${NOTIFICATION_TYPES[t].label} ${c === "inApp" ? "in-app" : "email"}`} checked={(draft.channels[t] ?? DEFAULT_PREFS.channels[t])[c]} onChange={() => toggle(t, c)} className="h-4 w-4 accent-[#20a7ee]" />
+                  <input type="checkbox" aria-label={`${NOTIFICATION_TYPES[t].label} ${c === "inApp" ? "in-app" : "email"}`} checked={channelPrefs(draft, t)[c]} onChange={() => toggle(t, c)} className="h-4 w-4 accent-[#20a7ee]" />
                 </td>
               ))}
             </tr>

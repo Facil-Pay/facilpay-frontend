@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = {
   escrow_releasing: { icon: "⚖️", label: "Escrow releasing soon", href: "/escrow" },
   team_joined: { icon: "👥", label: "Team member joined", href: "/settings/team" },
   api_key_expiring: { icon: "🔑", label: "API key expiring soon", href: "/settings/api-keys" },
+  new_device_login: { icon: "🔐", label: "New device sign-in", href: "/settings/security" },
 } as const;
 export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 
@@ -42,6 +43,11 @@ export const notificationStore = createLocalStore<AppNotification[]>("facilpay_n
 export const prefsStore = createLocalStore<NotificationPrefs>("facilpay_notification_prefs", DEFAULT_PREFS);
 
 export const useNotifications = notificationStore.useStore;
+
+/** Channel settings for a type, falling back to defaults for types added after the prefs were saved. */
+export function channelPrefs(prefs: NotificationPrefs, type: NotificationType) {
+  return prefs.channels[type] ?? DEFAULT_PREFS.channels[type];
+}
 export const useNotificationPrefs = prefsStore.useStore;
 
 export function markRead(id: string) {
@@ -58,7 +64,7 @@ export function unreadLabel(count: number): string | null {
 
 /** Applies in-app preferences and the payment threshold. */
 export function isVisible(n: AppNotification, prefs: NotificationPrefs): boolean {
-  if (!prefs.channels[n.type]?.inApp) return false;
+  if (!channelPrefs(prefs, n.type).inApp) return false;
   if (n.type === "payment_received" && (n.amount ?? 0) < prefs.paymentThreshold) return false;
   return true;
 }
@@ -74,6 +80,7 @@ const SAMPLES: Record<NotificationType, (amt: number) => string> = {
   escrow_releasing: () => "An escrow payment releases in 24 hours.",
   team_joined: () => "A new teammate accepted their invitation.",
   api_key_expiring: () => "A live API key expires in 7 days.",
+  new_device_login: () => "New sign-in from Chrome on Windows near Abuja, NG. Not you? Revoke it in Security settings.",
 };
 
 function mockNotification(createdAt = new Date()): AppNotification {

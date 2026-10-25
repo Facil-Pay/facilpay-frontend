@@ -10,6 +10,8 @@ import {
   nativeToScVal,
 } from "@stellar/stellar-sdk";
 import { useMemo, useState } from "react";
+import { useFormat } from "@/lib/i18n/use-format";
+import { toDecimalString } from "@/lib/i18n/format";
 
 type Payment = {
   id: string;
@@ -39,10 +41,6 @@ const explorerBase = ["public", "mainnet"].includes(process.env.NEXT_PUBLIC_STEL
   ? "https://stellar.expert/explorer/public/tx/"
   : "https://stellar.expert/explorer/testnet/tx/";
 
-function formatAmount(amount: number, asset: string) {
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount) + ` ${asset}`;
-}
-
 function shortAddress(address: string) {
   return `${address.slice(0, 7)}...${address.slice(-6)}`;
 }
@@ -58,6 +56,8 @@ function explainError(error: unknown) {
 }
 
 export default function Home() {
+  const f = useFormat();
+  const formatAmount = (amount: number, asset: string) => f.amount(amount, asset);
   const [payments, setPayments] = useState(initialPayments);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [refundPaymentId, setRefundPaymentId] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export default function Home() {
   function openRefund(payment: Payment) {
     setRefundPaymentId(payment.id);
     setMode("full");
-    setAmount((payment.amount - payment.refunded).toFixed(2));
+    setAmount(toDecimalString(payment.amount - payment.refunded, 2));
     setReason("Customer request");
     setNote("");
     setStage("form");
@@ -107,7 +107,7 @@ export default function Home() {
 
   function selectMode(nextMode: "full" | "partial") {
     setMode(nextMode);
-    if (nextMode === "full" && refundPayment) setAmount(refundable.toFixed(2));
+    if (nextMode === "full" && refundPayment) setAmount(toDecimalString(refundable, 2));
     if (nextMode === "partial") setAmount("");
   }
 
@@ -264,7 +264,7 @@ export default function Home() {
           <div className="refund-summary"><div><span>Original amount</span><strong>{formatAmount(refundPayment.amount, refundPayment.asset)}</strong></div><div><span>Already refunded</span><strong>{formatAmount(refundPayment.refunded, refundPayment.asset)}</strong></div><div className="refundable-row"><span>Refundable balance</span><strong>{formatAmount(refundable, refundPayment.asset)}</strong></div></div>
           {stage === "form" ? <>
             <div className="form-field"><span className="field-label">Refund type</span><div className="segmented-control"><button className={mode === "full" ? "selected" : ""} onClick={() => selectMode("full")}>Full refund</button><button className={mode === "partial" ? "selected" : ""} onClick={() => selectMode("partial")}>Partial refund</button></div></div>
-            <div className="form-field"><label className="field-label" htmlFor="refund-amount">Amount</label><div className={`amount-input ${amount && !amountValid ? "invalid" : ""}`}><input id="refund-amount" inputMode="decimal" value={amount} onChange={(event) => { setMode("partial"); setAmount(event.target.value); }} aria-describedby="amount-help"/><span>{refundPayment.asset}</span><button onClick={() => { setMode("full"); setAmount(refundable.toFixed(2)); }}>Max</button></div><small id="amount-help" className={amount && !amountValid ? "field-error" : "field-hint"}>{amount && !amountValid ? `Enter an amount greater than 0, up to ${formatAmount(refundable, refundPayment.asset)}, with up to ${precision} decimals.` : `Up to ${precision} decimal places. Maximum ${formatAmount(refundable, refundPayment.asset)}.`}</small></div>
+            <div className="form-field"><label className="field-label" htmlFor="refund-amount">Amount</label><div className={`amount-input ${amount && !amountValid ? "invalid" : ""}`}><input id="refund-amount" inputMode="decimal" value={amount} onChange={(event) => { setMode("partial"); setAmount(event.target.value); }} aria-describedby="amount-help"/><span>{refundPayment.asset}</span><button onClick={() => { setMode("full"); setAmount(toDecimalString(refundable, 2)); }}>Max</button></div><small id="amount-help" className={amount && !amountValid ? "field-error" : "field-hint"}>{amount && !amountValid ? `Enter an amount greater than 0, up to ${formatAmount(refundable, refundPayment.asset)}, with up to ${precision} decimals.` : `Up to ${precision} decimal places. Maximum ${formatAmount(refundable, refundPayment.asset)}.`}</small></div>
             <div className="form-field"><label className="field-label" htmlFor="refund-reason">Reason</label><select id="refund-reason" value={reason} onChange={(event) => setReason(event.target.value as RefundReason)}>{reasons.map((item) => <option key={item}>{item}</option>)}</select></div>
             <div className="form-field"><label className="field-label" htmlFor="refund-note">Note <span>Optional</span></label><textarea id="refund-note" maxLength={160} rows={2} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context for your records" /></div>
             <div className="destination-field"><div><span className="field-label">Destination</span><strong>{shortAddress(refundPayment.payer)}</strong></div><button onClick={() => navigator.clipboard.writeText(refundPayment.payer)}>Copy address</button></div>

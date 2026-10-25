@@ -2,9 +2,10 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { AssetVolume } from "@/lib/types/analytics";
-import { INSIGHT_COLORS, InsightCard, InsightEmpty, percent, usd } from "./InsightCard";
+import { INSIGHT_COLORS, InsightCard, InsightEmpty, useInsightFormat } from "./InsightCard";
 
 export function AssetBreakdown({ assets }: { assets: AssetVolume[] }) {
+  const { usd, percent, count } = useInsightFormat();
   const total = assets.reduce((sum, item) => sum + item.volume, 0);
   const rows = [...assets].sort((a, b) => b.volume - a.volume);
 
@@ -22,12 +23,12 @@ export function AssetBreakdown({ assets }: { assets: AssetVolume[] }) {
                     <Cell key={row.asset} fill={INSIGHT_COLORS[index % INSIGHT_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number, name: string) => [usd.format(value), name]} />
+                <Tooltip formatter={(value: number, name: string) => [usd(value), name]} />
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-[11px] text-zinc-500">Total</span>
-              <span className="text-lg font-semibold text-zinc-900">{usd.format(total)}</span>
+              <span className="text-lg font-semibold text-zinc-900">{usd(total)}</span>
             </div>
           </div>
 
@@ -50,9 +51,9 @@ export function AssetBreakdown({ assets }: { assets: AssetVolume[] }) {
                         {row.asset}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-right text-zinc-700">{usd.format(row.volume)}</td>
+                    <td className="py-2 pr-3 text-right text-zinc-700">{usd(row.volume)}</td>
                     <td className="py-2 pr-3 text-right text-zinc-700">{percent(row.volume / total)}</td>
-                    <td className="py-2 text-right text-zinc-700">{row.txCount.toLocaleString()}</td>
+                    <td className="py-2 text-right text-zinc-700">{count(row.txCount)}</td>
                   </tr>
                 ))}
               </tbody>

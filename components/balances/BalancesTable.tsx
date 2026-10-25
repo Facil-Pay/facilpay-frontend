@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { FormattedBalance } from '@/lib/stellar/horizon';
 import { getFiatEstimate } from '@/lib/stellar/prices';
 import { StrKey } from '@/lib/stellar/strkey';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface BalancesTableProps {
   balances: FormattedBalance[];
 }
 
 export default function BalancesTable({ balances }: BalancesTableProps) {
+  const f = useFormat();
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   return (
@@ -93,10 +95,7 @@ export default function BalancesTable({ balances }: BalancesTableProps) {
 
                   {/* Total Balance */}
                   <td className="px-6 py-4 font-semibold text-zinc-900 dark:text-white">
-                    {b.totalBalance.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 7,
-                    })}{' '}
+                    {f.amount(b.totalBalance, b.assetCode, { withCode: false })}{' '}
                     <span className="font-normal text-zinc-500">{b.assetCode}</span>
                   </td>
 
@@ -106,10 +105,7 @@ export default function BalancesTable({ balances }: BalancesTableProps) {
                       <div className="relative inline-block">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                            {b.availableBalance.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 7,
-                            })}{' '}
+                            {f.amount(b.availableBalance, b.assetCode, { withCode: false })}{' '}
                             XLM
                           </span>
 
@@ -135,15 +131,15 @@ export default function BalancesTable({ balances }: BalancesTableProps) {
                                 <div className="space-y-1 rounded-lg bg-black/40 p-2 font-mono text-[10px] text-zinc-200">
                                   <div className="flex justify-between">
                                     <span>Total Balance:</span>
-                                    <span>{b.totalBalance.toFixed(2)} XLM</span>
+                                    <span>{f.amount(b.totalBalance, 'XLM')}</span>
                                   </div>
                                   <div className="flex justify-between text-amber-300">
                                     <span>Locked Reserve:</span>
-                                    <span>-{b.reserveDetails.minReserve.toFixed(2)} XLM</span>
+                                    <span>{f.amount(-b.reserveDetails.minReserve, 'XLM')}</span>
                                   </div>
                                   <div className="flex justify-between font-bold text-emerald-400 border-t border-zinc-700 pt-1">
                                     <span>Available to Spend:</span>
-                                    <span>{b.availableBalance.toFixed(2)} XLM</span>
+                                    <span>{f.amount(b.availableBalance, 'XLM')}</span>
                                   </div>
                                 </div>
                                 <div className="mt-2 text-[10px] text-zinc-400">
@@ -159,10 +155,7 @@ export default function BalancesTable({ balances }: BalancesTableProps) {
                       </div>
                     ) : (
                       <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                        {b.totalBalance.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 7,
-                        })}{' '}
+                        {f.amount(b.totalBalance, b.assetCode, { withCode: false })}{' '}
                         {b.assetCode}
                       </span>
                     )}
@@ -176,7 +169,7 @@ export default function BalancesTable({ balances }: BalancesTableProps) {
                       </span>
                     ) : (
                       <span className="font-semibold text-zinc-900 dark:text-white">
-                        {fiat.formatted}
+                        {f.fiat(fiat.totalFiat ?? 0, fiat.currency)}
                       </span>
                     )}
                   </td>

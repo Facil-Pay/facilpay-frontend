@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FormattedBalance, SUPPORTED_TRUSTLINE_ASSETS } from '@/lib/stellar/horizon';
 import { StrKey } from '@/lib/stellar/strkey';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface TrustlinesCardProps {
   balances: FormattedBalance[];
@@ -15,6 +16,7 @@ export default function TrustlinesCard({
   onOpenAddModal,
   onRemoveTrustline,
 }: TrustlinesCardProps) {
+  const f = useFormat();
   const [removingAsset, setRemovingAsset] = useState<string | null>(null);
 
   // Trustlines are non-native credit assets
@@ -103,7 +105,7 @@ export default function TrustlinesCard({
                     </a>
                   </div>
                   <div className="text-[11px] text-zinc-400">
-                    Trust Limit: {tl.limit ? Number(tl.limit).toLocaleString() : 'Maximum (Default)'}
+                    Trust Limit: {tl.limit ? f.amount(tl.limit, tl.assetCode, { withCode: false }) : 'Maximum (Default)'}
                   </div>
                 </div>
 
@@ -111,7 +113,7 @@ export default function TrustlinesCard({
                   <div className="text-right">
                     <span className="text-[11px] text-zinc-400 block">Current Balance</span>
                     <span className="text-xs font-bold text-zinc-900 dark:text-white">
-                      {tl.totalBalance.toLocaleString()} {tl.assetCode}
+                      {f.amount(tl.totalBalance, tl.assetCode)}
                     </span>
                   </div>
 

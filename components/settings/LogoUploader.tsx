@@ -2,6 +2,7 @@
 
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ImageUp, Trash2 } from "lucide-react";
+import { useFormat } from "@/lib/i18n/use-format";
 
 const MAX_BYTES = 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/svg+xml"];
@@ -61,6 +62,7 @@ function clampOffset(crop: Pick<CropState, "image" | "zoom" | "x" | "y">) {
  * PNGs (zoom + drag). SVGs are vector and used as-is.
  */
 export function LogoUploader({ value, onChange }: LogoUploaderProps) {
+  const f = useFormat();
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; x: number; y: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function LogoUploader({ value, onChange }: LogoUploaderProps) {
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError(`That file is ${(file.size / 1024 / 1024).toFixed(2)} MB. The maximum is 1 MB.`);
+      setError(`That file is ${f.fileSize(file.size)}. The maximum is ${f.fileSize(MAX_BYTES)}.`);
       return;
     }
     try {

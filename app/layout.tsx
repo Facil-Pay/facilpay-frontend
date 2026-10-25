@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat, Roboto_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale } from "next-intl/server";
+import { TimeZoneSync } from "@/components/i18n/TimeZoneSync";
 import { Providers as WalletProviders } from "@/components/wallet/providers";
 import "./globals.css";
 import { Providers } from "@/app/providers";
@@ -37,12 +38,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
-  const messages = await getMessages();
 
   return (
     <html lang={locale}>
       <body className={`${montserrat.variable} ${inter.variable} ${robotoMono.variable} antialiased`}>
-        <NextIntlClientProvider locale="en" messages={messages}>
+        {/* Inherits locale, time zone and messages from i18n/request.ts */}
+        <NextIntlClientProvider>
+          <TimeZoneSync />
           <Providers>
             <WalletProviders>{children}</WalletProviders>
           </Providers>

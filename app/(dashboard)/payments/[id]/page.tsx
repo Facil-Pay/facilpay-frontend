@@ -7,12 +7,14 @@ import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
 import { Payment } from '@/lib/types';
 import { INITIAL_PAYMENTS } from '@/lib/mockData';
 import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface PaymentDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
+  const f = useFormat();
   const resolvedParams =
     params && typeof (params as any).then === 'function'
       ? use(params)
@@ -104,9 +106,7 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
                 Payment Amount
               </span>
               <div className="text-3xl font-extrabold text-[#000F24] dark:text-white mt-1">
-                {payment.amount.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}{' '}
+                {f.amount(payment.amount, payment.asset, { withCode: false })}{' '}
                 <span className="text-xl font-bold text-sky-600 dark:text-sky-400">
                   {payment.asset}
                 </span>

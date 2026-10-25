@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePaymentStream } from '@/lib/payment-stream-context';
 import { truncateAddress } from '@/lib/stellar';
+import { useFormat } from '@/lib/i18n/use-format';
+import { toDecimalString } from '@/lib/i18n/format';
 
 interface RecentPaymentsTableProps {
   maxRows?: number;
@@ -14,6 +16,7 @@ export default function RecentPaymentsTable({
   maxRows = 5,
   showViewAll = true,
 }: RecentPaymentsTableProps) {
+  const f = useFormat();
   const { payments, simulateIncomingPayment } = usePaymentStream();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [simCurrency, setSimCurrency] = useState<'USDC' | 'EURC' | 'XLM'>('USDC');
@@ -29,7 +32,7 @@ export default function RecentPaymentsTable({
   };
 
   const handleSimulate = () => {
-    const amount = (Math.floor(Math.random() * 85) + 15).toFixed(2);
+    const amount = toDecimalString(Math.floor(Math.random() * 85) + 15, 2);
     simulateIncomingPayment({
       asset_code: simCurrency,
       amount,
@@ -128,7 +131,7 @@ export default function RecentPaymentsTable({
                         </div>
                         <div>
                           <div className="font-mono font-bold text-zinc-900 dark:text-white">
-                            +{payment.amount} {payment.asset_code}
+                            {f.amount(payment.amount, payment.asset_code, { signDisplay: 'always' })}
                           </div>
                           {payment.isNew && (
                             <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
@@ -178,11 +181,7 @@ export default function RecentPaymentsTable({
 
                     {/* Time */}
                     <td className="py-3 pr-4 text-zinc-500 whitespace-nowrap">
-                      {new Date(payment.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
+                      {f.time(payment.created_at, true)}
                     </td>
 
                     {/* Status */}

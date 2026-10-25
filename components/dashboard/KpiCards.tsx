@@ -1,5 +1,6 @@
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import type { KpiMetrics, MonthlyRevenue } from "@/app/lib/api/dashboard";
+import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ function ReceiptIcon() {
 // ─── Delta badge ──────────────────────────────────────────────────────────────
 
 function DeltaBadge({ change }: { change: number }) {
+  const f = useFormat();
   const positive = change >= 0;
   return (
     <span
@@ -63,8 +65,7 @@ function DeltaBadge({ change }: { change: number }) {
       }`}
     >
       {positive ? <TrendUpIcon /> : <TrendDownIcon />}
-      {positive ? "+" : ""}
-      {change.toFixed(1)}%
+      {f.percent(change / 100, { signDisplay: "exceptZero" })}
     </span>
   );
 }
@@ -124,6 +125,7 @@ interface KpiCardsProps {
 }
 
 export function KpiCards({ kpi, monthly }: KpiCardsProps) {
+  const f = useFormat();
   const volumePoints = monthly.map((m) => m.volumeUsd);
   const countPoints  = monthly.map((m) => m.count);
 
@@ -131,12 +133,7 @@ export function KpiCards({ kpi, monthly }: KpiCardsProps) {
   const ratePoints   = volumePoints.map((v, i) => v * (0.6 + i * 0.05));
   const avgPoints    = countPoints.map((c, i) => c * (80 + i * 10));
 
-  const fmt2 = (n: number) =>
-    n >= 1_000_000
-      ? `$${(n / 1_000_000).toFixed(2)}M`
-      : n >= 1_000
-      ? `$${(n / 1_000).toFixed(1)}K`
-      : `$${n.toFixed(2)}`;
+  const fmt2 = (n: number) => (n >= 1_000 ? f.fiat(n, "USD", { compact: true }) : f.fiat(n, "USD"));
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -153,7 +150,7 @@ export function KpiCards({ kpi, monthly }: KpiCardsProps) {
         icon={<CheckCircleIcon />}
         iconBg="bg-emerald-100 text-emerald-600"
         label="Completed Payments"
-        value={String(kpi.completedCount)}
+        value={f.number(kpi.completedCount)}
         change={kpi.completedChange}
         sparkPoints={countPoints}
         sparkColor="#10b981"
@@ -162,7 +159,7 @@ export function KpiCards({ kpi, monthly }: KpiCardsProps) {
         icon={<ShieldCheckIcon />}
         iconBg="bg-violet-100 text-violet-600"
         label="Success Rate"
-        value={`${kpi.successRate.toFixed(1)}%`}
+        value={f.percent(kpi.successRate / 100)}
         change={kpi.successRateChange}
         changeSub="pp vs last period"
         sparkPoints={ratePoints}

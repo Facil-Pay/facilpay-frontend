@@ -61,6 +61,75 @@ export interface MerchantSession {
   current: boolean;
 }
 
+// ─── Two-factor authentication ────────────────────────────────────────────────
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  enrolledAt?: string | null;
+  /** Unused recovery codes left; prompt to regenerate when low */
+  recoveryCodesRemaining: number;
+}
+
+/** POST /merchant/2fa/enroll — a pending TOTP secret, not active until confirmed */
+export interface TwoFactorEnrollment {
+  /** Base32 secret for manual entry */
+  secret: string;
+  /** otpauth:// URI rendered as the QR code */
+  otpauthUrl: string;
+}
+
+/** POST /merchant/2fa/enroll/confirm */
+export interface ConfirmTwoFactorRequest {
+  code: string;
+}
+
+export interface ConfirmTwoFactorResponse {
+  /** Shown once; the server only stores hashes */
+  recoveryCodes: string[];
+}
+
+/** POST /merchant/2fa/disable */
+export interface DisableTwoFactorRequest {
+  password: string;
+  /** Authenticator code or an unused recovery code */
+  code: string;
+}
+
+/** Actions that require a fresh 2FA code even within an authenticated session. */
+export type SensitiveAction = "create_payout" | "reveal_api_key" | "change_settlement_address";
+
+/** POST /merchant/2fa/verify — exchanges a code for a short-lived step-up token */
+export interface StepUpRequest {
+  action: SensitiveAction;
+  code: string;
+}
+
+export interface StepUpResponse {
+  token: string;
+  expiresAt: string;
+}
+
+// ─── Authentication ───────────────────────────────────────────────────────────
+
+/** POST /auth/login */
+export interface LoginRequest {
+  email: string;
+}
+
+export type LoginResponse =
+  | { status: "authenticated"; token: string }
+  | { status: "two_factor_required"; challengeId: string };
+
+/** POST /auth/login/2fa */
+export interface LoginTwoFactorRequest {
+  challengeId: string;
+  code: string;
+}
+
+export interface LoginTwoFactorResponse {
+  token: string;
+}
+
 export interface LinkedWallet {
   address: string;
   label?: string;

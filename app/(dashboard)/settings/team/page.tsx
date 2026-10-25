@@ -4,11 +4,13 @@ import { useState, type FormEvent } from "react";
 import { Can, usePermission } from "@/components/auth/Can";
 import { ROLES, ROLE_LABELS, type Role } from "@/lib/permissions";
 import { teamActions, useTeam } from "@/lib/team";
+import { useFormat } from "@/lib/i18n/use-format";
 
 const INVITABLE = ROLES.filter((r) => r !== "owner");
-const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "—");
 
 export default function TeamPage() {
+  const f = useFormat();
+  const fmt = (iso?: string) => f.dateTime(iso);
   const { members, currentUserId } = useTeam();
   const canManage = usePermission("team:manage");
   const [email, setEmail] = useState("");

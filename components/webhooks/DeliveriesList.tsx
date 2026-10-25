@@ -7,6 +7,7 @@ import {
   WebhookFilterOptions,
 } from '@/types/webhooks';
 import DeliveryDetailPanel from './DeliveryDetailPanel';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface DeliveriesListProps {
   deliveries: WebhookDelivery[];
@@ -21,6 +22,7 @@ export default function DeliveriesList({
   onBulkResend,
   filterStatus: initialStatus = 'all',
 }: DeliveriesListProps) {
+  const f = useFormat();
   const [filters, setFilters] = useState<WebhookFilterOptions>({
     status: initialStatus,
     eventType: 'all',
@@ -364,11 +366,7 @@ export default function DeliveriesList({
 
                       {/* Delivered At */}
                       <td className="py-3 pr-4 text-zinc-500 whitespace-nowrap">
-                        {new Date(delivery.deliveredAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                        })}
+                        {f.time(delivery.deliveredAt, true)}
                       </td>
 
                       {/* Action buttons */}

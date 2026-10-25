@@ -11,6 +11,8 @@ Merchant dashboard for FacilPay. Manage payments, view analytics, configure webh
 - [Installation](#installation)
 - [Environment Variables](#environment-variables)
 - [Mock Mode](#mock-mode)
+- [Localisation](#localisation)
+- [Two-factor authentication](#two-factor-authentication)
 - [Development Workflow](#development-workflow)
 - [Project Structure](#project-structure)
 - [API Client Layer](#api-client-layer)
@@ -159,6 +161,44 @@ afterAll(() => server.close());
 The refund screen currently uses sample payment records because this starter repository does not include a payment API or query cache. Replace the `initialPayments` data in `app/page.tsx` with the merchant payment source and invalidate/refetch its payment and refund queries after confirmation.
 
 The Soroban call expects the configured refund contract to expose `refund(payment_id: u64, amount: i128, destination: Address, reason: String)`. Amounts are sent in Stellar's 7-decimal base units. The transaction is simulated through `NEXT_PUBLIC_SOROBAN_RPC_URL` (or the connected wallet's RPC URL), signed through Freighter, and submitted to that network. Confirm this ABI and the payment ID mapping against the deployed contract before enabling production refunds.
+
+---
+
+## Localisation
+
+Locales are declared in `i18n/routing.ts` (`en`, `es`, `pt`, `fr`), with one file per locale in `messages/`. `tests/i18n-messages.test.ts` fails if any locale is missing a key, has an extra key, or changes an ICU placeholder, so add every new key to all four files.
+
+The merchant's language (`NEXT_LOCALE` cookie) and time zone (`FACILPAY_TZ` cookie) are set from **Settings → Preferences** or the top-bar switcher. `i18n/request.ts` reads both, so server and client components render identically.
+
+Format amounts and dates through `useFormat()` from `lib/i18n/use-format.ts`, never `toFixed`/`toLocaleString`:
+
+```tsx
+const f = useFormat();
+f.amount(1250, "USDC");      // "1,250.00 USDC" (en) · "1 250,00 USDC" (fr)
+f.amount("0.1234567", "XLM"); // XLM keeps up to 7 decimals
+f.dateTime(payment.createdAt); // in the merchant's time zone
+f.relative(session.lastActiveAt); // "3 minutes ago"
+```
+
+Use `toDecimalString()` from `lib/i18n/format.ts` for values that must stay machine-readable (input values, SEP-7 URIs, Horizon payloads).
+
+## Two-factor authentication
+
+The dashboard expects these endpoints (mocked in `lib/mocks/handlers.ts`):
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /merchant/2fa` | `{ enabled, enrolledAt, recoveryCodesRemaining }` |
+| `POST /merchant/2fa/enroll` | Pending TOTP `{ secret, otpauthUrl }` |
+| `POST /merchant/2fa/enroll/confirm` | `{ code }` → `{ recoveryCodes }` (shown once) |
+| `POST /merchant/2fa/disable` | `{ password, code }` |
+| `POST /merchant/2fa/verify` | `{ action, code }` → short-lived step-up `{ token, expiresAt }` |
+| `POST /auth/login` | `{ status: "authenticated", token }` or `{ status: "two_factor_required", challengeId }` |
+| `POST /auth/login/2fa` | `{ challengeId, code }` → `{ token }` |
+
+Codes may be a 6-digit TOTP code or a `XXXX-XXXX` recovery code. Reject a wrong code with **422** `invalid_two_factor_code`. Don't use 401, because the API client treats 401 as an expired session and logs the user out.
+
+Sensitive actions (`create_payout`, `reveal_api_key`, `change_settlement_address`) go through `useStepUp()` in `components/security/use-step-up.tsx`, which prompts for a code and sends the resulting token in the `X-FacilPay-2FA-Token` header. When 2FA is enabled, the API must reject those requests without a valid token.
 
 ---
 

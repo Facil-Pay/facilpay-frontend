@@ -14,11 +14,13 @@ import {
   fundWithFriendbot,
 } from '@/lib/stellar/horizon';
 import { calculateTotalPortfolioUsd } from '@/lib/stellar/prices';
+import { useFormat } from '@/lib/i18n/use-format';
 
 const DEMO_MERCHANT_ACCOUNT = 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 const DEMO_UNFUNDED_ACCOUNT = 'GCRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 
 export default function BalancesPage() {
+  const f = useFormat();
   const [selectedAccount, setSelectedAccount] = useState<string>(DEMO_MERCHANT_ACCOUNT);
   const [isUnfunded, setIsUnfunded] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -417,7 +419,7 @@ export default function BalancesPage() {
         {/* 1. Account Overview Widget */}
         <AccountOverviewWidget
           accountId={selectedAccount}
-          totalUsdFormatted={totalUsd.formatted}
+          totalUsdFormatted={f.fiat(totalUsd.totalUsd, "USD")}
           subentryCount={subentryCount}
           isUnfunded={isUnfunded}
           onOpenAddTrustline={() => setIsAddTrustlineOpen(true)}

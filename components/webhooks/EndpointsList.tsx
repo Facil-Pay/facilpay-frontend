@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { WebhookEndpoint } from '@/types/webhooks';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface EndpointsListProps {
   endpoints: WebhookEndpoint[];
@@ -23,6 +24,7 @@ export default function EndpointsList({
   onToggleStatus,
   onViewVerificationGuide,
 }: EndpointsListProps) {
+  const f = useFormat();
   // Revealed secret tracking per endpoint ID
   const [revealedSecretIds, setRevealedSecretIds] = useState<Set<string>>(new Set());
   const [copiedSecretId, setCopiedSecretId] = useState<string | null>(null);
@@ -49,18 +51,7 @@ export default function EndpointsList({
     }
   };
 
-  const formatDate = (isoString: string) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return isoString;
-    }
-  };
+  const formatDate = (isoString: string) => f.date(isoString);
 
   if (endpoints.length === 0) {
     return (

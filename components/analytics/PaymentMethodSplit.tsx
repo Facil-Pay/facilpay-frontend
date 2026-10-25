@@ -1,5 +1,5 @@
 import type { PaymentMethod, PaymentMethodShare } from "@/lib/types/analytics";
-import { INSIGHT_COLORS, InsightCard, InsightEmpty, percent, usd } from "./InsightCard";
+import { INSIGHT_COLORS, InsightCard, InsightEmpty, useInsightFormat } from "./InsightCard";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   wallet_connect: "Wallet connect",
@@ -8,6 +8,7 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 };
 
 export function PaymentMethodSplit({ methods }: { methods: PaymentMethodShare[] }) {
+  const { usd, percent, count } = useInsightFormat();
   const total = methods.reduce((sum, item) => sum + item.count, 0);
 
   return (
@@ -39,7 +40,7 @@ export function PaymentMethodSplit({ methods }: { methods: PaymentMethodShare[] 
                 <span className="text-right text-zinc-600">
                   <strong className="text-zinc-900">{percent(method.count / total)}</strong>
                   <span className="block text-xs text-zinc-400">
-                    {method.count.toLocaleString()} payments · {usd.format(method.volume)}
+                    {count(method.count)} payments · {usd(method.volume)}
                   </span>
                 </span>
               </li>

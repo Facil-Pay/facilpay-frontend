@@ -8,6 +8,7 @@ import {
   triggerCsvDownload,
   exportWithProgress,
 } from '@/lib/csvExport';
+import { useFormat } from '@/lib/i18n/use-format';
 
 interface ExportModalProps<T extends Record<string, any>> {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function ExportModal<T extends Record<string, any>>({
   filterSummary,
   onBackendExport,
 }: ExportModalProps<T>) {
+  const f = useFormat();
   const [columns, setColumns] = useState<ExportColumn<T>[]>(initialColumns);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);
@@ -146,7 +148,7 @@ export default function ExportModal<T extends Record<string, any>>({
           batchIndex: 1,
           totalBatches: 1,
           status: 'completed',
-          message: `Exported ${totalRows.toLocaleString()} rows to ${generatedFileName}`,
+          message: `Exported ${f.number(totalRows)} rows to ${generatedFileName}`,
         });
 
         setTimeout(() => {
@@ -224,7 +226,7 @@ export default function ExportModal<T extends Record<string, any>>({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                    {totalRows.toLocaleString()} rows
+                    {f.number(totalRows)} rows
                   </span>
                   {filterSummary && (
                     <span className="rounded-full bg-zinc-200/70 px-2.5 py-0.5 text-xs text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
@@ -395,8 +397,8 @@ export default function ExportModal<T extends Record<string, any>>({
               {/* Row Stats */}
               <div className="flex items-center justify-between text-[11px] text-sky-800/80 dark:text-sky-400">
                 <span>
-                  Processed {progress.current.toLocaleString()} /{' '}
-                  {progress.total.toLocaleString()} rows
+                  Processed {f.number(progress.current)} /{' '}
+                  {f.number(progress.total)} rows
                 </span>
                 {progress.totalBatches > 1 && (
                   <span>
