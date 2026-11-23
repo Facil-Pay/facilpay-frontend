@@ -112,7 +112,7 @@ interface RecentActivityProps {
 
 export function RecentActivity({ payments }: RecentActivityProps) {
   return (
-    <Card noPadding>
+    <Card className="p-0">
       <div className="px-5 pt-5 pb-4">
         <CardHeader
           icon={<ClockIcon />}

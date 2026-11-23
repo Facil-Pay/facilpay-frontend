@@ -1,1 +1,1 @@
-export { default } from "../../escrow/page";
+export { default } from "../../(dashboard)/escrow/page";

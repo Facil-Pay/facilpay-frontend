@@ -30,10 +30,7 @@ const envSchema = z.object({
 
   // ── Stellar network ───────────────────────────────────────────────────────
   NEXT_PUBLIC_STELLAR_NETWORK: z.enum(["mainnet", "testnet", "futurenet"], {
-    errorMap: () => ({
-      message:
-        'NEXT_PUBLIC_STELLAR_NETWORK must be "mainnet", "testnet", or "futurenet"',
-    }),
+    error: 'NEXT_PUBLIC_STELLAR_NETWORK must be "mainnet", "testnet", or "futurenet"',
   }),
 
   NEXT_PUBLIC_STELLAR_HORIZON_URL: z

@@ -391,6 +391,7 @@ export function PaymentsListClient({
   failedCount,
   totalVolumeUsd,
 }: PaymentsListClientProps) {
+  const f = useFormat();
   // ── Filter state ────────────────────────────────────────────────────────────
   const [filters, setFilters]     = useState<FilterState>(INITIAL_FILTERS);
   const [showAdvanced, setShowAdvanced] = useState(false);
