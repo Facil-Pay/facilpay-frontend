@@ -1,3 +1,9 @@
+/**
+ * lib/types/stream.ts
+ *
+ * Live Horizon payment stream: raw operation items and context state.
+ */
+
 export type StreamConnectionStatus = 'connected' | 'reconnecting' | 'offline' | 'paused';
 
 export interface PaymentItem {
