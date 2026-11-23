@@ -6,6 +6,7 @@ import { TopBar } from "./TopBar";
 import { TestModeBanner } from "./TestModeBanner";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 import { NetworkModeProvider } from "@/lib/network-mode-context";
+import { CommandPaletteProvider } from "@/components/command-palette/CommandPalette";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useSidebarCollapsed();
@@ -13,6 +14,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <NetworkModeProvider>
+      <CommandPaletteProvider>
       <div className="flex min-h-screen w-full overflow-x-clip bg-zinc-50 text-zinc-900">
         <Sidebar
           collapsed={collapsed}
@@ -26,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
+      </CommandPaletteProvider>
     </NetworkModeProvider>
   );
 }
