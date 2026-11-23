@@ -72,6 +72,14 @@ export default function DeliveryDetailPanel({
                 />
                 {delivery.status.replace('_', ' ')}
               </span>
+              {delivery.isTest && (
+                <span
+                  className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300"
+                  title="Manually dispatched test event"
+                >
+                  Test Event
+                </span>
+              )}
             </div>
 
             <button
