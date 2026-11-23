@@ -157,8 +157,10 @@ export default function WebhookEndpointModal({
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             ✕
           </button>
@@ -169,15 +171,21 @@ export default function WebhookEndpointModal({
           {/* Endpoint URL Field */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                Endpoint URL <span className="text-rose-500">*</span>
+              <label htmlFor="webhook-endpoint-url" className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                Endpoint URL <span className="text-rose-600" aria-hidden="true">*</span>
               </label>
-              <span className="text-[11px] text-zinc-400">
+              <span id="webhook-endpoint-url-hint" className="text-[11px] text-zinc-600 dark:text-zinc-400">
                 Must be <code className="font-mono text-zinc-600 dark:text-zinc-300">https://</code> (or <code className="font-mono text-zinc-600 dark:text-zinc-300">http://localhost</code> on Testnet)
               </span>
             </div>
             <input
-              type="text"
+              id="webhook-endpoint-url"
+              type="url"
+              inputMode="url"
+              required
+              aria-required="true"
+              aria-invalid={urlError ? true : undefined}
+              aria-describedby={urlError ? 'webhook-endpoint-url-error webhook-endpoint-url-hint' : 'webhook-endpoint-url-hint'}
               value={url}
               onChange={(e) => {
                 setUrl(e.target.value);
@@ -191,8 +199,8 @@ export default function WebhookEndpointModal({
               }`}
             />
             {urlError && (
-              <p className="mt-1.5 text-xs text-rose-500 flex items-center gap-1">
-                <span>⚠</span>
+              <p id="webhook-endpoint-url-error" role="alert" className="mt-1.5 text-xs text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                <span aria-hidden="true">⚠</span>
                 <span>{urlError}</span>
               </p>
             )}
@@ -200,10 +208,11 @@ export default function WebhookEndpointModal({
 
           {/* Description Field */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+            <label htmlFor="webhook-endpoint-description" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Description / Friendly Label
             </label>
             <input
+              id="webhook-endpoint-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -213,10 +222,10 @@ export default function WebhookEndpointModal({
           </div>
 
           {/* Status Radio / Toggle */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+          <fieldset>
+            <legend className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
               Initial Status
-            </label>
+            </legend>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer text-xs">
                 <input
@@ -248,16 +257,16 @@ export default function WebhookEndpointModal({
                 </span>
               </label>
             </div>
-          </div>
+          </fieldset>
 
           {/* Event Subscriptions Checkbox Groups */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                  Event Subscriptions <span className="text-rose-500">*</span>
-                </label>
-                <p className="text-[11px] text-zinc-400">
+                <h3 id="webhook-events-label" className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  Event Subscriptions <span className="text-rose-600" aria-hidden="true">*</span>
+                </h3>
+                <p id="webhook-events-count" className="text-[11px] text-zinc-600 dark:text-zinc-400" aria-live="polite">
                   {selectedEvents.length} of {ALL_WEBHOOK_EVENT_IDS.length} events subscribed
                 </p>
               </div>
@@ -272,14 +281,19 @@ export default function WebhookEndpointModal({
             </div>
 
             {eventsError && (
-              <p className="text-xs text-rose-500 flex items-center gap-1">
-                <span>⚠</span>
+              <p id="webhook-events-error" role="alert" className="text-xs text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                <span aria-hidden="true">⚠</span>
                 <span>{eventsError}</span>
               </p>
             )}
 
             {/* Checkbox Groups */}
-            <div className="space-y-4">
+            <div
+              role="group"
+              aria-labelledby="webhook-events-label"
+              aria-describedby={eventsError ? 'webhook-events-error webhook-events-count' : 'webhook-events-count'}
+              className="space-y-4"
+            >
               {WEBHOOK_EVENT_GROUPS.map((group) => {
                 const groupEventIds = group.events.map((e) => e.id);
                 const isGroupAllSelected = groupEventIds.every((id) =>
@@ -300,7 +314,7 @@ export default function WebhookEndpointModal({
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                           {group.name}
                         </span>
-                        <span className="text-[10px] text-zinc-400">
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
                           ({group.events.length} events)
                         </span>
                       </div>
