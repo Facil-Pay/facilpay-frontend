@@ -14,6 +14,7 @@ import {
   PAYOUT_EXPORT_COLUMNS,
 } from '@/lib/mockData';
 import { useFormat } from '@/lib/i18n/use-format';
+import { useQuickAction } from '@/lib/command-palette';
 
 export default function PayoutsPage() {
   const f = useFormat();
@@ -33,6 +34,7 @@ export default function PayoutsPage() {
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isNewPayoutOpen, setIsNewPayoutOpen] = useState(false);
+  useQuickAction('new-payout', () => setIsNewPayoutOpen(true));
   const [isSavedDestinationsOpen, setIsSavedDestinationsOpen] = useState(false);
   const [trackingPayout, setTrackingPayout] = useState<PayoutRecord | null>(null);
 
