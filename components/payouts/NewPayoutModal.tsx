@@ -336,8 +336,10 @@ export default function NewPayoutModal({
             </p>
           </div>
           <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -381,9 +383,13 @@ export default function NewPayoutModal({
             /* ================= STELLAR ADDRESS FLOW ================= */
             <div>
               {stellarStep === 'form' && (
-                <form onSubmit={handleProceedToReview} className="space-y-4">
+                <form
+                  onSubmit={handleProceedToReview}
+                  aria-describedby={stellarError ? 'payout-form-error' : undefined}
+                  className="space-y-4"
+                >
                   {stellarError && (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+                    <div id="payout-form-error" role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
                       {stellarError}
                     </div>
                   )}
@@ -391,7 +397,7 @@ export default function NewPayoutModal({
                   {/* Saved Destinations Quick Bar */}
                   {savedDestinations.length > 0 && (
                     <div>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 block mb-1.5">
                         Quick Pick from Saved Destinations
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -412,27 +418,33 @@ export default function NewPayoutModal({
                   {/* Destination Address Field */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                        Destination Address *
+                      <label htmlFor="payout-destination" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        Destination Address <span aria-hidden="true">*</span>
                       </label>
                       {isResolvingFed && (
-                        <span className="text-[11px] text-sky-600 dark:text-sky-400 animate-pulse">
+                        <span role="status" className="text-[11px] text-sky-700 dark:text-sky-400 animate-pulse">
                           Resolving federation address...
                         </span>
                       )}
                     </div>
                     <div className="relative">
                       <input
+                        id="payout-destination"
                         type="text"
                         required
+                        autoComplete="off"
+                        spellCheck={false}
+                        aria-invalid={stellarError ? true : undefined}
+                        aria-describedby={stellarError ? 'payout-form-error' : undefined}
                         placeholder="G... or name*domain.com"
                         value={destinationInput}
                         onChange={(e) => setDestinationInput(e.target.value)}
                         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 font-mono text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                       />
                       {resolvedKey && (
-                        <span className="absolute right-3 top-2.5 text-emerald-500 text-sm">
-                          ✓
+                        <span className="absolute right-3 top-2.5 text-emerald-600 text-sm">
+                          <span aria-hidden="true">✓</span>
+                          <span className="sr-only">Address resolved</span>
                         </span>
                       )}
                     </div>
@@ -469,14 +481,16 @@ export default function NewPayoutModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                          Asset *
+                        <label htmlFor="payout-asset" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                          Asset <span aria-hidden="true">*</span>
                         </label>
-                        <span className="text-[11px] text-zinc-500">
+                        <span id="payout-available" className="text-[11px] text-zinc-600 dark:text-zinc-400">
                           Avail: {f.amount(currentAvailableBalance, selectedAsset)}
                         </span>
                       </div>
                       <select
+                        id="payout-asset"
+                        aria-describedby="payout-available"
                         value={selectedAsset}
                         onChange={(e) => setSelectedAsset(e.target.value as AssetType)}
                         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
@@ -489,11 +503,12 @@ export default function NewPayoutModal({
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                          Amount *
+                        <label htmlFor="payout-amount" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                          Amount <span aria-hidden="true">*</span>
                         </label>
                         <button
                           type="button"
+                          aria-label="Use maximum available amount"
                           onClick={handleSetMax}
                           className="text-[11px] font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400"
                         >
@@ -502,7 +517,10 @@ export default function NewPayoutModal({
                       </div>
                       <div className="relative">
                         <input
+                          id="payout-amount"
                           type="number"
+                          inputMode="decimal"
+                          aria-describedby="payout-available"
                           step="any"
                           required
                           min="0.01"
@@ -519,12 +537,14 @@ export default function NewPayoutModal({
                   {/* Memo Inputs */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                      <label htmlFor="payout-memo" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                         Memo {exchangeInfo?.memoRequired ? '(Required for Exchange) *' : '(Optional)'}
                       </label>
                       <input
+                        id="payout-memo"
                         type="text"
                         required={exchangeInfo?.memoRequired}
+                        aria-invalid={exchangeInfo?.memoRequired && !memoInput.trim() ? true : undefined}
                         placeholder={exchangeInfo ? `Enter ${exchangeInfo.memoTypeDescription}` : 'Memo text or ID'}
                         value={memoInput}
                         onChange={(e) => setMemoInput(e.target.value)}
@@ -536,10 +556,11 @@ export default function NewPayoutModal({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                      <label htmlFor="payout-memo-type" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                         Memo Type
                       </label>
                       <select
+                        id="payout-memo-type"
                         value={memoType}
                         onChange={(e) => setMemoType(e.target.value as any)}
                         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
