@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  WebhookEndpoint,
+  Webhook,
+  WebhookEvent,
   WEBHOOK_EVENT_GROUPS,
   ALL_WEBHOOK_EVENT_IDS,
-} from '@/types/webhooks';
+} from '@/lib/types';
 import {
   createEndpoint,
   updateEndpoint,
@@ -14,9 +15,9 @@ import {
 
 interface WebhookEndpointModalProps {
   isOpen: boolean;
-  endpoint?: WebhookEndpoint | null;
+  endpoint?: Webhook | null;
   onClose: () => void;
-  onSuccess: (endpoint: WebhookEndpoint, generatedSecret?: string) => void;
+  onSuccess: (endpoint: Webhook, generatedSecret?: string) => void;
 }
 
 export default function WebhookEndpointModal({
@@ -29,8 +30,8 @@ export default function WebhookEndpointModal({
 
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const [selectedEvents, setSelectedEvents] = useState<WebhookEvent[]>([]);
+  const [status, setStatus] = useState<'active' | 'disabled'>('active');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,8 +41,8 @@ export default function WebhookEndpointModal({
     if (endpoint) {
       setUrl(endpoint.url || '');
       setDescription(endpoint.description || '');
-      setSelectedEvents(endpoint.subscribedEvents || []);
-      setStatus(endpoint.status || 'active');
+      setSelectedEvents(endpoint.events || []);
+      setStatus(endpoint.status === 'disabled' ? 'disabled' : 'active');
     } else {
       setUrl('');
       setDescription('');
@@ -60,7 +61,7 @@ export default function WebhookEndpointModal({
   if (!isOpen) return null;
 
   // Toggle individual event
-  const toggleEvent = (eventId: string) => {
+  const toggleEvent = (eventId: WebhookEvent) => {
     setEventsError(null);
     setSelectedEvents((prev) =>
       prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
@@ -68,7 +69,7 @@ export default function WebhookEndpointModal({
   };
 
   // Group Select All / Deselect All
-  const toggleGroup = (groupEventIds: string[]) => {
+  const toggleGroup = (groupEventIds: WebhookEvent[]) => {
     setEventsError(null);
     const allSelected = groupEventIds.every((id) => selectedEvents.includes(id));
     if (allSelected) {
@@ -114,7 +115,7 @@ export default function WebhookEndpointModal({
         const updated = updateEndpoint(endpoint.id, {
           url: url.trim(),
           description: description.trim(),
-          subscribedEvents: selectedEvents,
+          events: selectedEvents,
           status,
         });
         setIsSubmitting(false);
@@ -125,7 +126,7 @@ export default function WebhookEndpointModal({
         const result = createEndpoint({
           url: url.trim(),
           description: description.trim(),
-          subscribedEvents: selectedEvents,
+          events: selectedEvents,
           status,
         });
         setIsSubmitting(false);
@@ -236,9 +237,9 @@ export default function WebhookEndpointModal({
                 <input
                   type="radio"
                   name="status"
-                  value="inactive"
-                  checked={status === 'inactive'}
-                  onChange={() => setStatus('inactive')}
+                  value="disabled"
+                  checked={status === 'disabled'}
+                  onChange={() => setStatus('disabled')}
                   className="h-4 w-4 text-zinc-600 focus:ring-zinc-500"
                 />
                 <span className="inline-flex items-center gap-1.5 font-medium text-zinc-600 dark:text-zinc-400">

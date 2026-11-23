@@ -8,8 +8,8 @@ import { AuthProvider } from '@/lib/auth-context';
 import {
   WebhookDelivery,
   WebhookDeliveryStatus,
-  WebhookEndpoint,
-} from '@/types/webhooks';
+  Webhook,
+} from '@/lib/types';
 import {
   DEFAULT_ENDPOINT,
   getEndpointById,
@@ -27,7 +27,7 @@ function WebhookDeliveriesContent() {
   const params = useParams();
   const endpointId = (params?.endpointId as string) || DEFAULT_ENDPOINT.id;
 
-  const [endpoint, setEndpoint] = useState<WebhookEndpoint>(DEFAULT_ENDPOINT);
+  const [endpoint, setEndpoint] = useState<Webhook>(DEFAULT_ENDPOINT);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [activeFilterStatus, setActiveFilterStatus] = useState<WebhookDeliveryStatus | 'all'>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -129,7 +129,7 @@ function WebhookDeliveriesContent() {
 
   const handleCopySecret = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(endpoint.secret);
+      navigator.clipboard.writeText(endpoint.secret ?? '');
       setCopiedSecret(true);
       setTimeout(() => setCopiedSecret(false), 2000);
     }

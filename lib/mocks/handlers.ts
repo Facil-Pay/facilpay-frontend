@@ -19,6 +19,7 @@ import {
   REFUND_FIXTURES,
   ESCROW_FIXTURES,
   WEBHOOK_FIXTURES,
+  WEBHOOK_DELIVERY_FIXTURE,
   API_KEY_FIXTURES,
   MERCHANT_FIXTURE,
   TEAM_FIXTURES,
@@ -284,17 +285,7 @@ const webhookHandlers = [
     await delay(LATENCY);
     // Return empty paginated list for non-fixture IDs
     const deliveries = params.id === WEBHOOK_FIXTURES[0].id
-      ? [{
-          id: "del_01",
-          webhookId: WEBHOOK_FIXTURES[0].id,
-          event: "payment.completed" as const,
-          status: "success" as const,
-          responseStatus: 200,
-          requestBody: JSON.stringify({ type: "payment.completed" }),
-          attemptCount: 1,
-          createdAt: "2026-09-24T09:18:43Z",
-          deliveredAt: "2026-09-24T09:18:44Z",
-        }]
+      ? [WEBHOOK_DELIVERY_FIXTURE]
       : [];
     return HttpResponse.json(paginate(deliveries, 1, 10));
   }),

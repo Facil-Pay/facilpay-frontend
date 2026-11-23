@@ -1,24 +1,24 @@
 import {
   WebhookDelivery,
   WebhookDeliveryStatus,
-  WebhookEndpoint,
-  WebhookEventType,
+  Webhook,
+  WebhookEvent,
   DayHealthStat,
-} from '@/types/webhooks';
+} from '@/lib/types';
 
 export const STORAGE_KEYS = {
   WEBHOOK_DELIVERIES: 'facilpay_webhook_deliveries',
   WEBHOOK_ENDPOINTS: 'facilpay_webhook_endpoints',
 } as const;
 
-export const DEFAULT_ENDPOINT: WebhookEndpoint = {
+export const DEFAULT_ENDPOINT: Webhook = {
   id: 'ep_prod_89a2b',
   url: 'https://api.acmestore.com/api/v1/webhooks/facilpay',
   description: 'Primary Production Payment & Order Processing Webhook',
   secret: 'whsec_7f9b8c2d1e0a4f5e6b7c8d9e0f1a2b3c4d5e6f7a',
   createdAt: '2026-09-20T10:00:00Z',
   status: 'active',
-  subscribedEvents: [
+  events: [
     'payment.created',
     'payment.completed',
     'payment.failed',
@@ -28,7 +28,7 @@ export const DEFAULT_ENDPOINT: WebhookEndpoint = {
   successRate24h: 94,
 };
 
-export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
+export const INITIAL_ENDPOINTS: Webhook[] = [
   DEFAULT_ENDPOINT,
   {
     id: 'ep_local_dev11',
@@ -37,7 +37,7 @@ export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
     secret: 'whsec_4b1a8c9e0d2f3a4b5c6d7e8f9a0b1c2d',
     createdAt: '2026-09-22T14:30:00Z',
     status: 'active',
-    subscribedEvents: ['payment.completed', 'refund.created', 'refund.completed'],
+    events: ['payment.completed', 'refund.created', 'refund.completed'],
     successRate24h: 100,
   },
   {
@@ -46,8 +46,8 @@ export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
     description: 'Internal Ops Alerts & Notifications',
     secret: 'whsec_9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f',
     createdAt: '2026-09-24T08:15:00Z',
-    status: 'inactive',
-    subscribedEvents: ['payment.failed', 'refund.failed', 'escrow.disputed'],
+    status: 'disabled',
+    events: ['payment.failed', 'refund.failed', 'escrow.disputed'],
     successRate24h: 75,
   },
 ];
@@ -671,7 +671,32 @@ export function validateWebhookUrl(
   }
 }
 
-export function getStoredEndpoints(): WebhookEndpoint[] {
+type LegacyStoredEndpoint = Omit<Partial<Webhook>, 'status'> & {
+  subscribedEvents?: WebhookEvent[];
+  lastTriggeredAt?: string;
+  status?: Webhook['status'] | 'inactive';
+};
+
+/**
+ * Endpoints saved before the webhook types were unified used
+ * `subscribedEvents`, `lastTriggeredAt` and an `inactive` status.
+ * Map them onto the current `Webhook` shape so old browsers keep working.
+ */
+export function normalizeStoredEndpoint(raw: LegacyStoredEndpoint): Webhook {
+  const { subscribedEvents, lastTriggeredAt, status, ...rest } = raw;
+  return {
+    ...rest,
+    id: rest.id ?? '',
+    url: rest.url ?? '',
+    description: rest.description ?? '',
+    createdAt: rest.createdAt ?? new Date(0).toISOString(),
+    events: rest.events ?? subscribedEvents ?? [],
+    lastDeliveryAt: rest.lastDeliveryAt ?? lastTriggeredAt,
+    status: status === 'inactive' ? 'disabled' : status ?? 'active',
+  };
+}
+
+export function getStoredEndpoints(): Webhook[] {
   if (typeof window === 'undefined') return INITIAL_ENDPOINTS;
   try {
     const item = window.localStorage.getItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS);
@@ -680,14 +705,16 @@ export function getStoredEndpoints(): WebhookEndpoint[] {
       return INITIAL_ENDPOINTS;
     }
     const parsed = JSON.parse(item);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ENDPOINTS;
+    return Array.isArray(parsed) && parsed.length > 0
+      ? parsed.map(normalizeStoredEndpoint)
+      : INITIAL_ENDPOINTS;
   } catch (err) {
     console.warn('Error reading stored webhook endpoints:', err);
     return INITIAL_ENDPOINTS;
   }
 }
 
-export function saveStoredEndpoints(endpoints: WebhookEndpoint[]): void {
+export function saveStoredEndpoints(endpoints: Webhook[]): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS, JSON.stringify(endpoints));
@@ -696,7 +723,7 @@ export function saveStoredEndpoints(endpoints: WebhookEndpoint[]): void {
   }
 }
 
-export function getEndpointById(id: string): WebhookEndpoint | undefined {
+export function getEndpointById(id: string): Webhook | undefined {
   const endpoints = getStoredEndpoints();
   return endpoints.find((ep) => ep.id === id);
 }
@@ -704,19 +731,19 @@ export function getEndpointById(id: string): WebhookEndpoint | undefined {
 export function createEndpoint(data: {
   url: string;
   description: string;
-  subscribedEvents: string[];
-  status?: 'active' | 'inactive';
-}): { endpoint: WebhookEndpoint; generatedSecret: string } {
+  events: WebhookEvent[];
+  status?: 'active' | 'disabled';
+}): { endpoint: Webhook; generatedSecret: string } {
   const endpoints = getStoredEndpoints();
   const secret = generateSigningSecret();
-  const newEndpoint: WebhookEndpoint = {
+  const newEndpoint: Webhook = {
     id: `ep_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
     url: data.url.trim(),
     description: data.description.trim(),
     secret,
     createdAt: new Date().toISOString(),
     status: data.status || 'active',
-    subscribedEvents: data.subscribedEvents,
+    events: data.events,
     successRate24h: 100,
   };
 
@@ -727,10 +754,10 @@ export function createEndpoint(data: {
 
 export function updateEndpoint(
   id: string,
-  updates: Partial<Omit<WebhookEndpoint, 'id' | 'secret' | 'createdAt'>>
-): WebhookEndpoint | null {
+  updates: Partial<Omit<Webhook, 'id' | 'secret' | 'createdAt'>>
+): Webhook | null {
   const endpoints = getStoredEndpoints();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
@@ -755,12 +782,12 @@ export function deleteEndpoint(id: string): boolean {
 }
 
 export function rollEndpointSecret(id: string): {
-  endpoint: WebhookEndpoint | null;
+  endpoint: Webhook | null;
   newSecret: string;
 } {
   const endpoints = getStoredEndpoints();
   const newSecret = generateSigningSecret();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
@@ -776,13 +803,13 @@ export function rollEndpointSecret(id: string): {
   return { endpoint: updatedEndpoint, newSecret };
 }
 
-export function toggleEndpointStatus(id: string): WebhookEndpoint | null {
+export function toggleEndpointStatus(id: string): Webhook | null {
   const endpoints = getStoredEndpoints();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
-      const nextStatus = ep.status === 'active' ? 'inactive' : 'active';
+      const nextStatus = ep.status === 'active' ? 'disabled' : 'active';
       updatedEndpoint = { ...ep, status: nextStatus };
       return updatedEndpoint;
     }
@@ -848,7 +875,7 @@ export function sendTestWebhookEvent(
   const delivery: WebhookDelivery = {
     id: deliveryId,
     eventId,
-    eventType: eventType as WebhookEventType,
+    eventType: eventType as WebhookEvent,
     status: 'succeeded',
     httpStatus: 200,
     statusText: 'OK',
@@ -903,8 +930,8 @@ export function sendTestWebhookEvent(
   const currentDeliveries = getStoredDeliveries();
   saveStoredDeliveries([delivery, ...currentDeliveries]);
 
-  // Update endpoint's lastTriggeredAt
-  updateEndpoint(endpointId, { lastTriggeredAt: nowIso });
+  // Update endpoint's lastDeliveryAt
+  updateEndpoint(endpointId, { lastDeliveryAt: nowIso });
 
   return {
     delivery,

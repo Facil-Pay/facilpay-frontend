@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { WebhookEndpoint, WebhookDelivery, WEBHOOK_EVENT_GROUPS } from '@/types/webhooks';
+import { Webhook, WebhookDelivery, WEBHOOK_EVENT_GROUPS } from '@/lib/types';
 import { sendTestWebhookEvent } from '@/lib/webhook-data';
 
 interface TestEndpointModalProps {
   isOpen: boolean;
-  endpoint: WebhookEndpoint | null;
+  endpoint: Webhook | null;
   onClose: () => void;
   onTestSent?: (delivery: WebhookDelivery) => void;
 }

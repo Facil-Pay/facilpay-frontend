@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookEndpoint } from '@/types/webhooks';
+import { Webhook } from '@/lib/types';
 import { rollEndpointSecret } from '@/lib/webhook-data';
 
 interface RollSecretModalProps {
   isOpen: boolean;
-  endpoint: WebhookEndpoint | null;
+  endpoint: Webhook | null;
   onClose: () => void;
-  onSecretRolled: (endpoint: WebhookEndpoint, newSecret: string) => void;
+  onSecretRolled: (endpoint: Webhook, newSecret: string) => void;
 }
 
 export default function RollSecretModal({

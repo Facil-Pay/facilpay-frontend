@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookDelivery } from '@/types/webhooks';
+import { WebhookDelivery } from '@/lib/types';
 import SyntaxHighlightedJson from './SyntaxHighlightedJson';
 import { useFormat } from '@/lib/i18n/use-format';
 

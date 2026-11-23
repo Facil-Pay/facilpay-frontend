@@ -5,7 +5,7 @@ import {
   WebhookDelivery,
   WebhookDeliveryStatus,
   WebhookFilterOptions,
-} from '@/types/webhooks';
+} from '@/lib/types';
 import DeliveryDetailPanel from './DeliveryDetailPanel';
 import { useFormat } from '@/lib/i18n/use-format';
 
