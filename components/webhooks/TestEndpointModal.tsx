@@ -71,8 +71,10 @@ export default function TestEndpointModal({
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Close"
             onClick={handleClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             ✕
           </button>
