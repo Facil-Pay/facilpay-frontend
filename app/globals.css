@@ -3,7 +3,8 @@
 /* ─── Brand design tokens ──────────────────────────────────────────────────── */
 :root {
   --ink: #1c2824;
-  --muted: #77817c;
+  /* #5f6a65 keeps muted text at 5.4:1 on white (WCAG AA) */
+  --muted: #5f6a65;
   --line: #e8ece9;
   --paper: #f5f7f5;
   --surface: #ffffff;
@@ -38,6 +39,24 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Visible keyboard focus for every interactive element (WCAG 2.4.7).
+   Components with their own focus-visible ring override this. */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex], [role="button"], [role="tab"], [role="option"]):focus-visible {
+    outline: 2px solid #0284c7;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-geist-sans), sans-serif; font-size: 14px; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
