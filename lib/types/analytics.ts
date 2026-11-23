@@ -37,10 +37,11 @@ export interface TopCustomer {
   lastPaymentAt: string;
 }
 
-export type PaymentMethod = "wallet_connect" | "qr_scan" | "manual_transfer";
+/** How the customer completed checkout (distinct from the API `PaymentMethod`). */
+export type CheckoutMethod = "wallet_connect" | "qr_scan" | "manual_transfer";
 
 export interface PaymentMethodShare {
-  method: PaymentMethod;
+  method: CheckoutMethod;
   count: number;
   volume: number;
 }
