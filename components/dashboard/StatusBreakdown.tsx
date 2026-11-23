@@ -2,7 +2,8 @@
 
 import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { StatusBreakdown } from "@/app/lib/api/dashboard";
-import type { PaymentStatus } from "@/app/lib/types/payment";
+import type { PaymentStatus } from "@/lib/types";
+import { PAYMENT_STATUS_META } from "@/components/payments/payment-status";
 import { useFormat } from "@/lib/i18n/use-format";
 
 function PieChartIcon() {
@@ -14,24 +15,13 @@ function PieChartIcon() {
   );
 }
 
-// Status colour map (matches CSS variables + Badge variants)
-const STATUS_COLORS: Record<PaymentStatus, string> = {
-  completed:  "#10b981",
-  pending:    "#f59e0b",
-  processing: "#0ea5e9",
-  failed:     "#ef4444",
-  refunded:   "#8b5cf6",
-  cancelled:  "#71717a",
-};
+const STATUS_COLORS = Object.fromEntries(
+  Object.entries(PAYMENT_STATUS_META).map(([status, meta]) => [status, meta.chartColor]),
+) as Record<PaymentStatus, string>;
 
-const STATUS_LABELS: Record<PaymentStatus, string> = {
-  completed:  "Completed",
-  pending:    "Pending",
-  processing: "Processing",
-  failed:     "Failed",
-  refunded:   "Refunded",
-  cancelled:  "Cancelled",
-};
+const STATUS_LABELS = Object.fromEntries(
+  Object.entries(PAYMENT_STATUS_META).map(([status, meta]) => [status, meta.label]),
+) as Record<PaymentStatus, string>;
 
 // Convert a list of status segments to SVG donut arc paths
 function buildDonutPaths(
