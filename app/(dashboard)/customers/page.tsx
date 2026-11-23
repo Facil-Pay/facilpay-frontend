@@ -119,6 +119,7 @@ export default function CustomersPage() {
               </label>
               <input
                 type="text"
+                data-shortcut-search
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);

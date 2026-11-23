@@ -22,6 +22,7 @@ import {
 import EndpointHealthChart from '@/components/webhooks/EndpointHealthChart';
 import FailureWarningBanner from '@/components/webhooks/FailureWarningBanner';
 import DeliveriesList from '@/components/webhooks/DeliveriesList';
+import RollSecretModal from '@/components/webhooks/RollSecretModal';
 
 function WebhookDeliveriesContent() {
   const params = useParams();
@@ -33,6 +34,7 @@ function WebhookDeliveriesContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
+  const [isRotationOpen, setIsRotationOpen] = useState(false);
   const fallbackId = useId();
 
   // Load endpoint and deliveries
@@ -196,7 +198,19 @@ function WebhookDeliveriesContent() {
             >
               All Webhooks
             </Link>
+            <button
+              type="button"
+              onClick={() => setIsRotationOpen(true)}
+              className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
+            >
+              Rotate secret
+            </button>
           </div>
+          {endpoint.previousSecrets?.map((previousSecret) => (
+            <p key={previousSecret.expiresAt} className="text-xs text-amber-700 dark:text-amber-300">
+              Previous signing secret expires: {new Date(previousSecret.expiresAt).toLocaleString()}
+            </p>
+          ))}
         </div>
 
         {/* Signing Secret Box */}
@@ -204,26 +218,34 @@ function WebhookDeliveriesContent() {
           <div className="flex items-center gap-2">
             <span className="text-zinc-500 font-medium">Signing Secret:</span>
             <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">
-              {showSecret ? endpoint.secret : 'whsec_••••••••••••••••••••••••••••••••'}
+              {showSecret && !endpoint.secretRevealDisabled
+                ? endpoint.secret
+                : 'whsec_••••••••••••••••••••••••••••••••'}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowSecret(!showSecret)}
-              className="text-xs font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400 cursor-pointer"
-            >
-              {showSecret ? 'Hide' : 'Reveal'}
-            </button>
-            <span className="text-zinc-300 dark:text-zinc-700">|</span>
-            <button
-              type="button"
-              onClick={handleCopySecret}
-              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
-            >
-              {copiedSecret ? '✓ Copied' : 'Copy Secret'}
-            </button>
+            {!endpoint.secretRevealDisabled && (
+              <button
+                type="button"
+                onClick={() => setShowSecret(!showSecret)}
+                className="text-xs font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400 cursor-pointer"
+              >
+                {showSecret ? 'Hide' : 'Reveal'}
+              </button>
+            )}
+            {!endpoint.secretRevealDisabled && (
+              <>
+                <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                <button
+                  type="button"
+                  onClick={handleCopySecret}
+                  className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+                >
+                  {copiedSecret ? '✓ Copied' : 'Copy Secret'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -260,6 +282,17 @@ function WebhookDeliveriesContent() {
           filterStatus={activeFilterStatus}
         />
       </div>
+
+      <RollSecretModal
+        isOpen={isRotationOpen}
+        endpoint={endpoint}
+        onClose={() => setIsRotationOpen(false)}
+        onSecretRolled={(updatedEndpoint) => {
+          setEndpoint(updatedEndpoint);
+          setShowSecret(false);
+          showToast('Signing secret rotated successfully.');
+        }}
+      />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import RollKeyModal from '@/components/developers/RollKeyModal';
@@ -13,6 +13,8 @@ import {
   getStoredApiKeys,
   saveStoredApiKeys,
 } from '@/lib/apiKeys';
+import { getOnboardingState } from '@/lib/storage';
+import type { PaymentLinkData } from '@/types/onboarding';
 
 export default function ApiKeysPage() {
   const [network, setNetwork] = useState<NetworkMode>('testnet');
@@ -20,9 +22,12 @@ export default function ApiKeysPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);
+  const [paymentLinks, setPaymentLinks] = useState<PaymentLinkData[]>([]);
 
   useEffect(() => {
     setKeys(getStoredApiKeys());
+    const paymentLink = getOnboardingState().paymentLink;
+    setPaymentLinks(paymentLink.paymentUrl ? [paymentLink] : []);
   }, []);
 
   // Active publishable key based on network
@@ -362,6 +367,7 @@ export default function ApiKeysPage() {
         <QuickstartSection
           publishableKey={activePublishableKey}
           network={network}
+          paymentLinks={paymentLinks}
         />
       </div>
 

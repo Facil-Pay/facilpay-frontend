@@ -619,12 +619,9 @@ export function bulkRetryDeliveries(
 // -------------------------------------------------------------
 
 export function generateSigningSecret(): string {
-  const chars = '0123456789abcdef';
-  let rand = '';
-  for (let i = 0; i < 40; i++) {
-    rand += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `whsec_${rand}`;
+  const bytes = new Uint8Array(20);
+  globalThis.crypto.getRandomValues(bytes);
+  return `whsec_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export function validateWebhookUrl(
@@ -679,20 +676,34 @@ export function getStoredEndpoints(): WebhookEndpoint[] {
       window.localStorage.setItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS, JSON.stringify(INITIAL_ENDPOINTS));
       return INITIAL_ENDPOINTS;
     }
-    const parsed = JSON.parse(item);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ENDPOINTS;
+    const parsed: unknown = JSON.parse(item);
+    if (!Array.isArray(parsed) || parsed.length === 0) return INITIAL_ENDPOINTS;
+
+    const now = Date.now();
+    const endpoints = (parsed as WebhookEndpoint[]).map((endpoint) => {
+      const previousSecrets = endpoint.previousSecrets?.filter(
+        ({ expiresAt }) => new Date(expiresAt).getTime() > now
+      );
+      return previousSecrets?.length
+        ? { ...endpoint, previousSecrets }
+        : { ...endpoint, previousSecrets: undefined };
+    });
+    if (JSON.stringify(endpoints) !== item) saveStoredEndpoints(endpoints);
+    return endpoints;
   } catch (err) {
     console.warn('Error reading stored webhook endpoints:', err);
     return INITIAL_ENDPOINTS;
   }
 }
 
-export function saveStoredEndpoints(endpoints: WebhookEndpoint[]): void {
-  if (typeof window === 'undefined') return;
+export function saveStoredEndpoints(endpoints: WebhookEndpoint[]): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     window.localStorage.setItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS, JSON.stringify(endpoints));
+    return true;
   } catch (err) {
     console.warn('Error saving webhook endpoints:', err);
+    return false;
   }
 }
 
@@ -754,24 +765,50 @@ export function deleteEndpoint(id: string): boolean {
   return true;
 }
 
-export function rollEndpointSecret(id: string): {
+export function rollEndpointSecret(
+  id: string,
+  overlap: 'now' | '1h' | '24h' | '7d' = 'now'
+): {
   endpoint: WebhookEndpoint | null;
   newSecret: string;
+  error?: string;
 } {
   const endpoints = getStoredEndpoints();
   const newSecret = generateSigningSecret();
+  const now = Date.now();
+  const overlapMs = {
+    now: 0,
+    '1h': 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+  }[overlap];
   let updatedEndpoint: WebhookEndpoint | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
-      updatedEndpoint = { ...ep, secret: newSecret };
+      const previousSecrets = (ep.previousSecrets || []).filter(
+        ({ expiresAt }) => new Date(expiresAt).getTime() > now
+      );
+      if (overlapMs > 0) {
+        previousSecrets.push({
+          secret: ep.secret,
+          expiresAt: new Date(now + overlapMs).toISOString(),
+        });
+      }
+      updatedEndpoint = {
+        ...ep,
+        secret: newSecret,
+        secretRevealDisabled: true,
+        previousSecrets: previousSecrets.length ? previousSecrets : undefined,
+      };
       return updatedEndpoint;
     }
     return ep;
   });
 
-  if (updatedEndpoint) {
-    saveStoredEndpoints(nextEndpoints);
+  if (!updatedEndpoint) return { endpoint: null, newSecret, error: 'Webhook endpoint was not found.' };
+  if (!saveStoredEndpoints(nextEndpoints)) {
+    return { endpoint: null, newSecret, error: 'Could not save the rotated webhook secret.' };
   }
   return { endpoint: updatedEndpoint, newSecret };
 }

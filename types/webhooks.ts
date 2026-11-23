@@ -68,6 +68,8 @@ export interface WebhookEndpoint {
   url: string;
   description: string;
   secret: string;
+  secretRevealDisabled?: boolean;
+  previousSecrets?: { secret: string; expiresAt: string }[];
   createdAt: string;
   status: 'active' | 'inactive';
   subscribedEvents: string[];
