@@ -58,12 +58,18 @@ const paymentHandlers = [
     let items = getPaymentFixtures();
     if (status)  items = items.filter((p) => p.status  === status);
     if (network) items = items.filter((p) => p.network === network);
-    if (search)  items = items.filter(
-      (p) =>
-        p.reference.toLowerCase().includes(search) ||
-        p.sender.name.toLowerCase().includes(search) ||
-        p.recipient.name.toLowerCase().includes(search) ||
-        p.description?.toLowerCase().includes(search)
+    // Matches IDs, transaction hash, customer email/address and free text.
+    if (search)  items = items.filter((p) =>
+      [
+        p.id,
+        p.reference,
+        p.onChain?.txHash,
+        p.sender.name,
+        p.sender.email,
+        p.sender.walletAddress,
+        p.recipient.name,
+        p.description,
+      ].some((value) => value?.toLowerCase().includes(search))
     );
 
     return HttpResponse.json(paginate(items, page, pageSize));
