@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 /**
  * tests/setup.ts
  *
