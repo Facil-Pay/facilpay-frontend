@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Payout } from '@/lib/types';
+import { PayoutRecord } from '@/lib/types';
 import { useFormat } from '@/lib/i18n/use-format';
 
 interface Sep24TrackerModalProps {
-  payout: Payout | null;
+  payout: PayoutRecord | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,9 +21,9 @@ export default function Sep24TrackerModal({
 
   useEffect(() => {
     if (payout) {
-      if (payout.status === 'COMPLETED') setCurrentStep(5);
-      else if (payout.status === 'PROCESSING') setCurrentStep(4);
-      else if (payout.status === 'PENDING') setCurrentStep(3);
+      if (payout.status === 'completed') setCurrentStep(5);
+      else if (payout.status === 'processing') setCurrentStep(4);
+      else if (payout.status === 'pending') setCurrentStep(3);
       else setCurrentStep(2);
     }
   }, [payout]);

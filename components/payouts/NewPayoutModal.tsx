@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   AssetType,
-  Payout,
+  PayoutRecord,
   SavedDestination,
   MerchantBalance,
 } from '@/lib/types';
@@ -31,7 +31,7 @@ interface NewPayoutModalProps {
   balances: Record<AssetType, MerchantBalance>;
   savedDestinations: SavedDestination[];
   onAddSavedDestination: (dest: SavedDestination) => void;
-  onCompletePayout: (payout: Payout, deductedAmount: number, asset: AssetType) => void;
+  onCompletePayout: (payout: PayoutRecord, deductedAmount: number, asset: AssetType) => void;
 }
 
 type PayoutTab = 'stellar' | 'sep24';
@@ -63,7 +63,7 @@ export default function NewPayoutModal({
   const [saveDestination, setSaveDestination] = useState(false);
   const [saveLabel, setSaveLabel] = useState('');
   const [stellarError, setStellarError] = useState<string | null>(null);
-  const [createdPayout, setCreatedPayout] = useState<Payout | null>(null);
+  const [createdPayout, setCreatedPayout] = useState<PayoutRecord | null>(null);
 
   // SEP-24 Bank Off-Ramp State
   const [sep24Step, setSep24Step] = useState<Sep24Step>('form');
@@ -222,12 +222,12 @@ export default function NewPayoutModal({
       const txHash = `${Date.now().toString(16)}a5c7f89312d8a4369e01bc34df56890213ef4598a72314bcdef56123490abcde`.slice(0, 64);
       const payoutId = `pout_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
-      const newPayout: Payout = {
+      const newPayout: PayoutRecord = {
         id: payoutId,
         date: new Date().toISOString(),
         amount: numAmount,
         asset: selectedAsset,
-        status: 'COMPLETED',
+        status: 'completed',
         destinationWallet: resolvedKey || destinationInput,
         destinationLabel: destinationInput.includes('*')
           ? destinationInput
@@ -301,12 +301,12 @@ export default function NewPayoutModal({
     const payoutId = `pout_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     const txHash = `${Date.now().toString(16)}ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100`.slice(0, 64);
 
-    const newPayout: Payout = {
+    const newPayout: PayoutRecord = {
       id: payoutId,
       date: new Date().toISOString(),
       amount: numSep24Amount,
       asset: sep24Asset,
-      status: 'PROCESSING',
+      status: 'processing',
       destinationWallet: ibanOrAccount,
       destinationLabel: `${selectedAnchor.name} (${bankName})`,
       payoutMethod: `SEP-24 Bank Off-Ramp (${selectedAnchor.name})`,

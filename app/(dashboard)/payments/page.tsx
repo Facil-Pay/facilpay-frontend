@@ -2,9 +2,13 @@
 
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Payment, PaymentStatus, AssetType } from '@/lib/types';
+import { PaymentRecord, PaymentStatus, AssetType } from '@/lib/types';
+import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
 
-const ExportModal = dynamic(() => import('@/components/ExportModal'), { ssr: false });
+// next/dynamic drops the generic signature, so restore it for typed columns.
+const ExportModal = dynamic(() => import('@/components/ExportModal'), {
+  ssr: false,
+}) as typeof import('@/components/ExportModal').default;
 const PaymentDetailModal = dynamic(() => import('@/components/PaymentDetailModal'), { ssr: false });
 import {
   INITIAL_PAYMENTS,
@@ -15,7 +19,7 @@ import { useFormat } from '@/lib/i18n/use-format';
 
 export default function PaymentsPage() {
   const f = useFormat();
-  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  const [payments, setPayments] = useState<PaymentRecord[]>(INITIAL_PAYMENTS);
   const [isLargeDataSimulated, setIsLargeDataSimulated] = useState(false);
 
   // Filters State
@@ -27,7 +31,7 @@ export default function PaymentsPage() {
 
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
 
   // Toggle large dataset simulation (>1,000 rows)
   const toggleLargeData = () => {
@@ -197,10 +201,10 @@ export default function PaymentsPage() {
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
                 <option value="ALL">All Statuses</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PENDING">Pending</option>
-                <option value="FAILED">Failed</option>
-                <option value="REFUNDED">Refunded</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
 
@@ -356,17 +360,7 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
-                            payment.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                              : payment.status === 'PENDING'
-                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
-                          }`}
-                        >
-                          {payment.status}
-                        </span>
+                        <PaymentStatusBadge status={payment.status} size="sm" />
                       </td>
                       <td className="px-5 py-4">
                         <a
