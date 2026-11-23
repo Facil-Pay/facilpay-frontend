@@ -13,7 +13,7 @@ import type {
   PaymentNetwork,
   PaymentSortField,
   PaymentSortOrder,
-} from "@/app/lib/types/payment";
+} from "@/lib/types";
 import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
