@@ -3,9 +3,9 @@ import {
   ArrowLeftRight,
   Code2,
   CreditCard,
+  Inbox,
   LayoutDashboard,
   Lock,
-  Repeat2,
   RotateCcw,
   Settings,
   Webhook,
@@ -16,6 +16,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** When true, show a live pending-count badge in the sidebar. */
+  badge?: "unmatched_count";
 }
 
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
@@ -23,6 +25,13 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "payments", href: "/payments", icon: CreditCard },
   { label: "refunds", href: "/refunds", icon: RotateCcw },
   { label: "escrow", href: "/escrow", icon: Lock },
+  { label: "reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
+  {
+    label: "unmatchedInbox",
+    href: "/unmatched",
+    icon: Inbox,
+    badge: "unmatched_count",
+  },
   { label: "analytics", href: "/analytics", icon: BarChart3 },
   { label: "webhooks", href: "/webhooks", icon: Webhook },
   { label: "developers", href: "/developers", icon: Code2 },

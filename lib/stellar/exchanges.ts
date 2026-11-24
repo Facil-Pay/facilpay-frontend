@@ -19,7 +19,7 @@ export const KNOWN_EXCHANGE_ADDRESSES: Record<string, ExchangeInfo> = {
     memoRequired: true,
     memoTypeDescription: 'Numeric Memo ID',
   },
-  GAB7F3X3Q77J26C67347A22J2G5S3C4K7Q72X6Y27Z7Z676767676767': {
+  'GAB7F3X3Q77J26C67347A22J2G5S3C4K7Q72X6Y27Z7Z676767676767': {
     name: 'Binance US',
     website: 'binance.us',
     memoRequired: true,

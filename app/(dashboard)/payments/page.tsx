@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Payment, PaymentStatus, AssetType } from '@/lib/types';
+import { useBlocklist, useRiskRules, evaluatePaymentRisk } from '@/lib/risk';
 
 const ExportModal = dynamic(() => import('@/components/ExportModal'), { ssr: false });
 const PaymentDetailModal = dynamic(() => import('@/components/PaymentDetailModal'), { ssr: false });
@@ -15,6 +16,8 @@ import { useFormat } from '@/lib/i18n/use-format';
 
 export default function PaymentsPage() {
   const f = useFormat();
+  const blocklist = useBlocklist();
+  const riskRules = useRiskRules();
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [isLargeDataSimulated, setIsLargeDataSimulated] = useState(false);
 
@@ -60,8 +63,17 @@ export default function PaymentsPage() {
         if (!matchesQuery) return false;
       }
 
-      // 2. Status Filter
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
+      // 2. Status Filter — "FLAGGED" is a virtual filter evaluated via risk rules
+      if (statusFilter === 'FLAGGED') {
+        const flag = evaluatePaymentRisk(
+          item.customerWallet,
+          item.amount,
+          false, // first-time payer not tracked in legacy type; default false
+          blocklist,
+          riskRules,
+        );
+        if (!flag.flagged) return false;
+      } else if (statusFilter !== 'ALL' && item.status !== statusFilter) {
         return false;
       }
 
@@ -82,7 +94,7 @@ export default function PaymentsPage() {
 
       return true;
     });
-  }, [payments, searchTerm, statusFilter, assetFilter, startDate, endDate]);
+  }, [payments, searchTerm, statusFilter, assetFilter, startDate, endDate, blocklist, riskRules]);
 
   const filterSummary = useMemo(() => {
     const parts = [];
@@ -201,6 +213,7 @@ export default function PaymentsPage() {
                 <option value="PENDING">Pending</option>
                 <option value="FAILED">Failed</option>
                 <option value="REFUNDED">Refunded</option>
+                <option value="FLAGGED">🚩 Flagged</option>
               </select>
             </div>
 
@@ -356,17 +369,39 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
-                            payment.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                              : payment.status === 'PENDING'
-                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
-                          }`}
-                        >
-                          {payment.status}
-                        </span>
+                        {(() => {
+                          const flag = evaluatePaymentRisk(
+                            payment.customerWallet,
+                            payment.amount,
+                            false,
+                            blocklist,
+                            riskRules,
+                          );
+                          if (flag.flagged) {
+                            return (
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-800"
+                                title={flag.reasonLabels.join(', ')}
+                                aria-label={`Flagged: ${flag.reasonLabels.join(', ')}`}
+                              >
+                                🚩 Flagged — {flag.reasonLabels[0]}
+                              </span>
+                            );
+                          }
+                          return (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
+                                payment.status === 'COMPLETED'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                  : payment.status === 'PENDING'
+                                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                              }`}
+                            >
+                              {payment.status}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-4">
                         <a
@@ -415,8 +450,8 @@ export default function PaymentsPage() {
         onClose={() => setIsExportModalOpen(false)}
         type="payments"
         title="Payments"
-        data={filteredPayments}
-        columns={PAYMENT_EXPORT_COLUMNS}
+        data={filteredPayments as unknown as Record<string, unknown>[]}
+        columns={PAYMENT_EXPORT_COLUMNS as unknown as import('@/lib/types').ExportColumn<Record<string, unknown>>[]}
         filterStartDate={startDate}
         filterEndDate={endDate}
         filterSummary={filterSummary}
