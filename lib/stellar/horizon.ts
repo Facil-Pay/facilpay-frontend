@@ -382,3 +382,41 @@ export async function findStrictReceiveQuote(params: {
     expiresAt,
   };
 }
+
+// ─── Network Status (#123) ────────────────────────────────────────────────────
+
+export type HorizonHealthStatus = 'healthy' | 'degraded' | 'down';
+
+export interface HorizonNetworkStatus {
+  status: HorizonHealthStatus;
+  latestLedger: number | null;
+  baseFee: number | null;
+  lastCheckedAt: number; // Date.now()
+  error?: string;
+}
+
+/** Fetches /fee_stats from Horizon to get base fee and latest ledger sequence. */
+export async function fetchHorizonStatus(
+  horizonUrl = HORIZON_TESTNET_URL
+): Promise<HorizonNetworkStatus> {
+  const lastCheckedAt = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
+    const res = await fetch(`${horizonUrl}/fee_stats`, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      return { status: 'degraded', latestLedger: null, baseFee: null, lastCheckedAt, error: `HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    const baseFee = Number(data.last_ledger_base_fee ?? data.fee_charged?.min ?? 100);
+    const latestLedger = Number(data.last_ledger ?? null);
+    return { status: 'healthy', latestLedger, baseFee, lastCheckedAt };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Network error';
+    return { status: 'down', latestLedger: null, baseFee: null, lastCheckedAt, error: msg };
+  }
+}

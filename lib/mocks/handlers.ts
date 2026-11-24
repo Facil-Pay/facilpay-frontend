@@ -30,6 +30,7 @@ import type { AnalyticsRange } from "@/lib/types/analytics";
 import type {
   Branding,
   BusinessProfile,
+  CheckoutFieldsConfig,
   LinkedWallet,
   MerchantSession,
   PaymentPreferences,
@@ -470,6 +471,13 @@ const linkedWallets: LinkedWallet[] = [
   { address: "GAYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A", label: "Refunds hot wallet", provider: "xbull", isSettlement: false, linkedAt: "2026-07-19T15:30:00Z" },
 ];
 
+let checkoutFieldsConfig: CheckoutFieldsConfig = {
+  fields: [
+    { id: "field_email", type: "email", label: "Email address", placeholder: "you@example.com", required: true },
+    { id: "field_phone", type: "phone", label: "Phone number", placeholder: "+1 555 000 0000", required: false },
+  ],
+};
+
 const settingsHandlers = [
   http.get(`${base}/merchant/profile`, async () => {
     await delay(LATENCY);
@@ -531,6 +539,18 @@ const settingsHandlers = [
   http.get(`${base}/merchant/wallets`, async () => {
     await delay(LATENCY);
     return HttpResponse.json(linkedWallets);
+  }),
+
+  http.get(`${base}/merchant/checkout-fields`, async () => {
+    await delay(LATENCY);
+    return HttpResponse.json(checkoutFieldsConfig);
+  }),
+
+  http.patch(`${base}/merchant/checkout-fields`, async ({ request }) => {
+    await delay(LATENCY);
+    const body = (await request.json()) as CheckoutFieldsConfig;
+    checkoutFieldsConfig = body;
+    return HttpResponse.json(checkoutFieldsConfig);
   }),
 ];
 
@@ -658,6 +678,287 @@ const stepUpGuardHandlers = [
   }),
 ];
 
+// ─── Payment Links ────────────────────────────────────────────────────────────
+// Module-level store so PATCH/POST mutations survive for the session.
+
+interface PaymentLinkRecord {
+  id: string;
+  title: string;
+  amount: string;
+  currency: 'USDC' | 'EURC' | 'XLM';
+  description: string;
+  paymentUrl: string;
+  createdAt: string;
+  status: 'active' | 'paid' | 'expired';
+  maxUses: number | null;
+  useCount: number;
+  expiresAt: string | null;
+}
+
+let paymentLinks: PaymentLinkRecord[] = [
+  {
+    id: 'pl_test_fixture_01',
+    title: 'Product Launch Special',
+    amount: '49.00',
+    currency: 'USDC',
+    description: 'Limited-time offer — first 10 customers only.',
+    paymentUrl: 'https://pay.facilpay.io/pay/pl_test_fixture_01',
+    createdAt: '2026-11-01T10:00:00Z',
+    status: 'active',
+    maxUses: 10,
+    useCount: 7,
+    expiresAt: '2026-12-31T23:59:59Z',
+  },
+  {
+    id: 'pl_test_fixture_02',
+    title: 'One-off Invoice #INV-2042',
+    amount: '1200.00',
+    currency: 'USDC',
+    description: 'Professional services invoice.',
+    paymentUrl: 'https://pay.facilpay.io/pay/pl_test_fixture_02',
+    createdAt: '2026-11-10T08:00:00Z',
+    status: 'active',
+    maxUses: 1,
+    useCount: 0,
+    expiresAt: null,
+  },
+  {
+    id: 'pl_test_fixture_03',
+    title: 'Black Friday Deal',
+    amount: '19.99',
+    currency: 'USDC',
+    description: 'Black Friday promo — expired.',
+    paymentUrl: 'https://pay.facilpay.io/pay/pl_test_fixture_03',
+    createdAt: '2026-11-15T00:00:00Z',
+    status: 'expired',
+    maxUses: null,
+    useCount: 0,
+    expiresAt: '2026-11-30T23:59:59Z',
+  },
+];
+
+const paymentLinkHandlers = [
+  // GET /payment-links
+  http.get(`${base}/payment-links`, async ({ request }) => {
+    await delay(LATENCY);
+    const url      = new URL(request.url);
+    const page     = Number(url.searchParams.get('page')     ?? 1);
+    const pageSize = Number(url.searchParams.get('pageSize') ?? 10);
+    return HttpResponse.json(paginate(paymentLinks, page, pageSize));
+  }),
+
+  // GET /payment-links/:id
+  http.get(`${base}/payment-links/:id`, async ({ params }) => {
+    await delay(LATENCY);
+    const link = paymentLinks.find((l) => l.id === params.id);
+    if (!link) return HttpResponse.json({ code: 'not_found', message: 'Payment link not found.' }, { status: 404 });
+    return HttpResponse.json(link);
+  }),
+
+  // POST /payment-links
+  http.post(`${base}/payment-links`, async ({ request }) => {
+    await delay(LATENCY);
+    const body = (await request.json()) as Partial<PaymentLinkRecord>;
+    // Validate expiry is not in the past
+    if (body.expiresAt && new Date(body.expiresAt).getTime() <= Date.now()) {
+      return HttpResponse.json({ code: 'validation_error', message: 'expiresAt must be in the future.' }, { status: 422 });
+    }
+    if (body.maxUses !== undefined && body.maxUses !== null && body.maxUses < 1) {
+      return HttpResponse.json({ code: 'validation_error', message: 'maxUses must be a positive integer.' }, { status: 422 });
+    }
+    const newLink: PaymentLinkRecord = {
+      id: `pl_${Date.now().toString(36)}`,
+      title: body.title ?? 'Untitled',
+      amount: body.amount ?? '0.00',
+      currency: body.currency ?? 'USDC',
+      description: body.description ?? '',
+      paymentUrl: `https://pay.facilpay.io/pay/pl_${Date.now().toString(36)}`,
+      createdAt: new Date().toISOString(),
+      status: 'active',
+      maxUses: body.maxUses ?? null,
+      useCount: 0,
+      expiresAt: body.expiresAt ?? null,
+    };
+    paymentLinks = [newLink, ...paymentLinks];
+    return HttpResponse.json(newLink, { status: 201 });
+  }),
+
+  // PATCH /payment-links/:id — allows editing or clearing maxUses / expiresAt
+  http.patch(`${base}/payment-links/:id`, async ({ params, request }) => {
+    await delay(LATENCY);
+    const idx = paymentLinks.findIndex((l) => l.id === params.id);
+    if (idx === -1) return HttpResponse.json({ code: 'not_found', message: 'Payment link not found.' }, { status: 404 });
+    const body = (await request.json()) as Partial<PaymentLinkRecord>;
+    if (body.expiresAt && new Date(body.expiresAt).getTime() <= Date.now()) {
+      return HttpResponse.json({ code: 'validation_error', message: 'expiresAt must be in the future.' }, { status: 422 });
+    }
+    if (body.maxUses !== undefined && body.maxUses !== null && body.maxUses < 1) {
+      return HttpResponse.json({ code: 'validation_error', message: 'maxUses must be a positive integer.' }, { status: 422 });
+    }
+    const updated = { ...paymentLinks[idx], ...body, updatedAt: new Date().toISOString() };
+    paymentLinks[idx] = updated as PaymentLinkRecord;
+    return HttpResponse.json(updated);
+  }),
+
+  // DELETE /payment-links/:id
+  http.delete(`${base}/payment-links/:id`, async ({ params }) => {
+    await delay(LATENCY);
+    const exists = paymentLinks.some((l) => l.id === params.id);
+    if (!exists) return HttpResponse.json({ code: 'not_found', message: 'Payment link not found.' }, { status: 404 });
+    paymentLinks = paymentLinks.filter((l) => l.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+];
+
+
+// --- Coupons ------------------------------------------------------------------
+
+interface CouponRecord {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  currency?: string;
+  expiresAt: string | null;
+  maxRedemptions: number | null;
+  redemptionCount: number;
+  status: 'active' | 'archived';
+  createdAt: string;
+  updatedAt: string;
+}
+
+let coupons: CouponRecord[] = [
+  {
+    id: 'coup_01',
+    code: 'LAUNCH20',
+    type: 'percentage',
+    value: 20,
+    expiresAt: '2026-12-31T23:59:59Z',
+    maxRedemptions: 100,
+    redemptionCount: 14,
+    status: 'active',
+    createdAt: '2026-11-01T00:00:00Z',
+    updatedAt: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'coup_02',
+    code: 'SAVE5',
+    type: 'fixed',
+    value: 5,
+    currency: 'USDC',
+    expiresAt: null,
+    maxRedemptions: null,
+    redemptionCount: 42,
+    status: 'active',
+    createdAt: '2026-10-15T00:00:00Z',
+    updatedAt: '2026-10-15T00:00:00Z',
+  },
+  {
+    id: 'coup_03',
+    code: 'OLDPROMO',
+    type: 'percentage',
+    value: 15,
+    expiresAt: '2026-10-01T00:00:00Z',
+    maxRedemptions: 50,
+    redemptionCount: 50,
+    status: 'archived',
+    createdAt: '2026-09-01T00:00:00Z',
+    updatedAt: '2026-10-01T00:00:00Z',
+  },
+];
+
+function validateCouponCode(
+  code: string,
+  orderAmount: number,
+  currency: string
+): { valid: true; coupon: CouponRecord; discountAmount: number } | { valid: false; error: string } {
+  const c = coupons.find((x) => x.code.toUpperCase() === code.toUpperCase().trim());
+  if (!c) return { valid: false, error: 'Coupon code not found.' };
+  if (c.status === 'archived') return { valid: false, error: 'This coupon has been archived.' };
+  if (c.expiresAt && new Date(c.expiresAt).getTime() <= Date.now()) return { valid: false, error: 'This coupon has expired.' };
+  if (c.maxRedemptions !== null && c.redemptionCount >= c.maxRedemptions) return { valid: false, error: 'This coupon has reached its redemption limit.' };
+  const discount =
+    c.type === 'percentage'
+      ? Math.min(orderAmount, (c.value / 100) * orderAmount)
+      : Math.min(orderAmount, c.value);
+  return { valid: true, coupon: c, discountAmount: Math.round(discount * 100) / 100 };
+}
+
+const couponHandlers = [
+  http.get(`${base}/coupons`, async ({ request }) => {
+    await delay(LATENCY);
+    const url      = new URL(request.url);
+    const page     = Number(url.searchParams.get('page')     ?? 1);
+    const pageSize = Number(url.searchParams.get('pageSize') ?? 10);
+    const status   = url.searchParams.get('status');
+    const items    = status ? coupons.filter((c) => c.status === status) : coupons;
+    return HttpResponse.json(paginate(items, page, pageSize));
+  }),
+
+  http.get(`${base}/coupons/:id`, async ({ params }) => {
+    await delay(LATENCY);
+    const c = coupons.find((x) => x.id === params.id);
+    if (!c) return HttpResponse.json({ code: 'not_found', message: 'Coupon not found.' }, { status: 404 });
+    return HttpResponse.json(c);
+  }),
+
+  http.post(`${base}/coupons`, async ({ request }) => {
+    await delay(LATENCY);
+    const body = (await request.json()) as Partial<CouponRecord>;
+    if (!body.code?.trim()) return HttpResponse.json({ code: 'validation_error', message: 'code is required.' }, { status: 422 });
+    if (coupons.some((c) => c.code.toUpperCase() === body.code!.toUpperCase()))
+      return HttpResponse.json({ code: 'validation_error', message: 'A coupon with this code already exists.' }, { status: 422 });
+    if (body.expiresAt && new Date(body.expiresAt).getTime() <= Date.now())
+      return HttpResponse.json({ code: 'validation_error', message: 'expiresAt must be in the future.' }, { status: 422 });
+    if (body.maxRedemptions !== undefined && body.maxRedemptions !== null && body.maxRedemptions < 1)
+      return HttpResponse.json({ code: 'validation_error', message: 'maxRedemptions must be a positive integer.' }, { status: 422 });
+    const newCoupon: CouponRecord = {
+      id: `coup_${Date.now().toString(36)}`,
+      code: body.code.trim().toUpperCase(),
+      type: body.type ?? 'percentage',
+      value: body.value ?? 10,
+      currency: body.currency,
+      expiresAt: body.expiresAt ?? null,
+      maxRedemptions: body.maxRedemptions ?? null,
+      redemptionCount: 0,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    coupons = [newCoupon, ...coupons];
+    return HttpResponse.json(newCoupon, { status: 201 });
+  }),
+
+  http.patch(`${base}/coupons/:id`, async ({ params, request }) => {
+    await delay(LATENCY);
+    const idx = coupons.findIndex((c) => c.id === params.id);
+    if (idx === -1) return HttpResponse.json({ code: 'not_found', message: 'Coupon not found.' }, { status: 404 });
+    const body = (await request.json()) as Partial<CouponRecord>;
+    coupons[idx] = { ...coupons[idx], ...body, updatedAt: new Date().toISOString() };
+    return HttpResponse.json(coupons[idx]);
+  }),
+
+  http.post(`${base}/coupons/validate`, async ({ request }) => {
+    await delay(LATENCY);
+    const { code, orderAmount, currency } = (await request.json()) as { code: string; orderAmount: number; currency: string };
+    const result = validateCouponCode(code, orderAmount, currency ?? 'USDC');
+    if (!result.valid) return HttpResponse.json({ code: 'invalid_coupon', message: result.error }, { status: 422 });
+    return HttpResponse.json({
+      coupon: result.coupon,
+      discountAmount: result.discountAmount,
+      finalAmount: Math.round((orderAmount - result.discountAmount) * 100) / 100,
+    });
+  }),
+
+  http.post(`${base}/coupons/:id/redeem`, async ({ params }) => {
+    await delay(LATENCY);
+    const idx = coupons.findIndex((c) => c.id === params.id);
+    if (idx === -1) return HttpResponse.json({ code: 'not_found', message: 'Coupon not found.' }, { status: 404 });
+    coupons[idx] = { ...coupons[idx], redemptionCount: coupons[idx].redemptionCount + 1, updatedAt: new Date().toISOString() };
+    return HttpResponse.json(coupons[idx]);
+  }),
+];
+
 export const handlers = [
   ...stepUpGuardHandlers,
   ...authHandlers,
@@ -672,4 +973,6 @@ export const handlers = [
   ...payoutHandlers,
   ...analyticsHandlers,
   ...settingsHandlers,
+  ...paymentLinkHandlers,
+  ...couponHandlers,
 ];
