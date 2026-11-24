@@ -4,6 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
+import { LinkAnalyticsSection } from '@/components/analytics/LinkAnalyticsSection';
 import { Payment } from '@/lib/types';
 import { INITIAL_PAYMENTS } from '@/lib/mockData';
 import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
@@ -365,6 +366,10 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
             </a>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <LinkAnalyticsSection linkId={payment.id} />
       </div>
 
       {/* Printable Receipt Preview Modal */}

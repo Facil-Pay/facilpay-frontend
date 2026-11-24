@@ -11,7 +11,7 @@ import { getDashboardData } from "@/app/lib/api/dashboard";
 import type { Paginated, PaginationMeta } from "@/lib/types/pagination";
 import type { Payment }   from "@/lib/types/payment";
 import type { Refund }    from "@/lib/types/refund";
-import type { AnalyticsInsights, AnalyticsRange } from "@/lib/types/analytics";
+import type { AnalyticsInsights, AnalyticsRange, LinkAnalytics } from "@/lib/types/analytics";
 import type { Escrow }    from "@/lib/types/escrow";
 import type { Webhook }   from "@/lib/types/webhook";
 import type { ApiKey }    from "@/lib/types/apiKey";
@@ -375,5 +375,57 @@ export function getAnalyticsInsightsFixture(range: AnalyticsRange, asset?: strin
       { country: "DE", volume: part(scale(9_900)), txCount: count(260 * share) },
       { country: "KE", volume: part(scale(7_400)), txCount: count(250 * share) },
     ],
+  };
+}
+
+// ─── Per-link analytics ───────────────────────────────────────────────────────
+
+/** Small, deterministic hash so each link id gets a stable-but-distinct shape. */
+function hashSeed(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/** Deterministic 14-day views/checkout/completion series + funnel for one payment link. */
+export function getLinkAnalyticsFixture(linkId: string): LinkAnalytics {
+  const seed = hashSeed(linkId);
+  const now = Date.now();
+  const days = 14;
+
+  const series = Array.from({ length: days }, (_, i) => {
+    const dayOffset = days - 1 - i;
+    const wobble = Math.sin(seed + i) * 0.5 + 0.5; // 0..1, stable per day/link
+    const views = Math.round(18 + wobble * 22);
+    const checkoutStarts = Math.round(views * (0.55 + wobble * 0.15));
+    const completedPayments = Math.round(checkoutStarts * (0.6 + wobble * 0.2));
+    return {
+      date: new Date(now - dayOffset * 86_400_000).toISOString().slice(0, 10),
+      views,
+      checkoutStarts,
+      completedPayments,
+    };
+  });
+
+  const totalViews = series.reduce((s, p) => s + p.views, 0);
+  const totalCheckoutStarts = series.reduce((s, p) => s + p.checkoutStarts, 0);
+  const totalCompletedPayments = series.reduce((s, p) => s + p.completedPayments, 0);
+  // wallet_connected/transaction_signed interpolate between checkout starts and completions
+  // so the funnel narrows monotonically, matching ConversionFunnel's expected shape.
+  const walletConnected = Math.round(totalCheckoutStarts * 0.92);
+  const transactionSigned = Math.round(totalCheckoutStarts * 0.78);
+
+  return {
+    linkId,
+    series,
+    funnel: [
+      { key: "link_opened", count: totalViews },
+      { key: "wallet_connected", count: walletConnected },
+      { key: "transaction_signed", count: transactionSigned },
+      { key: "payment_confirmed", count: totalCompletedPayments },
+    ],
+    totalViews,
+    totalCompletedPayments,
+    conversionRate: totalViews > 0 ? Math.round((totalCompletedPayments / totalViews) * 1000) / 10 : 0,
   };
 }

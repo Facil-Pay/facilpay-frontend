@@ -24,6 +24,7 @@ import {
   TEAM_FIXTURES,
   PAYOUT_FIXTURES,
   getAnalyticsInsightsFixture,
+  getLinkAnalyticsFixture,
   paginate,
 } from "./fixtures";
 import type { AnalyticsRange } from "@/lib/types/analytics";
@@ -436,6 +437,12 @@ const analyticsHandlers = [
     const asset = url.searchParams.get("asset") ?? undefined;
     return HttpResponse.json(getAnalyticsInsightsFixture(range, asset));
   }),
+
+  // Issue #134 — per-link analytics shown on a payment's detail page.
+  http.get(`${base}/payments/:id/link-analytics`, async ({ params }) => {
+    await delay(LATENCY);
+    return HttpResponse.json(getLinkAnalyticsFixture(params.id as string));
+  }),
 ];
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
@@ -498,6 +505,14 @@ const settingsHandlers = [
     await delay(LATENCY);
     branding = { ...branding, ...((await request.json()) as Partial<Branding>) };
     return HttpResponse.json(branding);
+  }),
+
+  // Issue #135 — lets the branding editor send a sample receipt to the
+  // merchant's own address using the current (possibly unsaved) form values.
+  http.post(`${base}/merchant/branding/test-receipt`, async ({ request }) => {
+    await delay(LATENCY);
+    const body = (await request.json()) as { to: string };
+    return HttpResponse.json({ sent: true, to: body.to });
   }),
 
   http.get(`${base}/merchant/preferences`, async () => {

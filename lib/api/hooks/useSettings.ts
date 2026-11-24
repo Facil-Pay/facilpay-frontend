@@ -75,12 +75,14 @@ export interface UpdateBrandingInput {
   /** Existing URL, a new data URL to upload, or null to remove the logo */
   logo: string | null;
   logoFileName?: string;
+  receiptFooterText?: string;
+  receiptSupportContact?: string;
 }
 
 export function useUpdateBranding() {
   const qc = useQueryClient();
   return useMutation<Branding, ApiError, UpdateBrandingInput>({
-    mutationFn: async ({ brandColor, logo, logoFileName }) => {
+    mutationFn: async ({ brandColor, logo, logoFileName, receiptFooterText, receiptSupportContact }) => {
       let logoUrl = logo;
       if (logo?.startsWith("data:")) {
         const contentType = logo.startsWith("data:image/svg+xml") ? "image/svg+xml" : "image/png";
@@ -91,12 +93,19 @@ export function useUpdateBranding() {
         logoUrl = uploaded.logoUrl;
       }
       return apiClient.patch<Branding, Branding>("/merchant/branding", {
-        body: { brandColor, logoUrl },
+        body: { brandColor, logoUrl, receiptFooterText, receiptSupportContact },
       });
     },
     onSuccess: (updated) => {
       qc.setQueryData(merchantKeys.branding(), updated);
     },
+  });
+}
+
+/** Sends a sample receipt using the in-progress (possibly unsaved) branding values — Issue #135. */
+export function useSendTestReceipt() {
+  return useMutation<{ sent: boolean }, ApiError, { to: string }>({
+    mutationFn: (body) => apiClient.post<{ sent: boolean }>("/merchant/branding/test-receipt", { body }),
   });
 }
 

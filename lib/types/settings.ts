@@ -23,6 +23,10 @@ export interface Branding {
   logoUrl?: string | null;
   /** Hex colour, e.g. #20A7EE */
   brandColor: string;
+  /** Shown at the bottom of customer receipt emails/PDFs */
+  receiptFooterText?: string;
+  /** Email or phone shown on receipts for customers who need help */
+  receiptSupportContact?: string;
 }
 
 /** POST /merchant/branding/logo — logo sent as a base64 data URL */

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronRight, Menu, FlaskConical, Zap } from "lucide-react";
+import { AccountSwitcher } from "@/components/layout/AccountSwitcher";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
@@ -118,6 +119,8 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         <h1 className="truncate text-base font-semibold text-zinc-900">{title}</h1>
       </div>
 
+      <AccountSwitcher />
+
       <NetworkModeToggle />
 
       <NetworkBadge />
@@ -126,14 +129,6 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
 
       <NotificationBell />
 
-      {/* Account menu — placeholder slot */}
-      <button
-        type="button"
-        aria-label={tNavigation("account")}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#55C2FF]/40 bg-[#55C2FF]/20 text-xs font-bold text-[#000F24]"
-      >
-        M
-      </button>
     </header>
   );
 }
