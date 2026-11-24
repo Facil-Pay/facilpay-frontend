@@ -7,6 +7,18 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     globals: true,
+    env: {
+      NEXT_PUBLIC_API_BASE_URL:           "http://localhost:4000/api/v1",
+      NEXT_PUBLIC_AUTH_LOGOUT_URL:        "http://localhost:3000/login",
+      NEXT_PUBLIC_STELLAR_NETWORK:        "testnet",
+      NEXT_PUBLIC_STELLAR_HORIZON_URL:    "https://horizon-testnet.stellar.org",
+      NEXT_PUBLIC_SOROBAN_RPC_URL:        "https://soroban-testnet.stellar.org",
+      NEXT_PUBLIC_APP_URL:                "http://localhost:3000",
+      NEXT_PUBLIC_USE_MOCKS:              "false",
+      NEXT_PUBLIC_PAYMENT_CONTRACT_ID:    "",
+      NEXT_PUBLIC_ESCROW_CONTRACT_ID:     "",
+      NEXT_PUBLIC_REFUND_CONTRACT_ID:     "",
+    },
   },
   resolve: {
     alias: {
