@@ -77,6 +77,11 @@ This repository does not currently define an automated browser E2E runner or an 
 
 If you add an automated E2E suite, include the runner, a documented setup command, and a package script (such as `npm run e2e`) in the same change.
 
+## Guides
+
+- [Testing guide](docs/testing.md): where tests go, how to run one, watch mode, MSW setup and Playwright debugging.
+- [Adding API endpoints](docs/adding-api-endpoints.md): types, query keys, hooks, MSW mocks and error handling for a new resource.
+
 ## Pull Requests
 
 Open a pull request against the default branch. Describe the user-visible change, link related issues, and list the checks you ran. Include screenshots or a short recording for UI changes. Call out environment or migration requirements, and note any checks you could not run. Use the repository pull request template as a checklist.
