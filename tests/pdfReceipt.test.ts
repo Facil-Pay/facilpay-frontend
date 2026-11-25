@@ -1,13 +1,13 @@
 import { generateReceiptPdf } from '../lib/pdfReceipt';
-import { Payment } from '../lib/types';
+import { PaymentRecord } from '../lib/types';
 
 describe('PDF Receipt Generator Specification', () => {
-  const samplePayment: Payment = {
+  const samplePayment: PaymentRecord = {
     id: 'pay_test_987654',
     date: '2026-01-20T15:30:00.000Z',
     amount: 1250.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'test.customer@stellar.org',
     customerWallet: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',

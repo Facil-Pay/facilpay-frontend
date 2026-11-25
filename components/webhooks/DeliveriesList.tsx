@@ -5,7 +5,7 @@ import {
   WebhookDelivery,
   WebhookDeliveryStatus,
   WebhookFilterOptions,
-} from '@/types/webhooks';
+} from '@/lib/types';
 import DeliveryDetailPanel from './DeliveryDetailPanel';
 import { useFormat } from '@/lib/i18n/use-format';
 
@@ -187,6 +187,7 @@ export default function DeliveriesList({
         <div className="relative">
           <input
             type="text"
+            data-shortcut-search
             placeholder="Search Event ID, Del ID..."
             value={filters.searchQuery}
             onChange={(e) =>

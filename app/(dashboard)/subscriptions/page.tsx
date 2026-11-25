@@ -232,7 +232,7 @@ export default function SubscriptionsPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(240px,1fr)_180px_220px]">
             <label>
               <span className="sr-only">Search subscriptions</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customer or subscription ID" className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
+              <input data-shortcut-search value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customer or subscription ID" className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             </label>
             <label>
               <span className="sr-only">Filter by status</span>

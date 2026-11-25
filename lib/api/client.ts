@@ -19,6 +19,7 @@
  */
 
 import { env } from "@/lib/env";
+import { getActiveMerchantId } from "@/lib/merchant-accounts";
 
 // ─── Typed error ──────────────────────────────────────────────────────────────
 
@@ -117,6 +118,9 @@ function buildHeaders(extra?: Record<string, string>): HeadersInit {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
+    // Scopes every request to the merchant account selected in the account
+    // switcher (Issue #133) rather than assuming a single-account user.
+    "X-Merchant-Account-Id": getActiveMerchantId(),
     ...extra,
   };
 

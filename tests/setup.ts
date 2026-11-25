@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 /**
  * tests/setup.ts
  *
@@ -6,16 +7,35 @@
  */
 
 import "@testing-library/jest-dom";
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll } from "vitest";
 
-/**
- * Shared MSW server for Node tests. Requests nobody mocked fail instead of
- * reaching the network. Add per-test handlers with `server.use(...)`; they are
- * removed again after each test by `resetHandlers`.
- */
-export const server = setupServer();
-
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+// Node 25+ ships an experimental global `localStorage` that shadows jsdom's
+// and is unusable without --localstorage-file. Fall back to an in-memory
+// Storage so code under test can persist state.
+if (typeof window !== "undefined" && typeof window.localStorage?.clear !== "function") {
+  class MemoryStorage implements Storage {
+    private store = new Map<string, string>();
+    get length() {
+      return this.store.size;
+    }
+    clear() {
+      this.store.clear();
+    }
+    getItem(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    key(index: number) {
+      return [...this.store.keys()][index] ?? null;
+    }
+    removeItem(key: string) {
+      this.store.delete(key);
+    }
+    setItem(key: string, value: string) {
+      this.store.set(key, String(value));
+    }
+  }
+  for (const name of ["localStorage", "sessionStorage"] as const) {
+    const storage = new MemoryStorage();
+    Object.defineProperty(window, name, { value: storage, configurable: true });
+    Object.defineProperty(globalThis, name, { value: storage, configurable: true });
+  }
+}
