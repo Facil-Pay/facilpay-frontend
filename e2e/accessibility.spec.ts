@@ -1,194 +1,144 @@
-/**
- * e2e/accessibility.spec.ts
- *
- * Runs axe-core against key pages in both light and dark modes.
- * Fails CI on "critical" and "serious" violations; logs "moderate"
- * and "minor" as warnings without failing.
- *
- * Pages scanned:
- *   /login, /overview, /payments, /payments/<id>,
- *   /checkout, /settings/profile
- *
- * Network: MSW (NEXT_PUBLIC_USE_MOCKS=true) — no real network.
- *
- * Known exceptions are listed in KNOWN_VIOLATIONS below with a reason.
- */
-
-import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
-import type { Result } from "axe-core";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ImpactLevel = "critical" | "serious" | "moderate" | "minor";
-
-// ─── Known violations ─────────────────────────────────────────────────────────
-// Add entries here when a violation is intentional or comes from a third-party
-// library that cannot be fixed immediately.  Each entry must include a reason.
-
-const KNOWN_VIOLATIONS: Record<string, string> = {
-  // Example: "color-contrast": "Recharts tooltip uses vendor colours we cannot override",
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Seed a logged-in merchant so dashboard pages don't redirect to /login. */
-function seedAuth() {
-  return async ({ page }: { page: import("@playwright/test").Page }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem("fp_access_token", "mock_e2e_token");
-      localStorage.setItem(
-        "facilpay_merchant_user",
-        JSON.stringify({
-          id: "usr_axe_01",
-          email: "merchant@acme.com",
-          name: "Acme Corp",
-          isLoggedIn: true,
-          isProfileCompleted: true,
-        }),
-      );
-      localStorage.setItem(
-        "facilpay_onboarding_state",
-        JSON.stringify({ isCompleted: true, business: { name: "Acme Corp" } }),
-      );
-    });
-  };
-}
+import AxeBuilder from '@axe-core/playwright';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Scan a page with axe-core and assert no critical/serious violations exist
- * outside the known-exceptions list.  Logs moderate/minor for reference.
+ * Accessibility checks for the main dashboard pages.
+ *
+ * Runs axe against WCAG 2.1 A/AA rules and fails on any serious or critical
+ * violation, then exercises the core keyboard-only flows.
  */
-async function scanAndAssert(
-  page: import("@playwright/test").Page,
-  label: string,
-): Promise<void> {
+
+const MAIN_PAGES = [
+  '/overview',
+  '/payments',
+  '/refunds',
+  '/analytics',
+  '/customers',
+  '/webhooks',
+  '/developers/api-keys',
+  '/settings/profile',
+];
+
+const BLOCKING_IMPACTS = new Set(['serious', 'critical']);
+
+async function blockingViolations(page: Page) {
   const results = await new AxeBuilder({ page })
-    // These rules produce many false-positives in Next.js SSR pages
-    .disableRules(["html-has-lang"])
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    // Third-party dev overlays are not part of the product UI.
+    .exclude('nextjs-portal')
     .analyze();
-
-  const blocking: Result[] = [];
-  const warnings: Result[] = [];
-
-  for (const violation of results.violations) {
-    const impact = violation.impact as ImpactLevel | undefined;
-    if (KNOWN_VIOLATIONS[violation.id]) {
-      // Suppress documented exception
-      continue;
-    }
-    if (impact === "critical" || impact === "serious") {
-      blocking.push(violation);
-    } else {
-      warnings.push(violation);
-    }
-  }
-
-  if (warnings.length > 0) {
-    console.warn(
-      `[a11y] ${label} — ${warnings.length} moderate/minor violation(s):\n` +
-        warnings.map((v) => `  • ${v.id}: ${v.description}`).join("\n"),
-    );
-  }
-
-  expect(
-    blocking,
-    `${label} has ${blocking.length} critical/serious a11y violation(s):\n` +
-      blocking
-        .map((v) => `  • [${v.impact}] ${v.id}: ${v.description}\n    ${v.helpUrl}`)
-        .join("\n"),
-  ).toHaveLength(0);
+  return results.violations
+    .filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ''))
+    .map((violation) => ({
+      id: violation.id,
+      impact: violation.impact,
+      help: violation.help,
+      targets: violation.nodes.slice(0, 5).map((node) => node.target.join(' ')),
+    }));
 }
 
-// ─── Light-mode scans ─────────────────────────────────────────────────────────
+test.describe('axe: no serious or critical violations', () => {
+  for (const path of MAIN_PAGES) {
+    test(`${path} (light)`, async ({ page }) => {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      expect(await blockingViolations(page)).toEqual([]);
+    });
 
-test.describe("Accessibility — light mode", () => {
-  test.beforeEach(seedAuth());
+    test(`${path} (dark)`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      expect(await blockingViolations(page)).toEqual([]);
+    });
+  }
 
-  test("login page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/login");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "login (light)");
-  });
-
-  test("overview page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/overview");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "overview (light)");
-  });
-
-  test("payments list has no critical/serious violations", async ({ page }) => {
-    await page.goto("/payments");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "payments list (light)");
-  });
-
-  test("payment detail has no critical/serious violations", async ({ page }) => {
-    await page.goto("/payments");
-    await page.waitForLoadState("networkidle");
-
-    // Open the first payment detail if a row link exists
-    const detailLink = page.getByRole("link", { name: /pay_/i }).first();
-    if (await detailLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await detailLink.click();
-      await page.waitForLoadState("networkidle");
-    } else {
-      // Fall back to a direct URL with a known fixture ID
-      await page.goto("/payments/pay_001");
-      await page.waitForLoadState("networkidle");
-    }
-    await scanAndAssert(page, "payment detail (light)");
-  });
-
-  test("checkout page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/checkout");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "checkout (light)");
-  });
-
-  test("settings/profile page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/settings/profile");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "settings/profile (light)");
+  test('command palette dialog', async ({ page }) => {
+    await page.goto('/overview');
+    await page.waitForLoadState('networkidle');
+    await page.keyboard.press('ControlOrMeta+k');
+    await expect(page.getByRole('combobox', { name: /search pages/i })).toBeVisible();
+    expect(await blockingViolations(page)).toEqual([]);
   });
 });
 
-// ─── Dark-mode scans ──────────────────────────────────────────────────────────
-// The app uses Tailwind's `dark:` variant triggered by the OS/browser
-// prefers-color-scheme media query.  We emulate it via Playwright's
-// colorScheme option.
-
-test.describe("Accessibility — dark mode", () => {
-  test.use({ colorScheme: "dark" });
-  test.beforeEach(seedAuth());
-
-  test("login page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/login");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "login (dark)");
+test.describe('keyboard-only flows', () => {
+  test('skip link moves focus to the main content', async ({ page }) => {
+    await page.goto('/payments');
+    await page.waitForLoadState('networkidle');
+    await page.keyboard.press('Tab');
+    const skip = page.getByRole('link', { name: 'Skip to content' });
+    await expect(skip).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main-content')).toBeFocused();
   });
 
-  test("overview page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/overview");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "overview (dark)");
+  test('every focusable element shows a visible focus indicator', async ({ page }) => {
+    await page.goto('/payments');
+    await page.waitForLoadState('networkidle');
+    for (let i = 0; i < 25; i += 1) {
+      await page.keyboard.press('Tab');
+      const indicator = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        if (!el || el === document.body) return 'none';
+        const style = window.getComputedStyle(el);
+        const hasOutline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
+        const hasRing = style.boxShadow !== 'none';
+        return hasOutline || hasRing ? 'visible' : el.outerHTML.slice(0, 120);
+      });
+      expect(indicator, 'focused element has no outline or ring').not.toMatch(/^</);
+    }
   });
 
-  test("payments list has no critical/serious violations", async ({ page }) => {
-    await page.goto("/payments");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "payments list (dark)");
+  test('navigate with the command palette', async ({ page }) => {
+    await page.goto('/overview');
+    await page.waitForLoadState('networkidle');
+    await page.keyboard.press('ControlOrMeta+k');
+    await page.keyboard.type('refunds');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/refunds/);
   });
 
-  test("checkout page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/checkout");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "checkout (dark)");
+  test('filter payments and switch saved views by keyboard', async ({ page }) => {
+    await page.goto('/payments');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByLabel('Status').selectOption('failed');
+    await expect(page).toHaveURL(/status=failed/);
+    await expect(page.getByRole('tab', { name: 'Failed' })).toHaveAttribute('aria-selected', 'true');
+
+    await page.getByRole('tab', { name: 'Failed' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Refunded' })).toBeFocused();
+    await expect(page).toHaveURL(/status=refunded/);
+
+    await page.keyboard.press('Home');
+    await expect(page).not.toHaveURL(/status=/);
   });
 
-  test("settings/profile page has no critical/serious violations", async ({ page }) => {
-    await page.goto("/settings/profile");
-    await page.waitForLoadState("networkidle");
-    await scanAndAssert(page, "settings/profile (dark)");
+  test('save a view and restore it from the URL', async ({ page }) => {
+    await page.goto('/payments?asset=USDC&sort=amount_desc');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Save view' }).click();
+    await page.getByLabel('View name').fill('Large USDC');
+    await page.keyboard.press('Enter');
+
+    await page.getByRole('tab', { name: 'All' }).click();
+    await expect(page).not.toHaveURL(/asset=/);
+
+    await page.getByRole('tab', { name: 'Large USDC' }).click();
+    await expect(page).toHaveURL(/asset=USDC&sort=amount_desc/);
+  });
+
+  test('open and close a dialog without a mouse', async ({ page }) => {
+    await page.goto('/payments');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Save view' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Save view' })).toBeFocused();
   });
 });

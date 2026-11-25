@@ -54,6 +54,7 @@ export default function RollKeyModal({
       status: 'active',
       permissions: keyItem.permissions,
       expiresAt: keyItem.expiresAt,
+      ipAllowlist: keyItem.ipAllowlist,
     };
 
     onKeyRolled(keyItem.id, newKey, gracePeriod);
@@ -90,8 +91,10 @@ export default function RollKeyModal({
           </div>
           {step === 'confirm' && (
             <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

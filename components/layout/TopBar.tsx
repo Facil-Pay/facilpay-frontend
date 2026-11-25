@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, Menu, FlaskConical, Zap } from "lucide-react";
+import { ChevronRight, Menu, FlaskConical, Search, Zap } from "lucide-react";
+import { useCommandPalette } from "@/components/command-palette/CommandPalette";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
@@ -82,6 +83,26 @@ export function NetworkModeToggle() {
   );
 }
 
+function CommandPaletteTrigger() {
+  const { open } = useCommandPalette();
+  const t = useTranslations("shell");
+  return (
+    <button
+      type="button"
+      onClick={open}
+      aria-keyshortcuts="Meta+K Control+K"
+      aria-label={t("searchHint")}
+      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 lg:w-56"
+    >
+      <Search className="h-4 w-4" aria-hidden="true" />
+      <span className="hidden lg:inline">{t("search")}…</span>
+      <kbd className="ml-auto hidden rounded border border-zinc-300 bg-white px-1.5 font-sans text-[10px] font-medium text-zinc-600 lg:inline" aria-hidden="true">
+        ⌘K
+      </kbd>
+    </button>
+  );
+}
+
 export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const crumbs = useBreadcrumbs();
   const tNavigation = useTranslations("navigation");
@@ -117,6 +138,8 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         </nav>
         <h1 className="truncate text-base font-semibold text-zinc-900">{title}</h1>
       </div>
+
+      <CommandPaletteTrigger />
 
       <NetworkModeToggle />
 

@@ -5,7 +5,7 @@ import {
   WebhookDelivery,
   WebhookDeliveryStatus,
   WebhookFilterOptions,
-} from '@/types/webhooks';
+} from '@/lib/types';
 import DeliveryDetailPanel from './DeliveryDetailPanel';
 import { useFormat } from '@/lib/i18n/use-format';
 
@@ -187,6 +187,7 @@ export default function DeliveriesList({
         <div className="relative">
           <input
             type="text"
+            data-shortcut-search
             placeholder="Search Event ID, Del ID..."
             value={filters.searchQuery}
             onChange={(e) =>
@@ -299,6 +300,14 @@ export default function DeliveriesList({
                       <td className="py-3 pr-4 font-semibold text-zinc-900 dark:text-white">
                         <span className="inline-flex items-center gap-1.5 font-mono text-[11px]">
                           {delivery.eventType}
+                          {delivery.isTest && (
+                            <span
+                              className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-700 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300"
+                              title="Manually dispatched test event"
+                            >
+                              Test
+                            </span>
+                          )}
                         </span>
                       </td>
 

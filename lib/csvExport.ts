@@ -1,4 +1,4 @@
-import { ExportColumn, ExportProgress } from './types';
+import { ExportColumn, ExportProgress } from '@/lib/types';
 
 /**
  * Escapes a single CSV value according to RFC 4180 specifications:

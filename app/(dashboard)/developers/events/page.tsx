@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SyntaxHighlightedJson from '@/components/webhooks/SyntaxHighlightedJson';
 import { getStoredEndpoints } from '@/lib/webhook-data';
-import { WebhookEventType, WebhookEndpoint } from '@/types/webhooks';
+import { WebhookEvent, Webhook } from '@/lib/types';
 
 interface EventDoc {
-  type: WebhookEventType;
+  type: WebhookEvent;
   title: string;
   category: 'payment' | 'refund' | 'escrow' | 'payout' | 'account';
   description: string;
@@ -365,7 +365,7 @@ func VerifyFacilPaySignature(rawBody, signatureHeader, secret string, toleranceS
 export default function EventsCatalogPage() {
   const [selectedEvent, setSelectedEvent] = useState<EventDoc>(EVENT_CATALOG[1]); // Default to payment.completed
   const [selectedLang, setSelectedLang] = useState<'node' | 'python' | 'go'>('node');
-  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
+  const [endpoints, setEndpoints] = useState<Webhook[]>([]);
   const [selectedEndpointId, setSelectedEndpointId] = useState<string>('');
   const [testSent, setTestSent] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
@@ -415,6 +415,12 @@ export default function EventsCatalogPage() {
             className="rounded-lg bg-[#000F24] px-3 py-1.5 font-semibold text-white shadow-sm dark:bg-[#55C2FF] dark:text-black"
           >
             Event Catalog
+          </Link>
+          <Link
+            href="/developers/logs"
+            className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Request Logs
           </Link>
         </div>
       </div>
