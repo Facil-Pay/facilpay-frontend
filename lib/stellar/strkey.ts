@@ -57,6 +57,10 @@ function decodeBase32(input: string): Uint8Array | null {
   return bytes;
 }
 
+/**
+ * Helpers for validating Stellar strkey-encoded values (account IDs, seeds and similar).
+ * Validation never throws; callers receive `false` for malformed input.
+ */
 export const StrKey = {
   /**
    * Validates if a string is a valid Stellar Ed25519 Public Key.

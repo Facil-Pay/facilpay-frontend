@@ -21,6 +21,15 @@ import type {
   RetryRefundResponse,
 } from "@/lib/types/refund";
 
+/**
+ * React Query hook for a paginated list of refunds.
+ *
+ * When `paymentId` is given the query is scoped to that payment's refunds; otherwise the global refund list is used.
+ *
+ * @param paymentId - Optional payment ID to filter refunds by.
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `Paginated<Refund>` data. Errors are reported as an {@link ApiError}.
+ */
 export function useRefunds(
   paymentId?: string,
   options?: Partial<UseQueryOptions<Paginated<Refund>, ApiError>>
@@ -40,6 +49,15 @@ export function useRefunds(
   });
 }
 
+/**
+ * React Query hook for a single refund.
+ *
+ * The query stays disabled while `id` is empty, so it is safe to call before the ID is known.
+ *
+ * @param id - Refund ID, or `undefined` to keep the query idle.
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result. Errors are reported as an {@link ApiError}.
+ */
 export function useRefund(
   id: string | undefined,
   options?: Partial<UseQueryOptions<Refund, ApiError>>
@@ -53,6 +71,14 @@ export function useRefund(
   });
 }
 
+/**
+ * Mutation that cancels a pending refund.
+ *
+ * On success the refund's cached detail is replaced with the response and the refund lists are invalidated.
+ *
+ * @param id - Refund ID to cancel.
+ * @returns A React Query mutation with no variables. Rejects with an {@link ApiError} when the API refuses the cancellation.
+ */
 export function useCancelRefund(id: string) {
   const qc = useQueryClient();
   return useMutation<Refund, ApiError, void>({

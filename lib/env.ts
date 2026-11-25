@@ -15,7 +15,8 @@ import { z } from "zod";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const envSchema = z.object({
+/** Zod schema for every NEXT_PUBLIC_* variable. Exported so tests can check it against .env.example. */
+export const envSchema = z.object({
   // ── API ──────────────────────────────────────────────────────────────────
   /** FacilPay backend REST API base URL — no trailing slash */
   NEXT_PUBLIC_API_BASE_URL: z
@@ -29,6 +30,7 @@ const envSchema = z.object({
     .url("NEXT_PUBLIC_AUTH_LOGOUT_URL must be a valid URL (e.g. http://localhost:3000/login)"),
 
   // ── Stellar network ───────────────────────────────────────────────────────
+  // Zod v4 reads a plain `error` string; the v3 `errorMap` option is ignored.
   NEXT_PUBLIC_STELLAR_NETWORK: z.enum(["mainnet", "testnet", "futurenet"], {
     error: 'NEXT_PUBLIC_STELLAR_NETWORK must be "mainnet", "testnet", or "futurenet"',
   }),

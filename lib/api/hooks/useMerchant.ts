@@ -20,6 +20,12 @@ import type {
   UpdateTeamMemberRequest,
 } from "@/lib/types/merchant";
 
+/**
+ * React Query hook for the authenticated merchant's profile.
+ *
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result. Errors are reported as an {@link ApiError}.
+ */
 export function useMerchantProfile(
   options?: Partial<UseQueryOptions<Merchant, ApiError>>
 ) {
@@ -31,6 +37,12 @@ export function useMerchantProfile(
   });
 }
 
+/**
+ * React Query hook for the merchant's team members.
+ *
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result. Errors are reported as an {@link ApiError}.
+ */
 export function useTeamMembers(
   options?: Partial<UseQueryOptions<TeamMember[], ApiError>>
 ) {
@@ -42,6 +54,12 @@ export function useTeamMembers(
   });
 }
 
+/**
+ * Mutation that invites a team member and refreshes the team list on success.
+ *
+ * @returns A React Query mutation. Calling `mutate` or `mutateAsync` sends `InviteTeamMemberRequest`.
+ *   Rejects with an {@link ApiError} when the API refuses the invite.
+ */
 export function useInviteTeamMember() {
   const qc = useQueryClient();
   return useMutation<TeamMember, ApiError, InviteTeamMemberRequest>({
@@ -53,6 +71,14 @@ export function useInviteTeamMember() {
   });
 }
 
+/**
+ * Mutation that updates one team member's role or details.
+ *
+ * On success the member's cached entry is replaced with the response and the team list is invalidated.
+ *
+ * @param memberId - ID of the team member to update.
+ * @returns A React Query mutation that sends `UpdateTeamMemberRequest`. Rejects with an {@link ApiError} on failure.
+ */
 export function useUpdateTeamMember(memberId: string) {
   const qc = useQueryClient();
   return useMutation<TeamMember, ApiError, UpdateTeamMemberRequest>({
@@ -65,6 +91,11 @@ export function useUpdateTeamMember(memberId: string) {
   });
 }
 
+/**
+ * Mutation that removes a team member and refreshes the team list on success.
+ *
+ * @returns A React Query mutation whose variable is the member ID. Rejects with an {@link ApiError} on failure.
+ */
 export function useRemoveTeamMember() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({

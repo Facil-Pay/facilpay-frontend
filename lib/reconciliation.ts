@@ -1,8 +1,25 @@
 import type { PaymentRecord, PayoutRecord, RefundRecord } from "@/lib/types";
 
+/**
+ * Kind of ledger activity compared against a settlement statement.
+ */
 export type ReconciliationActivityType = "Payment" | "Refund" | "Payout";
+/**
+ * Outcome for one reconciliation row.
+ *
+ * - `Matched`: a statement entry agrees on asset and amount, within one cent.
+ * - `Mismatch`: an entry was found but its asset or amount differs.
+ * - `Missing statement`: ledger activity with no matching statement entry.
+ * - `Unmatched statement`: a statement entry that matched no ledger activity.
+ */
 export type ReconciliationStatus = "Matched" | "Mismatch" | "Missing statement" | "Unmatched statement";
 
+/**
+ * A ledger movement to reconcile. Refunds and payouts are negative amounts so that a statement's net flow can be compared directly.
+ *
+ * @property reference - Transaction hash used as the primary match key. May be empty.
+ * @property amount - Signed amount in `asset` units.
+ */
 export interface ReconciliationActivity {
   id: string;
   date: string;
@@ -12,6 +29,11 @@ export interface ReconciliationActivity {
   amount: number;
 }
 
+/**
+ * One line from a settlement statement, either parsed from CSV or generated as a sample.
+ *
+ * @property amount - Signed amount; debits are negative.
+ */
 export interface SettlementEntry {
   id: string;
   date: string;
@@ -20,6 +42,13 @@ export interface SettlementEntry {
   amount: number;
 }
 
+/**
+ * One row of the reconciliation report.
+ *
+ * @property activity - Ledger side of the row, when present.
+ * @property statement - Statement side of the row, when present.
+ * @property difference - Statement amount minus activity amount, rounded to cents. Set only when both sides exist.
+ */
 export interface ReconciliationRow {
   id: string;
   status: ReconciliationStatus;
@@ -31,6 +60,17 @@ export interface ReconciliationRow {
 const amountTolerance = 0.01;
 const dateWindowMs = 3 * 24 * 60 * 60 * 1000;
 
+/**
+ * Turns payments, refunds and payouts into reconciliation activities.
+ *
+ * Only settled records are included: payments that are `COMPLETED` or `REFUNDED`, refunds that are `COMPLETED`,
+ * and payouts that are `COMPLETED`. Refunds and payouts are returned as negative amounts.
+ *
+ * @param payments - Merchant payments to consider.
+ * @param refunds - Merchant refunds to consider.
+ * @param payouts - Merchant payouts to consider.
+ * @returns Activities in the order payments, refunds, payouts.
+ */
 export function createReconciliationActivities(
   payments: PaymentRecord[],
   refunds: RefundRecord[],
@@ -128,6 +168,23 @@ function parseAmount(value: string, rowNumber: number): number {
   return isAccountingNegative ? -amount : amount;
 }
 
+/**
+ * Parses a settlement statement CSV into {@link SettlementEntry} rows.
+ *
+ * Columns are found by normalised header name, so `Posted At`, `transaction_date` and similar variants are accepted.
+ * Required columns are a date, an amount and an asset (or currency). Reference is optional.
+ * A `direction` column (for example `debit` or `credit`) sets the sign of the amount.
+ * Accounting notation such as `(12.00)` is read as negative.
+ *
+ * @param csv - Raw CSV text including a header row.
+ * @returns One entry per data row, with ids in the form `statement-<line>`.
+ * @throws {Error} When there is no data row, a required column is missing, or a row has an invalid date, missing asset or non-numeric amount. The message names the row.
+ *
+ * @example
+ * ```ts
+ * parseSettlementCsv("Date,Amount,Asset,Reference\n2026-01-02,10.5,USDC,abc");
+ * ```
+ */
 export function parseSettlementCsv(csv: string): SettlementEntry[] {
   const rows = parseCsvRows(csv);
   if (rows.length < 2) throw new Error("The statement CSV must include a header and at least one transaction.");
@@ -173,6 +230,21 @@ function roundAmount(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * Matches ledger activities against statement entries and reports each outcome.
+ *
+ * Matching runs in two passes for each activity:
+ * 1. Exact match on the normalised transaction reference.
+ * 2. If there is no reference match, a unique candidate with the same asset, an amount within one cent,
+ *    and a date within three days.
+ *
+ * An ambiguous second-pass match is left unmatched rather than guessed. Each statement entry can be used once.
+ * Statement entries that remain unused are appended as `Unmatched statement` rows.
+ *
+ * @param activities - Ledger activities to reconcile.
+ * @param statementEntries - Parsed statement entries.
+ * @returns Reconciliation rows, one per activity followed by one per leftover statement entry.
+ */
 export function reconcileSettlement(
   activities: ReconciliationActivity[],
   statementEntries: SettlementEntry[],
@@ -226,6 +298,15 @@ export function reconcileSettlement(
   return rows;
 }
 
+/**
+ * Builds a demo statement from ledger activities, for trying the reconciliation view without a real CSV.
+ *
+ * When there is more than one activity, the last one is left out so that it shows as `Missing statement`. The second entry gets a deliberate
+ * 4.25 difference so that a `Mismatch` row also appears. Sign and direction are preserved.
+ *
+ * @param activities - Activities to base the sample on.
+ * @returns Sample entries, or an empty array when there are no activities.
+ */
 export function createSampleStatement(activities: ReconciliationActivity[]): SettlementEntry[] {
   if (activities.length === 0) return [];
   const included = activities.slice(0, Math.max(1, activities.length - 1));
