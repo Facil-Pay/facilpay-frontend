@@ -7,7 +7,44 @@ export const STORAGE_KEYS = {
   WEBHOOKS: 'facilpay_webhooks',
   API_KEYS: 'facilpay_api_keys',
   TEAMMATES: 'facilpay_teammates',
+  DASHBOARD_LAYOUT: 'facilpay_dashboard_layout',
+  AUDIT_EVENTS: 'facilpay_audit_events',
 } as const;
+
+export const DASHBOARD_WIDGETS = [
+  'gettingStarted',
+  'stats',
+  'paymentLink',
+  'recentPayments',
+  'integrations',
+] as const;
+
+export type DashboardWidgetId = (typeof DASHBOARD_WIDGETS)[number];
+
+export interface DashboardLayout {
+  order: DashboardWidgetId[];
+  hidden: DashboardWidgetId[];
+}
+
+export interface StoredAuditEvent {
+  id: string;
+  actor: string;
+  actionType: 'Webhooks';
+  action: string;
+  target: string;
+  ip: string;
+  timestamp: string;
+}
+
+export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
+  order: [...DASHBOARD_WIDGETS],
+  hidden: [],
+};
+
+const dashboardLayoutSnapshots = new Map<string, DashboardLayout>();
+const dashboardLayoutSubscribers = new Map<string, Set<() => void>>();
+let auditEventsSnapshot: StoredAuditEvent[] | null = null;
+const auditEventSubscribers = new Set<() => void>();
 
 export const DEFAULT_CONNECTED_WALLET = 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3IF5IS2RVSQF';
 
@@ -120,6 +157,103 @@ export function getMerchantUser(): MerchantUser {
 
 export function saveMerchantUser(user: MerchantUser): void {
   saveToStorage(STORAGE_KEYS.MERCHANT_USER, user);
+}
+
+export function getDashboardLayout(userId: string): DashboardLayout {
+  const saved = loadFromStorage<Partial<DashboardLayout> | null>(
+    `${STORAGE_KEYS.DASHBOARD_LAYOUT}_${encodeURIComponent(userId)}`,
+    null
+  );
+  if (!saved || !Array.isArray(saved.order) || !Array.isArray(saved.hidden)) {
+    return DEFAULT_DASHBOARD_LAYOUT;
+  }
+
+  const valid = new Set<string>(DASHBOARD_WIDGETS);
+  const order = saved.order.filter(
+    (widget): widget is DashboardWidgetId =>
+      typeof widget === 'string' && valid.has(widget)
+  );
+  const hidden = saved.hidden.filter(
+    (widget): widget is DashboardWidgetId =>
+      typeof widget === 'string' && valid.has(widget)
+  );
+
+  return {
+    order: [...new Set([...order, ...DASHBOARD_WIDGETS])],
+    hidden: [...new Set(hidden)],
+  };
+}
+
+export function getDashboardLayoutSnapshot(userId: string): DashboardLayout {
+  const key = `${STORAGE_KEYS.DASHBOARD_LAYOUT}_${encodeURIComponent(userId)}`;
+  const cached = dashboardLayoutSnapshots.get(key);
+  if (cached) return cached;
+  const layout = getDashboardLayout(userId);
+  dashboardLayoutSnapshots.set(key, layout);
+  return layout;
+}
+
+export function subscribeToDashboardLayout(
+  userId: string,
+  listener: () => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const key = `${STORAGE_KEYS.DASHBOARD_LAYOUT}_${encodeURIComponent(userId)}`;
+  let subscribers = dashboardLayoutSubscribers.get(key);
+  if (!subscribers) {
+    subscribers = new Set();
+    dashboardLayoutSubscribers.set(key, subscribers);
+  }
+  subscribers.add(listener);
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== key) return;
+    dashboardLayoutSnapshots.delete(key);
+    listener();
+  };
+  window.addEventListener('storage', handleStorage);
+
+  return () => {
+    subscribers?.delete(listener);
+    if (subscribers?.size === 0) dashboardLayoutSubscribers.delete(key);
+    window.removeEventListener('storage', handleStorage);
+  };
+}
+
+export function saveDashboardLayout(userId: string, layout: DashboardLayout): void {
+  const key = `${STORAGE_KEYS.DASHBOARD_LAYOUT}_${encodeURIComponent(userId)}`;
+  saveToStorage(key, layout);
+  dashboardLayoutSnapshots.set(key, layout);
+  dashboardLayoutSubscribers.get(key)?.forEach((listener) => listener());
+}
+
+export function saveAuditEvent(event: StoredAuditEvent): void {
+  const events = getStoredAuditEvents();
+  auditEventsSnapshot = [event, ...events];
+  saveToStorage(STORAGE_KEYS.AUDIT_EVENTS, auditEventsSnapshot);
+  auditEventSubscribers.forEach((listener) => listener());
+}
+
+export function getStoredAuditEvents(): StoredAuditEvent[] {
+  if (auditEventsSnapshot) return auditEventsSnapshot;
+  auditEventsSnapshot = loadFromStorage<StoredAuditEvent[]>(STORAGE_KEYS.AUDIT_EVENTS, []);
+  return auditEventsSnapshot;
+}
+
+export function subscribeToAuditEvents(listener: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  auditEventSubscribers.add(listener);
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== STORAGE_KEYS.AUDIT_EVENTS) return;
+    auditEventsSnapshot = null;
+    listener();
+  };
+  window.addEventListener('storage', handleStorage);
+
+  return () => {
+    auditEventSubscribers.delete(listener);
+    window.removeEventListener('storage', handleStorage);
+  };
 }
 
 export function removeFromStorage(key: string): void {

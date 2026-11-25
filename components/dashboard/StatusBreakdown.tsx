@@ -2,7 +2,8 @@
 
 import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { StatusBreakdown } from "@/app/lib/api/dashboard";
-import type { PaymentStatus } from "@/app/lib/types/payment";
+import type { PaymentStatus } from "@/lib/types";
+import { PAYMENT_STATUS_META } from "@/components/payments/payment-status";
 import { useFormat } from "@/lib/i18n/use-format";
 
 function PieChartIcon() {
@@ -14,24 +15,13 @@ function PieChartIcon() {
   );
 }
 
-// Status colour map (matches CSS variables + Badge variants)
-const STATUS_COLORS: Record<PaymentStatus, string> = {
-  completed:  "#10b981",
-  pending:    "#f59e0b",
-  processing: "#0ea5e9",
-  failed:     "#ef4444",
-  refunded:   "#8b5cf6",
-  cancelled:  "#71717a",
-};
+const STATUS_COLORS = Object.fromEntries(
+  Object.entries(PAYMENT_STATUS_META).map(([status, meta]) => [status, meta.chartColor]),
+) as Record<PaymentStatus, string>;
 
-const STATUS_LABELS: Record<PaymentStatus, string> = {
-  completed:  "Completed",
-  pending:    "Pending",
-  processing: "Processing",
-  failed:     "Failed",
-  refunded:   "Refunded",
-  cancelled:  "Cancelled",
-};
+const STATUS_LABELS = Object.fromEntries(
+  Object.entries(PAYMENT_STATUS_META).map(([status, meta]) => [status, meta.label]),
+) as Record<PaymentStatus, string>;
 
 // Convert a list of status segments to SVG donut arc paths
 function buildDonutPaths(
@@ -116,7 +106,9 @@ export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
             width={140}
             height={140}
             viewBox="0 0 140 140"
-            aria-label="Payment status donut chart"
+            aria-label={`Payment status breakdown: ${data
+              .map((d) => `${STATUS_LABELS[d.status] ?? d.status} ${d.count} (${f.percent(d.pct / 100, { digits: 0 })})`)
+              .join(", ")}`}
             role="img"
           >
             {paths.map((p, i) => (
@@ -138,6 +130,7 @@ export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
             <li key={d.status} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 <span
+                  aria-hidden="true"
                   className="h-2.5 w-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: STATUS_COLORS[d.status] ?? "#71717a" }}
                 />
@@ -149,7 +142,7 @@ export function StatusBreakdownChart({ data }: StatusBreakdownChartProps) {
                 <span className="text-xs font-semibold text-zinc-900 tabular-nums w-5 text-right">
                   {d.count}
                 </span>
-                <span className="text-xs text-zinc-400 tabular-nums w-10 text-right">
+                <span className="text-xs text-zinc-600 tabular-nums w-10 text-right">
                   {f.percent(d.pct / 100, { digits: 0 })}
                 </span>
               </div>

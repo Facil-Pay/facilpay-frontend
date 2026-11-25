@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { WebhookEndpoint } from '@/types/webhooks';
+import { Webhook } from '@/lib/types';
 import { useFormat } from '@/lib/i18n/use-format';
 
 interface EndpointsListProps {
-  endpoints: WebhookEndpoint[];
-  onEdit: (endpoint: WebhookEndpoint) => void;
-  onDelete: (endpoint: WebhookEndpoint) => void;
-  onRollSecret: (endpoint: WebhookEndpoint) => void;
-  onTest: (endpoint: WebhookEndpoint) => void;
+  endpoints: Webhook[];
+  onEdit: (endpoint: Webhook) => void;
+  onDelete: (endpoint: Webhook) => void;
+  onRollSecret: (endpoint: Webhook) => void;
+  onTest: (endpoint: Webhook) => void;
   onToggleStatus: (endpointId: string) => void;
   onViewVerificationGuide: (secret?: string) => void;
 }
@@ -43,9 +43,9 @@ export default function EndpointsList({
     });
   };
 
-  const handleCopySecret = (endpoint: WebhookEndpoint) => {
+  const handleCopySecret = (endpoint: Webhook) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(endpoint.secret);
+      navigator.clipboard.writeText(endpoint.secret ?? '');
       setCopiedSecretId(endpoint.id);
       setTimeout(() => setCopiedSecretId(null), 2000);
     }
@@ -163,8 +163,8 @@ export default function EndpointsList({
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap gap-1">
                         {(isEventsExpanded
-                          ? ep.subscribedEvents
-                          : ep.subscribedEvents.slice(0, 3)
+                          ? ep.events
+                          : ep.events.slice(0, 3)
                         ).map((ev) => (
                           <span
                             key={ev}
@@ -175,7 +175,7 @@ export default function EndpointsList({
                         ))}
                       </div>
 
-                      {ep.subscribedEvents.length > 3 && (
+                      {ep.events.length > 3 && (
                         <button
                           type="button"
                           onClick={() =>
@@ -187,7 +187,7 @@ export default function EndpointsList({
                         >
                           {isEventsExpanded
                             ? 'Show less'
-                            : `+${ep.subscribedEvents.length - 3} more events`}
+                            : `+${ep.events.length - 3} more events`}
                         </button>
                       )}
                     </div>

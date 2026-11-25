@@ -13,7 +13,7 @@ import type {
   PaymentNetwork,
   PaymentSortField,
   PaymentSortOrder,
-} from "@/app/lib/types/payment";
+} from "@/lib/types";
 import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -391,6 +391,7 @@ export function PaymentsListClient({
   failedCount,
   totalVolumeUsd,
 }: PaymentsListClientProps) {
+  const f = useFormat();
   // ── Filter state ────────────────────────────────────────────────────────────
   const [filters, setFilters]     = useState<FilterState>(INITIAL_FILTERS);
   const [showAdvanced, setShowAdvanced] = useState(false);

@@ -1,5 +1,6 @@
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
-import type { PaymentStatus } from "@/app/lib/types/payment";
+import { PAYMENT_STATUS_META, paymentStatusLabel } from "./payment-status";
+import type { PaymentStatus } from "@/lib/types";
 
 interface PaymentStatusBadgeProps {
   status: PaymentStatus;
@@ -8,28 +9,15 @@ interface PaymentStatusBadgeProps {
   className?: string;
 }
 
-const statusConfig: Record<
-  PaymentStatus,
-  { label: string; variant: BadgeVariant }
-> = {
-  pending:    { label: "Pending",    variant: "warning" },
-  processing: { label: "Processing", variant: "info"    },
-  completed:  { label: "Completed",  variant: "success" },
-  failed:     { label: "Failed",     variant: "danger"  },
-  refunded:   { label: "Refunded",   variant: "neutral" },
-  cancelled:  { label: "Cancelled",  variant: "neutral" },
-};
-
 export function PaymentStatusBadge({
   status,
   size = "sm",
   dot = true,
   className,
 }: PaymentStatusBadgeProps) {
-  const { label, variant } = statusConfig[status] ?? {
-    label: status,
-    variant: "neutral" as BadgeVariant,
-  };
+  const meta = PAYMENT_STATUS_META[status];
+  const label = meta?.label ?? paymentStatusLabel(status);
+  const variant: BadgeVariant = meta?.variant ?? "neutral";
 
   return (
     <Badge variant={variant} size={size} dot={dot} className={className}>

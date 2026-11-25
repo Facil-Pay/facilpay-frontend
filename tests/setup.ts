@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 /**
  * tests/setup.ts
  *
@@ -7,14 +8,34 @@
 
 import "@testing-library/jest-dom";
 
-// ── Env stubs ────────────────────────────────────────────────────────────────
-// lib/env.ts runs at module load time and throws if any required NEXT_PUBLIC_*
-// variable is missing.  Set minimal valid values here so every test file can
-// import app modules without a real .env.local present.
-process.env.NEXT_PUBLIC_API_BASE_URL          = "http://localhost:4000/api/v1";
-process.env.NEXT_PUBLIC_AUTH_LOGOUT_URL       = "http://localhost:3000/login";
-process.env.NEXT_PUBLIC_STELLAR_NETWORK       = "testnet";
-process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL   = "https://horizon-testnet.stellar.org";
-process.env.NEXT_PUBLIC_SOROBAN_RPC_URL       = "https://soroban-testnet.stellar.org";
-process.env.NEXT_PUBLIC_APP_URL               = "http://localhost:3000";
-process.env.NEXT_PUBLIC_USE_MOCKS             = "false";
+// Node 25+ ships an experimental global `localStorage` that shadows jsdom's
+// and is unusable without --localstorage-file. Fall back to an in-memory
+// Storage so code under test can persist state.
+if (typeof window !== "undefined" && typeof window.localStorage?.clear !== "function") {
+  class MemoryStorage implements Storage {
+    private store = new Map<string, string>();
+    get length() {
+      return this.store.size;
+    }
+    clear() {
+      this.store.clear();
+    }
+    getItem(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    key(index: number) {
+      return [...this.store.keys()][index] ?? null;
+    }
+    removeItem(key: string) {
+      this.store.delete(key);
+    }
+    setItem(key: string, value: string) {
+      this.store.set(key, String(value));
+    }
+  }
+  for (const name of ["localStorage", "sessionStorage"] as const) {
+    const storage = new MemoryStorage();
+    Object.defineProperty(window, name, { value: storage, configurable: true });
+    Object.defineProperty(globalThis, name, { value: storage, configurable: true });
+  }
+}

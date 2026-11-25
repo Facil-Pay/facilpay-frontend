@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Payment } from '@/lib/types';
+import { PaymentRecord } from '@/lib/types';
+import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
 import { downloadPaymentReceipt, printPaymentReceipt } from '@/lib/pdfReceipt';
 import { useFormat } from '@/lib/i18n/use-format';
 
 interface ReceiptPreviewModalProps {
-  payment: Payment | null;
+  payment: PaymentRecord | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -66,8 +67,10 @@ export default function ReceiptPreviewModal({
               Download PDF
             </button>
             <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -131,17 +134,7 @@ export default function ReceiptPreviewModal({
               </div>
 
               <div className="text-right">
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                    payment.status === 'COMPLETED'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                      : payment.status === 'PENDING'
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                      : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                  }`}
-                >
-                  {payment.status}
-                </span>
+                <PaymentStatusBadge status={payment.status} size="md" />
               </div>
             </div>
           </div>

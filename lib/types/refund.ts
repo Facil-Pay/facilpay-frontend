@@ -1,15 +1,21 @@
 /**
  * lib/types/refund.ts
  *
- * Refund domain types.
+ * Refund domain types. Single source: import from "@/lib/types".
  */
 
-export type RefundStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "cancelled";
+import type { AssetType } from "./asset";
+
+/** Lowercase status values exactly as returned by the API. */
+export const REFUND_STATUSES = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+
+export type RefundStatus = (typeof REFUND_STATUSES)[number];
 
 export type RefundReason =
   | "customer_request"
@@ -92,4 +98,22 @@ export interface CreateRefundRequest {
   amount?: number;       // defaults to full payment amount
   reason: RefundReason;
   reasonDetail?: string;
+}
+
+/**
+ * Flattened, settled refund row used by CSV export and reconciliation.
+ * Shares `RefundStatus` with the API `Refund`.
+ */
+export interface RefundRecord {
+  id: string;
+  paymentId: string;
+  /** ISO 8601 */
+  date: string;
+  amount: number;
+  asset: AssetType;
+  status: RefundStatus;
+  reason: string;
+  customerWallet: string;
+  txHash: string;
+  fee: number;
 }
