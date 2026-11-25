@@ -1,5 +1,6 @@
 import { Payment, Refund, Payout, ExportColumn } from './types';
 import { roundTo, toDecimalString } from '@/lib/i18n/format';
+import { taxExportColumns } from './csvExport';
 
 export const INITIAL_PAYMENTS: Payment[] = [
   {
@@ -35,6 +36,12 @@ export const INITIAL_PAYMENTS: Payment[] = [
     fee: 0.00001,
     description: 'API Usage Pack: 50,000 requests',
     memo: 'MEMO-50K-API',
+    // Tax-inclusive sample (VAT 20%): 375.42 + 75.08 = 450.50 USDC
+    taxName: 'VAT',
+    taxRate: 20,
+    taxInclusive: true,
+    taxAmount: 75.08,
+    subtotal: 375.42,
   },
   {
     id: 'pay_20260122_3b4c5d',
@@ -332,6 +339,7 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
         ? '0.1250 USD/XLM'
         : '1.0800 USD/EURC',
   },
+  ...taxExportColumns<Payment>(),
   { key: 'description', label: 'Description', selected: true },
   { key: 'memo', label: 'Memo', selected: true },
 ];

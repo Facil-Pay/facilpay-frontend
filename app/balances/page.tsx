@@ -11,16 +11,29 @@ import {
   FormattedBalance,
   HorizonOperation,
   calculateXlmReserve,
+  fetchHorizonAccount,
   fundWithFriendbot,
+  parseHorizonBalances,
 } from '@/lib/stellar/horizon';
 import { calculateTotalPortfolioUsd } from '@/lib/stellar/prices';
 import { useFormat } from '@/lib/i18n/use-format';
+import { useToast } from '@/components/ui/toast';
+import {
+  type NetworkMode,
+  getStoredNetworkMode,
+  isFriendbotAvailable,
+} from '@/lib/network-mode';
 
 const DEMO_MERCHANT_ACCOUNT = 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 const DEMO_UNFUNDED_ACCOUNT = 'GCRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 
 export default function BalancesPage() {
   const f = useFormat();
+  const toast = useToast();
+  // Resolved on the client only; null until known so the Friendbot action is
+  // never flashed on mainnet during hydration.
+  const [networkMode, setNetworkMode] = useState<NetworkMode | null>(null);
+  const showFriendbot = isFriendbotAvailable(networkMode);
   const [selectedAccount, setSelectedAccount] = useState<string>(DEMO_MERCHANT_ACCOUNT);
   const [isUnfunded, setIsUnfunded] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -122,6 +135,10 @@ export default function BalancesPage() {
     },
   ]);
 
+  useEffect(() => {
+    setNetworkMode(getStoredNetworkMode());
+  }, []);
+
   // Load / Toggle account
   const handleToggleAccount = (accountId: string) => {
     setSelectedAccount(accountId);
@@ -170,35 +187,50 @@ export default function BalancesPage() {
     }
   };
 
-  // Friendbot Funding Action
+  // Reload balances from Horizon after funding; fall back to the freshly
+  // funded Friendbot starting balance when Horizon can't be reached.
+  const refreshBalances = useCallback(async (accountId: string) => {
+    setIsLoading(true);
+    const { account } = await fetchHorizonAccount(accountId);
+    setIsLoading(false);
+
+    if (account) {
+      setBalances(parseHorizonBalances(account));
+      return;
+    }
+
+    const totalXlm = 10000.0;
+    const reserve = calculateXlmReserve(totalXlm, 0);
+    setBalances([
+      {
+        assetCode: 'XLM',
+        isNative: true,
+        totalBalance: totalXlm,
+        availableBalance: reserve.available,
+        subentryCount: 0,
+        reserveDetails: reserve,
+        stellarExpertUrl: 'https://stellar.expert/explorer/testnet/asset/XLM',
+      },
+    ]);
+  }, []);
+
+  // Friendbot Funding Action (testnet only)
   const handleFundWithFriendbot = async () => {
+    if (!isFriendbotAvailable(networkMode) || isFunding) return;
+
     setIsFunding(true);
     setFundingMessage(null);
 
     const res = await fundWithFriendbot(selectedAccount);
-    setIsFunding(false);
 
     if (res.success) {
       setFundingMessage({ text: res.message, isSuccess: true });
+      toast(res.message, 'success');
       setIsUnfunded(false);
 
-      // Initialize with funded XLM balance
-      const totalXlm = 10000.0;
-      const reserve = calculateXlmReserve(totalXlm, 0);
+      await refreshBalances(selectedAccount);
 
-      setBalances([
-        {
-          assetCode: 'XLM',
-          isNative: true,
-          totalBalance: totalXlm,
-          availableBalance: reserve.available,
-          subentryCount: 0,
-          reserveDetails: reserve,
-          stellarExpertUrl: 'https://stellar.expert/explorer/testnet/asset/XLM',
-        },
-      ]);
-
-      setOperations([
+      setOperations((prev) => [
         {
           id: `op_${Date.now()}`,
           type: 'create_account',
@@ -211,10 +243,15 @@ export default function BalancesPage() {
             funder: 'GAIH3ULLFQ4DGSECF2AR5SX6VGE3EGRHSQMAVYPPYFCIFHUACJYRLORW',
           },
         },
+        ...prev,
       ]);
     } else {
       setFundingMessage({ text: res.message, isSuccess: false });
+      toast(`Friendbot funding failed: ${res.message}`, 'error');
     }
+
+    // Keep the button disabled until balances have been refreshed
+    setIsFunding(false);
   };
 
   // Add Trustline Handler
@@ -330,7 +367,21 @@ export default function BalancesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {showFriendbot && (
+              <button
+                type="button"
+                onClick={handleFundWithFriendbot}
+                disabled={isFunding}
+                aria-busy={isFunding}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg className={`h-3.5 w-3.5 ${isFunding ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                {isFunding ? 'Funding…' : 'Fund with Friendbot'}
+              </button>
+            )}
             <span className="text-xs text-zinc-500 hidden sm:inline">Simulate State:</span>
             <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 text-xs dark:border-zinc-800 dark:bg-zinc-900">
               <button
@@ -376,31 +427,33 @@ export default function BalancesPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1 pl-12">
-              <button
-                type="button"
-                onClick={handleFundWithFriendbot}
-                disabled={isFunding}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-              >
-                <svg className={`h-4 w-4 ${isFunding ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                {isFunding ? 'Funding from Friendbot...' : 'Fund Account with Friendbot (10,000 XLM)'}
-              </button>
+            {showFriendbot && (
+              <div className="flex flex-wrap items-center gap-3 pt-1 pl-12">
+                <button
+                  type="button"
+                  onClick={handleFundWithFriendbot}
+                  disabled={isFunding}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <svg className={`h-4 w-4 ${isFunding ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  {isFunding ? 'Funding from Friendbot...' : 'Fund Account with Friendbot (10,000 XLM)'}
+                </button>
 
-              <a
-                href={`https://friendbot.stellar.org/?addr=${encodeURIComponent(selectedAccount)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 hover:underline dark:text-amber-300"
-              >
-                <span>Direct Friendbot API Link</span>
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
+                <a
+                  href={`https://friendbot.stellar.org/?addr=${encodeURIComponent(selectedAccount)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 hover:underline dark:text-amber-300"
+                >
+                  <span>Direct Friendbot API Link</span>
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            )}
 
             {fundingMessage && (
               <div
@@ -425,6 +478,7 @@ export default function BalancesPage() {
           onOpenAddTrustline={() => setIsAddTrustlineOpen(true)}
           onFundWithFriendbot={handleFundWithFriendbot}
           isFunding={isFunding}
+          canFundWithFriendbot={showFriendbot}
         />
 
         {/* 2. Balances Table & Native XLM Reserve Breakdown */}

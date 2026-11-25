@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Payment } from '@/lib/types';
 import { downloadPaymentReceipt, printPaymentReceipt } from '@/lib/pdfReceipt';
 import { useFormat } from '@/lib/i18n/use-format';
+import { formatTaxLabel, getPaymentTax } from '@/lib/tax';
 
 interface ReceiptPreviewModalProps {
   payment: Payment | null;
@@ -20,6 +21,8 @@ export default function ReceiptPreviewModal({
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !payment) return null;
+
+  const tax = getPaymentTax(payment);
 
   const stellarUrl =
     payment.stellarExpertUrl ||
@@ -179,6 +182,22 @@ export default function ReceiptPreviewModal({
                   {payment.fee} XLM
                 </span>
               </div>
+              {tax && (
+                <>
+                  <div>
+                    <span className="text-zinc-500 block">Subtotal</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">
+                      {f.amount(tax.subtotal, payment.asset)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 block">{formatTaxLabel(tax)}</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">
+                      {f.amount(tax.taxAmount, payment.asset)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div>
                 <span className="text-zinc-500 block">Customer Email</span>
                 <span className="font-medium text-zinc-900 dark:text-white truncate block">

@@ -12,6 +12,8 @@ interface AccountOverviewWidgetProps {
   onOpenAddTrustline: () => void;
   onFundWithFriendbot: () => void;
   isFunding: boolean;
+  /** Friendbot only exists on testnet; hide the action entirely on mainnet. */
+  canFundWithFriendbot?: boolean;
 }
 
 export default function AccountOverviewWidget({
@@ -22,6 +24,7 @@ export default function AccountOverviewWidget({
   onOpenAddTrustline,
   onFundWithFriendbot,
   isFunding,
+  canFundWithFriendbot = true,
 }: AccountOverviewWidgetProps) {
   const [copied, setCopied] = useState(false);
 
@@ -104,17 +107,19 @@ export default function AccountOverviewWidget({
         {/* Right Info & Quick Action Buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {isUnfunded ? (
-            <button
-              type="button"
-              onClick={onFundWithFriendbot}
-              disabled={isFunding}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
-            >
-              <svg className={`h-4 w-4 ${isFunding ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              {isFunding ? 'Requesting Testnet XLM...' : 'Fund with Friendbot (10,000 XLM)'}
-            </button>
+            canFundWithFriendbot ? (
+              <button
+                type="button"
+                onClick={onFundWithFriendbot}
+                disabled={isFunding}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                <svg className={`h-4 w-4 ${isFunding ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                {isFunding ? 'Requesting Testnet XLM...' : 'Fund with Friendbot (10,000 XLM)'}
+              </button>
+            ) : null
           ) : (
             <>
               <button

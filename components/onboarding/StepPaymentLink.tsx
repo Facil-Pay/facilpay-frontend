@@ -4,6 +4,8 @@ import React, { useState, useEffect, useId } from 'react';
 import { PaymentLinkData, BrandingDetails } from '@/types/onboarding';
 import { generateQRSvg } from '@/lib/qr';
 import { toDecimalString } from '@/lib/i18n/format';
+import { calculateTax, enteredAmount, formatTaxLabel, toAssetAmountString } from '@/lib/tax';
+import { useTaxRates } from '@/lib/tax-store';
 
 interface StepPaymentLinkProps {
   branding: BrandingDetails;
@@ -19,13 +21,25 @@ export default function StepPaymentLink({
   onBack,
 }: StepPaymentLinkProps) {
   const [title, setTitle] = useState(initialData.title || 'First Test Order');
-  const [amount, setAmount] = useState(initialData.amount || '10.00');
+  // For taxed links `amount` holds the total, so restore what was entered.
+  const [amount, setAmount] = useState(
+    initialData.tax
+      ? toAssetAmountString(enteredAmount(initialData.tax), initialData.currency)
+      : initialData.amount || '10.00'
+  );
   const [currency, setCurrency] = useState<'USDC' | 'EURC' | 'XLM'>(
     initialData.currency || 'USDC'
   );
   const [description, setDescription] = useState(
     initialData.description || 'Test payment link created during FacilPay merchant onboarding'
   );
+
+  const taxRates = useTaxRates();
+  const [taxRateId, setTaxRateId] = useState<string>(initialData.tax?.rateId ?? '');
+  const selectedTaxRate = taxRates.find((r) => r.id === taxRateId);
+  const parsedAmount = parseFloat(amount);
+  const taxPreview =
+    selectedTaxRate && parsedAmount > 0 ? calculateTax(parsedAmount, selectedTaxRate, currency) : null;
 
   const [paymentData, setPaymentData] = useState<PaymentLinkData | null>(
     initialData.id ? initialData : null
@@ -51,15 +65,19 @@ export default function StepPaymentLink({
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://pay.facilpay.io';
     const payUrl = `${origin}/pay/${linkId}`;
 
+    const tax = selectedTaxRate ? calculateTax(parseFloat(amount), selectedTaxRate, currency) : undefined;
+
     const newPaymentLink: PaymentLinkData = {
       id: linkId,
       title: title.trim(),
-      amount: toDecimalString(amount, 2),
+      // Always the amount the customer pays (tax included when a rate is applied)
+      amount: tax ? toAssetAmountString(tax.total, currency) : toDecimalString(amount, 2),
       currency,
       description: description.trim(),
       paymentUrl: payUrl,
       createdAt: new Date().toISOString(),
       status: 'active',
+      ...(tax ? { tax } : {}),
     };
 
     setPaymentData(newPaymentLink);
@@ -189,6 +207,35 @@ export default function StepPaymentLink({
             </div>
           </div>
 
+          {/* Tax Rate */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+              Tax Rate (Optional)
+            </label>
+            <select
+              value={taxRateId}
+              onChange={(e) => setTaxRateId(e.target.value)}
+              className="w-full rounded-xl border border-zinc-300 px-3.5 py-2.5 text-sm transition-all focus:border-sky-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+            >
+              <option value="">No tax</option>
+              {taxRates.map((rate) => (
+                <option key={rate.id} value={rate.id}>
+                  {formatTaxLabel(rate)}
+                </option>
+              ))}
+            </select>
+            {taxRates.length === 0 && (
+              <p className="mt-1 text-xs text-zinc-500">Add tax rates under Settings → Tax.</p>
+            )}
+            {taxPreview && (
+              <div className="mt-2 space-y-0.5 rounded-xl border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <div className="flex justify-between"><span>Subtotal</span><span>{toAssetAmountString(taxPreview.subtotal, currency)} {currency}</span></div>
+                <div className="flex justify-between"><span>{formatTaxLabel(taxPreview)}</span><span>{toAssetAmountString(taxPreview.taxAmount, currency)} {currency}</span></div>
+                <div className="flex justify-between font-semibold text-zinc-900 dark:text-white"><span>Total</span><span>{toAssetAmountString(taxPreview.total, currency)} {currency}</span></div>
+              </div>
+            )}
+          </div>
+
           {/* Description */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
@@ -261,7 +308,7 @@ export default function StepPaymentLink({
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-zinc-500 px-1">
-                  <span>Price: <strong className="text-zinc-800 dark:text-zinc-200">${amount} {currency}</strong></span>
+                  <span>Price: <strong className="text-zinc-800 dark:text-zinc-200">${paymentData.amount} {paymentData.currency}</strong>{paymentData.tax && <> · {formatTaxLabel(paymentData.tax)}</>}</span>
                   <span className="inline-flex items-center gap-1 text-emerald-600">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     Ready to Test

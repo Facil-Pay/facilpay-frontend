@@ -1,4 +1,5 @@
 import { ExportColumn, ExportProgress } from './types';
+import { getPaymentTax, toAssetAmountString, type PaymentTaxFields, type TaxBreakdown } from './tax';
 
 /**
  * Escapes a single CSV value according to RFC 4180 specifications:
@@ -96,6 +97,51 @@ export function generateCsv<T extends Record<string, any>>(
 
   // RFC 4180 standard CRLF row delimiters
   return [headerRow, ...dataRows].join('\r\n');
+}
+
+/**
+ * Tax / VAT columns for exports of taxed records (payments, invoices).
+ * Amounts are rounded to the asset precision. Rows recorded without tax
+ * leave every tax cell empty, so untaxed records export exactly as before.
+ */
+export function taxExportColumns<T extends PaymentTaxFields>(): ExportColumn<T>[] {
+  const withTax = (row: T, pick: (tax: TaxBreakdown) => string) => {
+    const tax = getPaymentTax(row);
+    return tax ? pick(tax) : '';
+  };
+
+  return [
+    {
+      key: 'subtotal',
+      label: 'Subtotal',
+      selected: true,
+      formatter: (_val, row) => withTax(row, (tax) => toAssetAmountString(tax.subtotal, row.asset)),
+    },
+    {
+      key: 'taxName',
+      label: 'Tax Name',
+      selected: true,
+      formatter: (_val, row) => withTax(row, (tax) => tax.name),
+    },
+    {
+      key: 'taxRate',
+      label: 'Tax Rate (%)',
+      selected: true,
+      formatter: (_val, row) => withTax(row, (tax) => String(tax.percentage)),
+    },
+    {
+      key: 'taxInclusive',
+      label: 'Tax Inclusive',
+      selected: true,
+      formatter: (_val, row) => withTax(row, (tax) => (tax.inclusive ? 'Yes' : 'No')),
+    },
+    {
+      key: 'taxAmount',
+      label: 'Tax Amount',
+      selected: true,
+      formatter: (_val, row) => withTax(row, (tax) => toAssetAmountString(tax.taxAmount, row.asset)),
+    },
+  ];
 }
 
 /**

@@ -8,6 +8,7 @@ import { OnboardingState } from '@/types/onboarding';
 import { generateQRSvg } from '@/lib/qr';
 import { truncateAddress } from '@/lib/stellar';
 import { findStrictReceiveQuote, StrictReceiveQuote } from '@/lib/stellar/horizon';
+import { formatTaxLabel, toAssetAmountString } from '@/lib/tax';
 
 const AVAILABLE_PAY_ASSETS = ['USDC', 'XLM', 'EURC'] as const;
 
@@ -38,6 +39,8 @@ export default function HostedPayPage() {
   const title = paymentLink?.title || 'Test Payment';
   const targetAmount = paymentLink?.amount || '10.00';
   const settlementCurrency = paymentLink?.currency || 'USDC';
+  // Links created without a tax rate have no `tax` and render as before.
+  const tax = paymentLink?.tax;
 
   const isPathPayment = selectedAsset !== settlementCurrency;
 
@@ -163,6 +166,24 @@ export default function HostedPayPage() {
                 ${targetAmount} <span className="text-base font-semibold text-zinc-500">{settlementCurrency}</span>
               </div>
             </div>
+
+            {/* Tax breakdown */}
+            {tax && (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 space-y-1 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>{toAssetAmountString(tax.subtotal, settlementCurrency)} {settlementCurrency}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{formatTaxLabel(tax)}</span>
+                  <span>{toAssetAmountString(tax.taxAmount, settlementCurrency)} {settlementCurrency}</span>
+                </div>
+                <div className="flex justify-between border-t border-zinc-200 pt-1 font-semibold text-zinc-900 dark:border-zinc-700 dark:text-white">
+                  <span>Total</span>
+                  <span>{toAssetAmountString(tax.total, settlementCurrency)} {settlementCurrency}</span>
+                </div>
+              </div>
+            )}
 
             {/* Asset Picker for Customer */}
             <div className="space-y-1.5">

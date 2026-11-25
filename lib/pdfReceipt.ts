@@ -1,4 +1,5 @@
 import { Payment } from './types';
+import { formatTaxLabel, getPaymentTax, toAssetAmountString } from './tax';
 
 /**
  * Escapes characters for PDF string literals.
@@ -22,6 +23,21 @@ export function generateReceiptPdf(payment: Payment): Blob {
   // PDF Page Dimensions: A4 (595.28 x 841.89 points)
   const pageWidth = 595.28;
   const pageHeight = 841.89;
+
+  // Tax line inside the amount card — only for payments made with a tax rate
+  const tax = getPaymentTax(payment);
+  const taxLines: string[] = tax
+    ? [
+        'BT',
+        '/F1 9 Tf',
+        '0.4 0.45 0.55 rg',
+        `72 ${pageHeight - 232} Td`,
+        `(${escapePdfText(
+          `Subtotal ${toAssetAmountString(tax.subtotal, payment.asset)} ${payment.asset}  |  ${formatTaxLabel(tax)}: ${toAssetAmountString(tax.taxAmount, payment.asset)} ${payment.asset}`
+        )}) Tj`,
+        'ET',
+      ]
+    : [];
 
   // Link Annotation coordinates for Stellar Expert URL
   // In PDF, origin (0,0) is bottom-left
@@ -114,6 +130,8 @@ export function generateReceiptPdf(payment: Payment): Blob {
     `72 ${pageHeight - 208} Td`,
     `(${escapePdfText(payment.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }))} ${escapePdfText(payment.asset)}) Tj`,
     'ET',
+
+    ...taxLines,
 
     // Status Badge (Right side of card)
     payment.status === 'COMPLETED'

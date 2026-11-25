@@ -62,6 +62,13 @@ export interface Payment {
   netAmount?: number;    // Amount merchant actually received (amount − facilpayFee)
   conversionRate?: number; // Exchange rate applied when asset was converted (e.g. XLM→USDC)
   networkFeeXlm?: number;  // Stellar network fee in XLM (always 0.00001 per operation)
+  // Tax / VAT (issue #137) — omitted for payments made without a tax rate.
+  // `amount` stays the total paid; these describe how it splits.
+  taxName?: string;        // e.g. "VAT"
+  taxRate?: number;        // percentage, e.g. 20
+  taxInclusive?: boolean;  // true when the price already included tax
+  taxAmount?: number;      // tax portion of `amount`, in the payment asset
+  subtotal?: number;       // `amount` − `taxAmount`
 }
 
 export interface Refund {

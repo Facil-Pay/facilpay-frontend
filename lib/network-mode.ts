@@ -27,3 +27,12 @@ export function getStoredNetworkMode(): NetworkMode {
 export function storeNetworkMode(mode: NetworkMode): void {
   saveToStorage(STORAGE_KEY, mode);
 }
+
+/**
+ * Friendbot only exists on test networks. Use this to decide whether the
+ * "Fund with Friendbot" action should be shown at all — it must never be
+ * rendered in live (mainnet) mode.
+ */
+export function isFriendbotAvailable(mode: NetworkMode | null | undefined): boolean {
+  return mode === "testnet";
+}
