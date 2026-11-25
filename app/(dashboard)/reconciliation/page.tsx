@@ -272,6 +272,7 @@ export default function ReconciliationPage() {
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-400" aria-hidden="true" />
             <input
               type="search"
+              data-shortcut-search
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search ID or reference"

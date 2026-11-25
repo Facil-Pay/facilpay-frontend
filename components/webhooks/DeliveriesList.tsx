@@ -187,6 +187,7 @@ export default function DeliveriesList({
         <div className="relative">
           <input
             type="text"
+            data-shortcut-search
             placeholder="Search Event ID, Del ID..."
             value={filters.searchQuery}
             onChange={(e) =>

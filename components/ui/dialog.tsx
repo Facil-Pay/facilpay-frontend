@@ -9,10 +9,14 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
+type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  closeLabel?: string;
+};
+
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(function DialogContent({ className, children, ...props }, ref) {
+  DialogContentProps
+>(function DialogContent({ className, children, closeLabel = "Close dialog", ...props }, ref) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-accent/60 data-[state=open]:animate-in data-[state=closed]:animate-out" />
@@ -23,7 +27,7 @@ export const DialogContent = React.forwardRef<
         className={cn("fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border bg-card p-6 text-foreground shadow-lg outline-none", className)}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm p-1 text-muted opacity-70 outline-none transition hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary" aria-label="Close dialog">
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm p-1 text-muted opacity-70 outline-none transition hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary" aria-label={closeLabel}>
           <X className="size-4" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>

@@ -170,6 +170,7 @@ export default function PaymentsPage() {
               <div className="relative">
                 <input
                   type="text"
+                  data-shortcut-search
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="ID, customer, hash, or memo..."
