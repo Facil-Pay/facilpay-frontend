@@ -416,6 +416,12 @@ export default function EventsCatalogPage() {
           >
             Event Catalog
           </Link>
+          <Link
+            href="/developers/logs"
+            className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Request Logs
+          </Link>
         </div>
       </div>
 

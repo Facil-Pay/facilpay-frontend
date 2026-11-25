@@ -7,8 +7,11 @@ import {
   KeyPermissions,
   generateSecretKeyString,
   maskSecretKey,
+  addIpAllowlistEntry,
+  parseIpAllowlistInput,
 } from '@/lib/apiKeys';
 import { useStepUp } from '@/components/security/use-step-up';
+import IpAllowlistEditor from '@/components/developers/IpAllowlistEditor';
 
 interface CreateKeyModalProps {
   isOpen: boolean;
@@ -37,6 +40,9 @@ export default function CreateKeyModal({
   const [customExpiry, setCustomExpiry] = useState('');
   const [newFullKey, setNewFullKey] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [ipAllowlist, setIpAllowlist] = useState<string[]>([]);
+  const [ipDraft, setIpDraft] = useState('');
+  const [ipError, setIpError] = useState<string | null>(null);
   const [stepUpError, setStepUpError] = useState<string | null>(null);
   const { requestStepUp, stepUpDialog } = useStepUp();
 
@@ -55,9 +61,38 @@ export default function CreateKeyModal({
     }));
   };
 
+  const handleAddIp = () => {
+    const { entries, error } = addIpAllowlistEntry(ipAllowlist, ipDraft);
+    if (error) {
+      setIpError(error);
+      return;
+    }
+    setIpAllowlist(entries);
+    setIpDraft('');
+    setIpError(null);
+  };
+
+  const handleRemoveIp = (entry: string) => {
+    setIpAllowlist((prev) => prev.filter((existing) => existing !== entry));
+    setIpError(null);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Fold any un-committed input into the allowlist, then validate it.
+    const withDraft = addIpAllowlistEntry(ipAllowlist, ipDraft);
+    if (withDraft.error) {
+      setIpError(withDraft.error);
+      return;
+    }
+    const { entries: normalizedIps, errors: ipErrors } = parseIpAllowlistInput(withDraft.entries);
+    if (ipErrors.length > 0) {
+      setIpError(ipErrors[0]);
+      return;
+    }
+    setIpError(null);
 
     // The secret is shown in full exactly once, so revealing it needs a fresh 2FA code.
     setStepUpError(null);
@@ -104,6 +139,7 @@ export default function CreateKeyModal({
             : permissions,
       },
       expiresAt,
+      ipAllowlist: normalizedIps,
     };
 
     onKeyCreated(createdItem);
@@ -125,6 +161,9 @@ export default function CreateKeyModal({
     setStep('form');
     setName('');
     setNewFullKey('');
+    setIpAllowlist([]);
+    setIpDraft('');
+    setIpError(null);
     onClose();
   };
 
@@ -311,6 +350,19 @@ export default function CreateKeyModal({
                   </div>
                 )}
               </div>
+
+              {/* IP Allowlist */}
+              <IpAllowlistEditor
+                entries={ipAllowlist}
+                draft={ipDraft}
+                onDraftChange={(value) => {
+                  setIpDraft(value);
+                  if (ipError) setIpError(null);
+                }}
+                onAdd={handleAddIp}
+                onRemove={handleRemoveIp}
+                error={ipError}
+              />
 
               {/* Form Buttons */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">

@@ -42,6 +42,10 @@ export interface Webhook {
   events: WebhookEvent[];
   /** HMAC-SHA256 signing secret (returned in full only at creation) */
   secret?: string;
+  /** Set after a secret roll; the full secret can no longer be revealed */
+  secretRevealDisabled?: boolean;
+  /** Previous signing secrets still accepted until their overlap expires */
+  previousSecrets?: { secret: string; expiresAt: string }[];
   /** Number of consecutive delivery failures */
   failureCount?: number;
   /** Delivery success rate over the last 24 hours (0–100) */
@@ -107,6 +111,8 @@ export interface WebhookDelivery {
   response: WebhookResponseData;
   attempts: WebhookAttempt[];
   nextRetryAt?: string;
+  /** True when this delivery was triggered manually via "Send test event". */
+  isTest?: boolean;
 }
 
 // ─── Dashboard helpers ────────────────────────────────────────────────────────

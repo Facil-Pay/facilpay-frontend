@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Webhook } from '@/lib/types';
 import { rollEndpointSecret } from '@/lib/webhook-data';
+import { getMerchantUser, saveAuditEvent } from '@/lib/storage';
+import { CopyButton } from '@/components/ui/copy-button';
 
 interface RollSecretModalProps {
   isOpen: boolean;
@@ -19,32 +21,60 @@ export default function RollSecretModal({
 }: RollSecretModalProps) {
   const [isRolling, setIsRolling] = useState(false);
   const [newSecret, setNewSecret] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [overlap, setOverlap] = useState<'now' | '1h' | '24h' | '7d'>('24h');
+  const [overlapExpiresAt, setOverlapExpiresAt] = useState<string | null>(null);
+  const [rotationError, setRotationError] = useState<string | null>(null);
 
   if (!isOpen || !endpoint) return null;
 
   const handleRoll = () => {
     setIsRolling(true);
+    setRotationError(null);
     setTimeout(() => {
-      const result = rollEndpointSecret(endpoint.id);
-      setIsRolling(false);
-      if (result.endpoint) {
+      try {
+        const result = rollEndpointSecret(endpoint.id, overlap);
+        if (!result.endpoint) {
+          setRotationError(
+            result.error || 'This webhook endpoint could not be found. Refresh and try again.'
+          );
+          return;
+        }
+
         setNewSecret(result.newSecret);
+        const previousSecret = result.endpoint.previousSecrets?.find(
+          ({ secret }) => secret === endpoint.secret
+        );
+        setOverlapExpiresAt(previousSecret?.expiresAt ?? null);
+        const user = getMerchantUser();
+        saveAuditEvent({
+          id: `evt_webhook_secret_${Date.now()}`,
+          actor: user.email,
+          actionType: 'Webhooks',
+          action: 'Webhook signing secret rotated',
+          target: endpoint.url,
+          ip: '—',
+          timestamp: new Date().toISOString(),
+        });
         onSecretRolled(result.endpoint, result.newSecret);
+      } catch (error) {
+        setRotationError(
+          error instanceof Error ? error.message : 'Secret rotation failed. Please try again.'
+        );
+      } finally {
+        setIsRolling(false);
       }
     }, 500);
   };
 
-  const handleCopy = () => {
-    if (newSecret && typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(newSecret);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const handleDone = () => {
     setNewSecret(null);
+    setOverlapExpiresAt(null);
+    setRotationError(null);
+    onClose();
+  };
+
+  const handleCancel = () => {
+    setRotationError(null);
     onClose();
   };
 
@@ -65,19 +95,35 @@ export default function RollSecretModal({
                   Roll Signing Secret?
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Rotating your secret will immediately invalidate the current signing secret.
+                  Choose how long the current signing secret remains valid while you update your receiver.
                 </p>
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-800 dark:text-rose-300 space-y-1.5">
               <span className="font-bold flex items-center gap-1.5">
-                <span>⚠️ Immediate Invalidation Warning</span>
+                <span>⚠️ Secret rotation</span>
               </span>
               <p className="text-[11px] leading-relaxed">
-                Any subsequent webhooks sent to <strong className="font-mono">{endpoint.url}</strong> will be signed using the new secret. Webhook verification on your server will fail until you update the secret in your environment configuration.
+                During the selected overlap, deliveries to{' '}
+                <strong className="font-mono">{endpoint.url}</strong> can be verified with either
+                secret. The new secret is shown once.
               </p>
             </div>
+
+            <label className="block space-y-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              Overlap period
+              <select
+                value={overlap}
+                onChange={(event) => setOverlap(event.target.value as typeof overlap)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="now">Immediately (no overlap)</option>
+                <option value="1h">1 hour</option>
+                <option value="24h">24 hours</option>
+                <option value="7d">7 days</option>
+              </select>
+            </label>
 
             <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-400">
               <p>
@@ -88,10 +134,16 @@ export default function RollSecretModal({
               </p>
             </div>
 
+            {rotationError && (
+              <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">
+                {rotationError}
+              </p>
+            )}
+
             <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleCancel}
                 disabled={isRolling}
                 className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
@@ -121,7 +173,7 @@ export default function RollSecretModal({
                   Signing Secret Successfully Rolled
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Update your server with this new signing secret immediately.
+                  Update your receiver before the overlap period ends.
                 </p>
               </div>
             </div>
@@ -134,26 +186,19 @@ export default function RollSecretModal({
                 <span className="flex-1 break-all select-all font-bold text-emerald-400">
                   {newSecret}
                 </span>
-                <button
-                  onClick={handleCopy}
-                  className="shrink-0 flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
-                >
-                  {copied ? (
-                    <>
-                      <span>✓</span>
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                      </svg>
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
+                <CopyButton value={newSecret} label="Copy new signing secret" />
               </div>
             </div>
+
+            {overlapExpiresAt ? (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Old secret expires: {new Date(overlapExpiresAt).toLocaleString()}
+              </p>
+            ) : (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                The old secret was invalidated immediately.
+              </p>
+            )}
 
             <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
               <button

@@ -278,6 +278,7 @@ function PaymentsPageContent() {
                 <input
                   id="payments-search"
                   type="search"
+                  data-shortcut-search
                   value={searchDraft}
                   onChange={(e) => setSearchDraft(e.target.value)}
                   placeholder="ID, customer, hash, or memo..."

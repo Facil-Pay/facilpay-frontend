@@ -7,6 +7,7 @@ import { TestModeBanner } from "./TestModeBanner";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 import { NetworkModeProvider } from "@/lib/network-mode-context";
 import { CommandPaletteProvider } from "@/components/command-palette/CommandPalette";
+import KeyboardShortcutsHelp from "./KeyboardShortcutsHelp";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useSidebarCollapsed();
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
+      <KeyboardShortcutsHelp />
       <div className="flex min-h-screen w-full overflow-x-clip bg-zinc-50 text-zinc-900">
         <Sidebar
           collapsed={collapsed}
