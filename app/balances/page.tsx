@@ -15,6 +15,7 @@ import {
 } from '@/lib/stellar/horizon';
 import { calculateTotalPortfolioUsd } from '@/lib/stellar/prices';
 import { useFormat } from '@/lib/i18n/use-format';
+import { checkLowBalance, useAssetThresholds, assetThresholdsStore, type AssetThreshold } from '@/lib/notifications';
 
 const DEMO_MERCHANT_ACCOUNT = 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
 const DEMO_UNFUNDED_ACCOUNT = 'GCRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A';
@@ -308,6 +309,27 @@ export default function BalancesPage() {
     ]);
   };
 
+  // Low balance threshold alerts (issue #132) — re-checked whenever balances change.
+  const assetThresholds = useAssetThresholds();
+  const [thresholdDrafts, setThresholdDrafts] = useState<Record<string, AssetThreshold>>(assetThresholds);
+  useEffect(() => setThresholdDrafts(assetThresholds), [assetThresholds]);
+
+  useEffect(() => {
+    if (isUnfunded) return;
+    for (const b of balances) checkLowBalance(b.assetCode, b.availableBalance);
+  }, [balances, isUnfunded]);
+
+  const handleThresholdChange = (assetCode: string, field: keyof AssetThreshold, value: number) => {
+    setThresholdDrafts((prev) => ({
+      ...prev,
+      [assetCode]: { ...(prev[assetCode] ?? { lowBalance: 0, largePayment: 0 }), [field]: Math.max(0, value) },
+    }));
+  };
+
+  const handleSaveThresholds = () => {
+    assetThresholdsStore.set(thresholdDrafts);
+  };
+
   const totalUsd = useMemo(() => {
     return calculateTotalPortfolioUsd(balances);
   }, [balances]);
@@ -429,6 +451,63 @@ export default function BalancesPage() {
 
         {/* 2. Balances Table & Native XLM Reserve Breakdown */}
         {!isUnfunded && <BalancesTable balances={balances} />}
+
+        {/* 2b. Low Balance & Large Payment Threshold Alerts (issue #132) */}
+        {!isUnfunded && (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Balance &amp; Payment Alerts</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Get notified when an asset balance drops too low, or a single payment is unusually large.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveThresholds}
+                className="rounded-xl bg-[#000F24] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 dark:bg-[#55C2FF] dark:text-black"
+              >
+                Save Thresholds
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {balances.map((b) => {
+                const draft = thresholdDrafts[b.assetCode] ?? { lowBalance: 0, largePayment: 0 };
+                return (
+                  <div key={b.assetCode} className="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{b.assetCode}</span>
+                    <label className="mt-2 block text-[11px] text-zinc-500">
+                      Low balance alert below
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={draft.lowBalance}
+                        onChange={(e) => handleThresholdChange(b.assetCode, 'lowBalance', Number(e.target.value))}
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="mt-2 block text-[11px] text-zinc-500">
+                      Large payment alert at or above
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={draft.largePayment}
+                        onChange={(e) => handleThresholdChange(b.assetCode, 'largePayment', Number(e.target.value))}
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                      />
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-[11px] text-zinc-400">
+              In-app and email delivery for these alerts can be toggled per notification type in Settings → Notifications.
+            </p>
+          </div>
+        )}
 
         {/* 3. Trustlines Card (List, Add, Zero-balance Remove) */}
         {!isUnfunded && (

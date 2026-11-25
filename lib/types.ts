@@ -89,6 +89,7 @@ export interface SavedDestination {
   label: string;
   address: string; // Stellar G... or federation address name*domain.com
   resolvedAddress?: string;
+  asset?: AssetType;
   memo?: string;
   memoType?: 'text' | 'id' | 'hash';
   isExchange?: boolean;

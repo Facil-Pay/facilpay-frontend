@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   "payments:view": "View payments & analytics",
   "payment-links:create": "Create payment links",
   "refunds:create": "Issue refunds",
+  "refunds:approve": "Approve large refunds",
   "escrow:manage": "Manage escrow & payouts",
   "developers:manage": "Manage webhooks & API keys",
   "team:manage": "Manage team & settings",

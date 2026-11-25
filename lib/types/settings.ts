@@ -96,7 +96,7 @@ export interface DisableTwoFactorRequest {
 }
 
 /** Actions that require a fresh 2FA code even within an authenticated session. */
-export type SensitiveAction = "create_payout" | "reveal_api_key" | "change_settlement_address";
+export type SensitiveAction = "create_payout" | "reveal_api_key" | "change_settlement_address" | "create_payout_schedule";
 
 /** POST /merchant/2fa/verify — exchanges a code for a short-lived step-up token */
 export interface StepUpRequest {

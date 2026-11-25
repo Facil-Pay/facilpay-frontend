@@ -6,6 +6,7 @@ import ExportModal from '@/components/ExportModal';
 import NewPayoutModal from '@/components/payouts/NewPayoutModal';
 import SavedDestinationsModal from '@/components/payouts/SavedDestinationsModal';
 import Sep24TrackerModal from '@/components/payouts/Sep24TrackerModal';
+import ScheduledPayoutsCard from '@/components/payouts/ScheduledPayoutsCard';
 import { Payout, AssetType, MerchantBalance, SavedDestination } from '@/lib/types';
 import {
   INITIAL_PAYOUTS,
@@ -226,6 +227,9 @@ export default function PayoutsPage() {
             );
           })}
         </div>
+
+        {/* Scheduled Automatic Payouts (issue #115) */}
+        <ScheduledPayoutsCard savedDestinations={savedDestinations} />
 
         {/* Filters Card */}
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, Download, Loader2, RotateCcw, RotateCw, Search } from "lucide-react";
+import { AlertCircle, Download, Loader2, Plus, RotateCcw, RotateCw, Search } from "lucide-react";
 import ExportModal from "@/components/ExportModal";
 import { useToast } from "@/components/ui/toast";
 import { useWallet } from "@/components/wallet/wallet-provider";
@@ -12,6 +12,8 @@ import type { ExportColumn } from "@/lib/types";
 import type { Refund, RefundListParams, RefundStatus } from "@/lib/types/refund";
 import { RefundDetailDrawer } from "./RefundDetailDrawer";
 import { RefundStatusBadge } from "./RefundStatusBadge";
+import NewRefundModal from "./NewRefundModal";
+import ApprovalsQueue from "./ApprovalsQueue";
 import {
   REFUND_ASSETS,
   REFUND_STATUSES,
@@ -107,6 +109,7 @@ export function RefundsView() {
 
   const hasFilters = FILTER_KEYS.some((key) => filters[key]);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isNewRefundOpen, setIsNewRefundOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -115,16 +118,29 @@ export function RefundsView() {
           <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Refunds</h2>
           <p className="mt-1 text-sm text-zinc-500">Track every refund you have issued and recover failed ones.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsExportOpen(true)}
-          disabled={refunds.length === 0}
-          className="inline-flex items-center gap-2 self-start rounded-lg bg-[#000F24] px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2 self-start">
+          <button
+            type="button"
+            onClick={() => setIsNewRefundOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#000F24] px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+          >
+            <Plus className="h-4 w-4" />
+            New Refund
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsExportOpen(true)}
+            disabled={refunds.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        </div>
       </div>
+
+      {/* Refund approval queue (issue #114) */}
+      <ApprovalsQueue />
 
       {/* Summary header */}
       <section aria-label="Refund summary" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -363,6 +379,12 @@ export function RefundsView() {
         onClose={() => updateParams({ refund: undefined })}
         onRetry={(refund) => void handleRetry(refund)}
         isRetrying={retry.isPending}
+      />
+
+      <NewRefundModal
+        isOpen={isNewRefundOpen}
+        onClose={() => setIsNewRefundOpen(false)}
+        onSubmitted={(message) => toast(message, "success")}
       />
 
       <ExportModal
