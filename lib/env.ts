@@ -30,11 +30,9 @@ export const envSchema = z.object({
     .url("NEXT_PUBLIC_AUTH_LOGOUT_URL must be a valid URL (e.g. http://localhost:3000/login)"),
 
   // ── Stellar network ───────────────────────────────────────────────────────
+  // Zod v4 reads a plain `error` string; the v3 `errorMap` option is ignored.
   NEXT_PUBLIC_STELLAR_NETWORK: z.enum(["mainnet", "testnet", "futurenet"], {
-    errorMap: () => ({
-      message:
-        'NEXT_PUBLIC_STELLAR_NETWORK must be "mainnet", "testnet", or "futurenet"',
-    }),
+    error: 'NEXT_PUBLIC_STELLAR_NETWORK must be "mainnet", "testnet", or "futurenet"',
   }),
 
   NEXT_PUBLIC_STELLAR_HORIZON_URL: z
