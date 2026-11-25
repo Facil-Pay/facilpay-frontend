@@ -30,6 +30,14 @@ import type {
 
 const profileKey = [...merchantKeys.profile(), "business"] as const;
 
+/**
+ * React Query hook for the merchant's business profile.
+ *
+ * Data is cached for five minutes.
+ *
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `BusinessProfile` data. Errors are reported as an {@link ApiError}.
+ */
 export function useBusinessProfile(
   options?: Partial<UseQueryOptions<BusinessProfile, ApiError>>
 ) {
@@ -41,12 +49,25 @@ export function useBusinessProfile(
   });
 }
 
+/**
+ * Variables for {@link useUpdateBusinessProfile}.
+ *
+ * @property profile - Full profile to save.
+ * @property headers - Step-up headers from a fresh 2FA check. Required by the API when the settlement address changes and 2FA is enabled.
+ */
 export interface UpdateBusinessProfileInput {
   profile: BusinessProfile;
   /** Step-up headers; required by the API when the settlement address changes and 2FA is on */
   headers?: Record<string, string>;
 }
 
+/**
+ * Mutation that saves the business profile.
+ *
+ * On success the cached profile is replaced with the saved version and the profile queries are invalidated.
+ *
+ * @returns A React Query mutation that takes {@link UpdateBusinessProfileInput}. Rejects with an {@link ApiError}; a 403 may indicate a missing or expired step-up token.
+ */
 export function useUpdateBusinessProfile() {
   const qc = useQueryClient();
   return useMutation<BusinessProfile, ApiError, UpdateBusinessProfileInput>({
@@ -70,6 +91,13 @@ export function useBranding(options?: Partial<UseQueryOptions<Branding, ApiError
   });
 }
 
+/**
+ * Variables for {@link useUpdateBranding}.
+ *
+ * @property brandColor - Hex colour such as `#20A7EE`.
+ * @property logo - Existing URL, a `data:` URL that must be uploaded first, or `null` to remove the logo.
+ * @property logoFileName - Original file name, used as the upload name for new data URLs.
+ */
 export interface UpdateBrandingInput {
   brandColor: string;
   /** Existing URL, a new data URL to upload, or null to remove the logo */
@@ -77,6 +105,13 @@ export interface UpdateBrandingInput {
   logoFileName?: string;
 }
 
+/**
+ * Mutation that saves checkout branding.
+ *
+ * When `logo` is a `data:` URL it is uploaded to `/merchant/branding/logo` first, and the returned URL is saved with the colour. The request then fails without saving the colour if the upload fails.
+ *
+ * @returns A React Query mutation that takes {@link UpdateBrandingInput}. Rejects with an {@link ApiError}.
+ */
 export function useUpdateBranding() {
   const qc = useQueryClient();
   return useMutation<Branding, ApiError, UpdateBrandingInput>({
@@ -113,6 +148,13 @@ export function usePaymentPreferences(
   });
 }
 
+/**
+ * Mutation that saves the merchant's default payment preferences.
+ *
+ * On success the cached preferences are replaced with the saved version.
+ *
+ * @returns A React Query mutation that sends the full `PaymentPreferences` object. Rejects with an {@link ApiError} on failure.
+ */
 export function useUpdatePaymentPreferences() {
   const qc = useQueryClient();
   return useMutation<PaymentPreferences, ApiError, PaymentPreferences>({
@@ -134,6 +176,13 @@ export function useSessions(options?: Partial<UseQueryOptions<MerchantSession[],
   });
 }
 
+/**
+ * Mutation that signs out one merchant session.
+ *
+ * On success the session is removed from the cached session list without a refetch.
+ *
+ * @returns A React Query mutation whose variable is the session ID. Rejects with an {@link ApiError} on failure.
+ */
 export function useRevokeSession() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({
@@ -146,6 +195,13 @@ export function useRevokeSession() {
   });
 }
 
+/**
+ * Mutation that signs out every session except the current one.
+ *
+ * On success the cached list is narrowed to the current session.
+ *
+ * @returns A React Query mutation with no variables. Rejects with an {@link ApiError} on failure.
+ */
 export function useRevokeOtherSessions() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, void>({
@@ -158,6 +214,12 @@ export function useRevokeOtherSessions() {
   });
 }
 
+/**
+ * React Query hook for the Stellar wallets linked to the merchant account.
+ *
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `LinkedWallet[]` data. Errors are reported as an {@link ApiError}.
+ */
 export function useLinkedWallets(options?: Partial<UseQueryOptions<LinkedWallet[], ApiError>>) {
   return useQuery<LinkedWallet[], ApiError>({
     queryKey: merchantKeys.wallets(),

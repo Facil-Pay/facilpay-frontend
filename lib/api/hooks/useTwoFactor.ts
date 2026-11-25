@@ -40,6 +40,15 @@ export const STEP_UP_HEADER = "X-FacilPay-2FA-Token";
 /** A 6-digit authenticator code, or a recovery code (e.g. "7HQK-2M9D"). */
 export const TWO_FACTOR_CODE_PATTERN = /^(\d{6}|[A-Z0-9]{4}-?[A-Z0-9]{4})$/i;
 
+/**
+ * Normalises a user-typed 2FA code before it is sent to the API.
+ *
+ * Removes all whitespace and upper-cases the result, so `"7hqk 2m9d"` becomes `"7HQK2M9D"`.
+ * Recovery codes are case-insensitive, and this keeps the request body consistent.
+ *
+ * @param code - Code as typed by the user.
+ * @returns The compacted, upper-cased code.
+ */
 export function normalizeTwoFactorCode(code: string): string {
   return code.replace(/\s+/g, "").toUpperCase();
 }
@@ -52,6 +61,12 @@ const statusQuery = {
   staleTime: 60_000,
 };
 
+/**
+ * React Query hook for the merchant's two-factor status.
+ *
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `TwoFactorStatus` data. Errors are reported as an {@link ApiError}.
+ */
 export function useTwoFactorStatus(options?: Partial<UseQueryOptions<TwoFactorStatus, ApiError>>) {
   return useQuery<TwoFactorStatus, ApiError>({ ...statusQuery, ...options });
 }
@@ -69,6 +84,14 @@ export function useStartTwoFactorEnrollment() {
   });
 }
 
+/**
+ * Mutation that confirms a pending 2FA enrolment with the first code from the authenticator app.
+ *
+ * On success the cached status is set to enabled. The response includes the recovery codes,
+ * which the caller should display to the user.
+ *
+ * @returns A React Query mutation that sends `ConfirmTwoFactorRequest`. Rejects with an {@link ApiError} when the code is wrong.
+ */
 export function useConfirmTwoFactorEnrollment() {
   const qc = useQueryClient();
   return useMutation<ConfirmTwoFactorResponse, ApiError, ConfirmTwoFactorRequest>({
@@ -86,6 +109,13 @@ export function useConfirmTwoFactorEnrollment() {
   });
 }
 
+/**
+ * Mutation that turns off 2FA after the user proves possession of a valid code.
+ *
+ * On success the cached status is set to disabled.
+ *
+ * @returns A React Query mutation that sends `DisableTwoFactorRequest`. Rejects with an {@link ApiError} when the code is rejected.
+ */
 export function useDisableTwoFactor() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, DisableTwoFactorRequest>({
@@ -125,6 +155,13 @@ export function useLogin() {
   });
 }
 
+/**
+ * Mutation that completes a login that requires a second factor.
+ *
+ * The code is normalised with {@link normalizeTwoFactorCode} before it is sent to `/auth/login/2fa`.
+ *
+ * @returns A React Query mutation that sends `LoginTwoFactorRequest`. Rejects with an {@link ApiError} when the code is rejected.
+ */
 export function useLoginTwoFactor() {
   return useMutation<LoginTwoFactorResponse, ApiError, LoginTwoFactorRequest>({
     mutationFn: (body) =>

@@ -13,6 +13,14 @@ import { dashboardKeys }                  from "@/lib/api/keys";
 // Re-use the shape already defined in the app layer
 import type { DashboardData } from "@/app/lib/api/dashboard";
 
+/**
+ * React Query hook for the merchant dashboard overview.
+ *
+ * Data is considered fresh for one minute and refreshed in the background every five minutes.
+ *
+ * @param options - Extra React Query options merged over the defaults, for example `enabled`.
+ * @returns The query result. `data` is `DashboardData` once loaded; failures surface as an {@link ApiError} in `error`.
+ */
 export function useDashboard(
   options?: Partial<UseQueryOptions<DashboardData, ApiError>>
 ) {
