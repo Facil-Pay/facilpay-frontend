@@ -2,7 +2,7 @@
 /**
  * tests/setup.ts
  *
- * Global test setup for React Testing Library.
+ * Global test setup for React Testing Library and MSW.
  * Imported by vitest.config.ts via `setupFiles`.
  */
 
