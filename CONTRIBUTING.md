@@ -65,7 +65,7 @@ npm test
 npm run build
 ```
 
-`npm test` runs the Vitest unit and component suite in jsdom. You can run one test file with:
+`npm test` runs the Vitest unit and component suite in jsdom. `tests/setup.ts` fills in the `NEXT_PUBLIC_*` values from `.env.example` when they are not set, so tests run without a `.env.local`. Tests that check environment validation set or delete those variables themselves. You can run one test file with:
 
 ```bash
 npx vitest run tests/payouts.test.ts
