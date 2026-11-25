@@ -2,15 +2,19 @@
 
 import React, { useState } from 'react';
 import { NetworkMode } from '@/lib/apiKeys';
+import PaymentButtonGenerator from '@/components/developers/PaymentButtonGenerator';
+import type { PaymentLinkData } from '@/types/onboarding';
 
 interface QuickstartSectionProps {
   publishableKey: string;
   network: NetworkMode;
+  paymentLinks: PaymentLinkData[];
 }
 
 export default function QuickstartSection({
   publishableKey,
   network,
+  paymentLinks,
 }: QuickstartSectionProps) {
   const [lang, setLang] = useState<'curl' | 'node'>('curl');
   const [copied, setCopied] = useState(false);
@@ -66,6 +70,7 @@ createCheckout();`;
   };
 
   return (
+    <div className="space-y-6">
     <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/60">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-6 py-4 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40">
         <div>
@@ -128,6 +133,8 @@ createCheckout();`;
       <div className="relative bg-[#000F24] p-5 text-zinc-100 overflow-x-auto font-mono text-xs leading-relaxed">
         <pre>{activeSnippet}</pre>
       </div>
+    </div>
+    <PaymentButtonGenerator paymentLinks={paymentLinks} />
     </div>
   );
 }

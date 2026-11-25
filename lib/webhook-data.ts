@@ -1,24 +1,24 @@
 import {
   WebhookDelivery,
   WebhookDeliveryStatus,
-  WebhookEndpoint,
-  WebhookEventType,
+  Webhook,
+  WebhookEvent,
   DayHealthStat,
-} from '@/types/webhooks';
+} from '@/lib/types';
 
 export const STORAGE_KEYS = {
   WEBHOOK_DELIVERIES: 'facilpay_webhook_deliveries',
   WEBHOOK_ENDPOINTS: 'facilpay_webhook_endpoints',
 } as const;
 
-export const DEFAULT_ENDPOINT: WebhookEndpoint = {
+export const DEFAULT_ENDPOINT: Webhook = {
   id: 'ep_prod_89a2b',
   url: 'https://api.acmestore.com/api/v1/webhooks/facilpay',
   description: 'Primary Production Payment & Order Processing Webhook',
   secret: 'whsec_7f9b8c2d1e0a4f5e6b7c8d9e0f1a2b3c4d5e6f7a',
   createdAt: '2026-09-20T10:00:00Z',
   status: 'active',
-  subscribedEvents: [
+  events: [
     'payment.created',
     'payment.completed',
     'payment.failed',
@@ -28,7 +28,7 @@ export const DEFAULT_ENDPOINT: WebhookEndpoint = {
   successRate24h: 94,
 };
 
-export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
+export const INITIAL_ENDPOINTS: Webhook[] = [
   DEFAULT_ENDPOINT,
   {
     id: 'ep_local_dev11',
@@ -37,7 +37,7 @@ export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
     secret: 'whsec_4b1a8c9e0d2f3a4b5c6d7e8f9a0b1c2d',
     createdAt: '2026-09-22T14:30:00Z',
     status: 'active',
-    subscribedEvents: ['payment.completed', 'refund.created', 'refund.completed'],
+    events: ['payment.completed', 'refund.created', 'refund.completed'],
     successRate24h: 100,
   },
   {
@@ -46,8 +46,8 @@ export const INITIAL_ENDPOINTS: WebhookEndpoint[] = [
     description: 'Internal Ops Alerts & Notifications',
     secret: 'whsec_9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f',
     createdAt: '2026-09-24T08:15:00Z',
-    status: 'inactive',
-    subscribedEvents: ['payment.failed', 'refund.failed', 'escrow.disputed'],
+    status: 'disabled',
+    events: ['payment.failed', 'refund.failed', 'escrow.disputed'],
     successRate24h: 75,
   },
 ];
@@ -619,12 +619,9 @@ export function bulkRetryDeliveries(
 // -------------------------------------------------------------
 
 export function generateSigningSecret(): string {
-  const chars = '0123456789abcdef';
-  let rand = '';
-  for (let i = 0; i < 40; i++) {
-    rand += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `whsec_${rand}`;
+  const bytes = new Uint8Array(20);
+  globalThis.crypto.getRandomValues(bytes);
+  return `whsec_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export function validateWebhookUrl(
@@ -671,7 +668,32 @@ export function validateWebhookUrl(
   }
 }
 
-export function getStoredEndpoints(): WebhookEndpoint[] {
+type LegacyStoredEndpoint = Omit<Partial<Webhook>, 'status'> & {
+  subscribedEvents?: WebhookEvent[];
+  lastTriggeredAt?: string;
+  status?: Webhook['status'] | 'inactive';
+};
+
+/**
+ * Endpoints saved before the webhook types were unified used
+ * `subscribedEvents`, `lastTriggeredAt` and an `inactive` status.
+ * Map them onto the current `Webhook` shape so old browsers keep working.
+ */
+export function normalizeStoredEndpoint(raw: LegacyStoredEndpoint): Webhook {
+  const { subscribedEvents, lastTriggeredAt, status, ...rest } = raw;
+  return {
+    ...rest,
+    id: rest.id ?? '',
+    url: rest.url ?? '',
+    description: rest.description ?? '',
+    createdAt: rest.createdAt ?? new Date(0).toISOString(),
+    events: rest.events ?? subscribedEvents ?? [],
+    lastDeliveryAt: rest.lastDeliveryAt ?? lastTriggeredAt,
+    status: status === 'inactive' ? 'disabled' : status ?? 'active',
+  };
+}
+
+export function getStoredEndpoints(): Webhook[] {
   if (typeof window === 'undefined') return INITIAL_ENDPOINTS;
   try {
     const item = window.localStorage.getItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS);
@@ -679,24 +701,38 @@ export function getStoredEndpoints(): WebhookEndpoint[] {
       window.localStorage.setItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS, JSON.stringify(INITIAL_ENDPOINTS));
       return INITIAL_ENDPOINTS;
     }
-    const parsed = JSON.parse(item);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ENDPOINTS;
+    const parsed: unknown = JSON.parse(item);
+    if (!Array.isArray(parsed) || parsed.length === 0) return INITIAL_ENDPOINTS;
+
+    const now = Date.now();
+    const endpoints = (parsed as LegacyStoredEndpoint[]).map(normalizeStoredEndpoint).map((endpoint) => {
+      const previousSecrets = endpoint.previousSecrets?.filter(
+        ({ expiresAt }) => new Date(expiresAt).getTime() > now
+      );
+      return previousSecrets?.length
+        ? { ...endpoint, previousSecrets }
+        : { ...endpoint, previousSecrets: undefined };
+    });
+    if (JSON.stringify(endpoints) !== item) saveStoredEndpoints(endpoints);
+    return endpoints;
   } catch (err) {
     console.warn('Error reading stored webhook endpoints:', err);
     return INITIAL_ENDPOINTS;
   }
 }
 
-export function saveStoredEndpoints(endpoints: WebhookEndpoint[]): void {
-  if (typeof window === 'undefined') return;
+export function saveStoredEndpoints(endpoints: Webhook[]): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     window.localStorage.setItem(STORAGE_KEYS.WEBHOOK_ENDPOINTS, JSON.stringify(endpoints));
+    return true;
   } catch (err) {
     console.warn('Error saving webhook endpoints:', err);
+    return false;
   }
 }
 
-export function getEndpointById(id: string): WebhookEndpoint | undefined {
+export function getEndpointById(id: string): Webhook | undefined {
   const endpoints = getStoredEndpoints();
   return endpoints.find((ep) => ep.id === id);
 }
@@ -704,19 +740,19 @@ export function getEndpointById(id: string): WebhookEndpoint | undefined {
 export function createEndpoint(data: {
   url: string;
   description: string;
-  subscribedEvents: string[];
-  status?: 'active' | 'inactive';
-}): { endpoint: WebhookEndpoint; generatedSecret: string } {
+  events: WebhookEvent[];
+  status?: 'active' | 'disabled';
+}): { endpoint: Webhook; generatedSecret: string } {
   const endpoints = getStoredEndpoints();
   const secret = generateSigningSecret();
-  const newEndpoint: WebhookEndpoint = {
+  const newEndpoint: Webhook = {
     id: `ep_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
     url: data.url.trim(),
     description: data.description.trim(),
     secret,
     createdAt: new Date().toISOString(),
     status: data.status || 'active',
-    subscribedEvents: data.subscribedEvents,
+    events: data.events,
     successRate24h: 100,
   };
 
@@ -727,10 +763,10 @@ export function createEndpoint(data: {
 
 export function updateEndpoint(
   id: string,
-  updates: Partial<Omit<WebhookEndpoint, 'id' | 'secret' | 'createdAt'>>
-): WebhookEndpoint | null {
+  updates: Partial<Omit<Webhook, 'id' | 'secret' | 'createdAt'>>
+): Webhook | null {
   const endpoints = getStoredEndpoints();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
@@ -754,35 +790,61 @@ export function deleteEndpoint(id: string): boolean {
   return true;
 }
 
-export function rollEndpointSecret(id: string): {
-  endpoint: WebhookEndpoint | null;
+export function rollEndpointSecret(
+  id: string,
+  overlap: 'now' | '1h' | '24h' | '7d' = 'now'
+): {
+  endpoint: Webhook | null;
   newSecret: string;
+  error?: string;
 } {
   const endpoints = getStoredEndpoints();
   const newSecret = generateSigningSecret();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  const now = Date.now();
+  const overlapMs = {
+    now: 0,
+    '1h': 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+  }[overlap];
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
-      updatedEndpoint = { ...ep, secret: newSecret };
+      const previousSecrets = (ep.previousSecrets || []).filter(
+        ({ expiresAt }) => new Date(expiresAt).getTime() > now
+      );
+      if (overlapMs > 0 && ep.secret) {
+        previousSecrets.push({
+          secret: ep.secret,
+          expiresAt: new Date(now + overlapMs).toISOString(),
+        });
+      }
+      updatedEndpoint = {
+        ...ep,
+        secret: newSecret,
+        secretRevealDisabled: true,
+        previousSecrets: previousSecrets.length ? previousSecrets : undefined,
+      };
       return updatedEndpoint;
     }
     return ep;
   });
 
-  if (updatedEndpoint) {
-    saveStoredEndpoints(nextEndpoints);
+  if (!updatedEndpoint) return { endpoint: null, newSecret, error: 'Webhook endpoint was not found.' };
+  if (!saveStoredEndpoints(nextEndpoints)) {
+    return { endpoint: null, newSecret, error: 'Could not save the rotated webhook secret.' };
   }
   return { endpoint: updatedEndpoint, newSecret };
 }
 
-export function toggleEndpointStatus(id: string): WebhookEndpoint | null {
+export function toggleEndpointStatus(id: string): Webhook | null {
   const endpoints = getStoredEndpoints();
-  let updatedEndpoint: WebhookEndpoint | null = null;
+  let updatedEndpoint: Webhook | null = null;
 
   const nextEndpoints = endpoints.map((ep) => {
     if (ep.id === id) {
-      const nextStatus = ep.status === 'active' ? 'inactive' : 'active';
+      const nextStatus = ep.status === 'active' ? 'disabled' : 'active';
       updatedEndpoint = { ...ep, status: nextStatus };
       return updatedEndpoint;
     }
@@ -848,7 +910,7 @@ export function sendTestWebhookEvent(
   const delivery: WebhookDelivery = {
     id: deliveryId,
     eventId,
-    eventType: eventType as WebhookEventType,
+    eventType: eventType as WebhookEvent,
     status: 'succeeded',
     httpStatus: 200,
     statusText: 'OK',
@@ -903,14 +965,365 @@ export function sendTestWebhookEvent(
   const currentDeliveries = getStoredDeliveries();
   saveStoredDeliveries([delivery, ...currentDeliveries]);
 
-  // Update endpoint's lastTriggeredAt
-  updateEndpoint(endpointId, { lastTriggeredAt: nowIso });
+  // Update endpoint's lastDeliveryAt
+  updateEndpoint(endpointId, { lastDeliveryAt: nowIso });
 
   return {
     delivery,
     status: 200,
     statusText: 'OK',
     responseTimeMs: latency,
+  };
+}
+
+// -------------------------------------------------------------
+// "Send test event" dispatcher (endpoint detail page)
+// -------------------------------------------------------------
+
+const SAMPLE_MERCHANT_ACCOUNT = 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3IF5IS2RVSQF';
+const SAMPLE_CUSTOMER_ACCOUNT = 'GABCD3XYZ99238KLMS72782910AAJJWWQQOPPLKKJJHGFEDCBA7766554433221';
+const SAMPLE_USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+
+function randomHex(length: number): string {
+  const chars = '0123456789abcdef';
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return out;
+}
+
+/**
+ * Builds a sample `data` object so a dispatched test payload matches the
+ * documented schema for the selected event in the webhook event catalog.
+ */
+export function buildEventSampleData(
+  eventType: WebhookEvent,
+  seed: string,
+  timestamp: string
+): Record<string, unknown> {
+  const paymentId = `pl_test_${seed}`;
+  const transactionHash = randomHex(64);
+
+  switch (eventType) {
+    case 'payment.created':
+      return {
+        payment_id: paymentId,
+        amount: '50.00',
+        currency: 'USDC',
+        status: 'created',
+        customer_account: SAMPLE_CUSTOMER_ACCOUNT,
+        merchant_account: SAMPLE_MERCHANT_ACCOUNT,
+        network: 'stellar_testnet',
+      };
+    case 'payment.completed':
+      return {
+        payment_id: paymentId,
+        transaction_hash: transactionHash,
+        amount: '50.00',
+        currency: 'USDC',
+        asset_issuer: SAMPLE_USDC_ISSUER,
+        customer_account: SAMPLE_CUSTOMER_ACCOUNT,
+        merchant_account: SAMPLE_MERCHANT_ACCOUNT,
+        status: 'settled',
+        network: 'stellar_testnet',
+        metadata: {
+          order_id: `ord_${seed}`,
+          customer_email: 'buyer@example.com',
+        },
+      };
+    case 'payment.failed':
+      return {
+        payment_id: paymentId,
+        failure_reason: 'insufficient_funds',
+        attempted_amount: '50.00',
+        currency: 'USDC',
+        customer_account: SAMPLE_CUSTOMER_ACCOUNT,
+      };
+    case 'payment.expired':
+      return {
+        payment_id: paymentId,
+        amount: '50.00',
+        currency: 'USDC',
+        expired_at: timestamp,
+        customer_account: SAMPLE_CUSTOMER_ACCOUNT,
+      };
+    case 'refund.created':
+      return {
+        refund_id: `ref_${seed}`,
+        original_payment_id: paymentId,
+        refund_amount: '15.00',
+        currency: 'USDC',
+        reason: 'Customer requested cancellation',
+        status: 'pending',
+      };
+    case 'refund.completed':
+      return {
+        refund_id: `ref_${seed}`,
+        original_payment_id: paymentId,
+        refund_amount: '15.00',
+        currency: 'USDC',
+        transaction_hash: transactionHash,
+        status: 'completed',
+      };
+    case 'refund.failed':
+      return {
+        refund_id: `ref_${seed}`,
+        original_payment_id: paymentId,
+        refund_amount: '15.00',
+        currency: 'USDC',
+        failure_reason: 'refund_rejected_by_issuer',
+      };
+    case 'refund.processed':
+      return {
+        refund_id: `ref_${seed}`,
+        original_payment_id: paymentId,
+        refund_amount: '15.00',
+        currency: 'USDC',
+        reason: 'Customer requested cancellation',
+        transaction_hash: transactionHash,
+      };
+    case 'escrow.funded':
+      return {
+        escrow_id: `esc_${seed}`,
+        order_id: `ord_${seed}`,
+        amount: '50.00',
+        currency: 'USDC',
+        funder_account: SAMPLE_CUSTOMER_ACCOUNT,
+        status: 'funded',
+      };
+    case 'escrow.released':
+      return {
+        escrow_id: `esc_${seed}`,
+        order_id: `ord_${seed}`,
+        amount: '50.00',
+        currency: 'USDC',
+        merchant_account: SAMPLE_MERCHANT_ACCOUNT,
+        transaction_hash: transactionHash,
+        status: 'released',
+      };
+    case 'escrow.disputed':
+      return {
+        escrow_id: `esc_${seed}`,
+        order_id: `ord_${seed}`,
+        amount: '50.00',
+        currency: 'USDC',
+        disputed_by: SAMPLE_CUSTOMER_ACCOUNT,
+        reason: 'Item not received',
+        status: 'disputed',
+      };
+    case 'payout.completed':
+      return {
+        payout_id: `po_${seed}`,
+        amount: '500.00',
+        currency: 'USDC',
+        destination_account: SAMPLE_MERCHANT_ACCOUNT,
+        transaction_hash: transactionHash,
+        status: 'completed',
+      };
+    case 'trustline.added':
+      return {
+        account: SAMPLE_MERCHANT_ACCOUNT,
+        asset_code: 'USDC',
+        asset_issuer: SAMPLE_USDC_ISSUER,
+        limit: '922337203685.4775807',
+      };
+    default:
+      return {
+        reference: seed,
+        amount: '50.00',
+        currency: 'USDC',
+        status: 'test',
+      };
+  }
+}
+
+export interface TestEventDispatchResult {
+  delivery: WebhookDelivery;
+  ok: boolean;
+  status: number;
+  statusText: string;
+  responseTimeMs: number;
+  errorMessage?: string;
+}
+
+interface SimulatedOutcome {
+  ok: boolean;
+  statusCode: number;
+  statusText: string;
+  responseTimeMs: number;
+  headers: Record<string, string>;
+  body: string;
+  errorMessage?: string;
+}
+
+function simulateFailureOutcome(endpointUrl: string): SimulatedOutcome {
+  const modes: Array<() => SimulatedOutcome> = [
+    () => ({
+      ok: false,
+      statusCode: 504,
+      statusText: 'Gateway Timeout',
+      responseTimeMs: 10000,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(
+        {
+          error: 'endpoint_timeout',
+          message: 'FacilPay did not receive a response within the 10000ms delivery timeout.',
+        },
+        null,
+        2
+      ),
+      errorMessage: 'Request timed out after 10000ms - no response received from the endpoint.',
+    }),
+    () => ({
+      ok: false,
+      statusCode: 500,
+      statusText: 'Internal Server Error',
+      responseTimeMs: Math.floor(Math.random() * 2000) + 1200,
+      headers: { 'content-type': 'application/json', server: 'nginx/1.24.0' },
+      body: JSON.stringify(
+        {
+          error: 'internal_error',
+          message: 'The endpoint threw an exception while handling the test event.',
+        },
+        null,
+        2
+      ),
+      errorMessage: 'HTTP 500: Internal Server Error - unhandled exception in the endpoint handler.',
+    }),
+    () => ({
+      ok: false,
+      statusCode: 502,
+      statusText: 'Bad Gateway',
+      responseTimeMs: Math.floor(Math.random() * 120) + 380,
+      headers: { 'content-type': 'text/html', server: 'cloudflare' },
+      body: '<html><body><h1>502 Bad Gateway</h1><p>The upstream server returned an invalid response.</p></body></html>',
+      errorMessage: 'HTTP 502: Bad Gateway - the endpoint refused the connection.',
+    }),
+    () => ({
+      ok: false,
+      statusCode: 404,
+      statusText: 'Not Found',
+      responseTimeMs: Math.floor(Math.random() * 40) + 65,
+      headers: { 'content-type': 'text/plain' },
+      body: `Cannot POST ${endpointUrl} - route not registered on the endpoint.`,
+      errorMessage: 'HTTP 404: Not Found - verify the webhook path is correct.',
+    }),
+  ];
+
+  return modes[Math.floor(Math.random() * modes.length)]();
+}
+
+/**
+ * Simulates dispatching a sample event to an endpoint and records it as a
+ * delivery flagged with `isTest` so it shows up in the delivery logs.
+ */
+export function dispatchTestWebhookEvent(
+  endpointId: string,
+  eventType: WebhookEvent
+): TestEventDispatchResult {
+  const endpoint = getEndpointById(endpointId) || DEFAULT_ENDPOINT;
+  const nowIso = new Date().toISOString();
+  const seed = Date.now().toString(36);
+  const eventId = `evt_test_${seed}`;
+  const deliveryId = `del_test_${seed}`;
+  const timestampSec = Math.floor(Date.now() / 1000);
+
+  const payload: Record<string, unknown> = {
+    id: eventId,
+    event: eventType,
+    timestamp: nowIso,
+    data: buildEventSampleData(eventType, seed, nowIso),
+  };
+
+  // Simulate the round trip against the endpoint's observed reliability: healthy
+  // endpoints (>= 90% success) reply 200 OK, while degraded endpoints surface
+  // realistic timeout / non-2xx failures so the dashboard can show them.
+  const successRate = endpoint.successRate24h ?? 100;
+  const failureChance = successRate >= 90 ? 0 : 100 - successRate;
+  const shouldFail = failureChance > 0 && Math.random() * 100 < failureChance;
+
+  const outcome: SimulatedOutcome = shouldFail
+    ? simulateFailureOutcome(endpoint.url)
+    : {
+        ok: true,
+        statusCode: 200,
+        statusText: 'OK',
+        responseTimeMs: Math.floor(Math.random() * 65) + 75,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          date: new Date().toUTCString(),
+          'x-facilpay-test-mode': 'true',
+        },
+        body: JSON.stringify(
+          {
+            received: true,
+            test_mode: true,
+            event: eventType,
+            event_id: eventId,
+            status: 'acknowledged',
+            timestamp: nowIso,
+          },
+          null,
+          2
+        ),
+      };
+
+  const delivery: WebhookDelivery = {
+    id: deliveryId,
+    eventId,
+    eventType,
+    status: outcome.ok ? 'succeeded' : 'failed',
+    httpStatus: outcome.statusCode,
+    statusText: outcome.statusText,
+    attemptCount: 1,
+    deliveredAt: nowIso,
+    endpointId,
+    isTest: true,
+    request: {
+      url: endpoint.url,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'FacilPay-Webhooks/1.0',
+        'X-FacilPay-Signature': `t=${timestampSec},v1=${randomHex(40)}`,
+        'X-FacilPay-Event-ID': eventId,
+        'X-FacilPay-Delivery-ID': deliveryId,
+        'X-FacilPay-Test-Mode': 'true',
+      },
+      payload,
+    },
+    response: {
+      statusCode: outcome.statusCode,
+      statusText: outcome.statusText,
+      responseTimeMs: outcome.responseTimeMs,
+      headers: outcome.headers,
+      body: outcome.body,
+    },
+    attempts: [
+      {
+        attemptNumber: 1,
+        timestamp: nowIso,
+        httpStatus: outcome.statusCode,
+        statusText: outcome.statusText,
+        responseTimeMs: outcome.responseTimeMs,
+        result: outcome.ok ? 'succeeded' : 'failed',
+        errorMessage: outcome.errorMessage,
+      },
+    ],
+  };
+
+  // Persist alongside every other endpoint's deliveries, newest first.
+  saveStoredDeliveries([delivery, ...getStoredDeliveries()]);
+  updateEndpoint(endpointId, { lastDeliveryAt: nowIso });
+
+  return {
+    delivery,
+    ok: outcome.ok,
+    status: outcome.statusCode,
+    statusText: outcome.statusText,
+    responseTimeMs: outcome.responseTimeMs,
+    errorMessage: outcome.errorMessage,
   };
 }
 

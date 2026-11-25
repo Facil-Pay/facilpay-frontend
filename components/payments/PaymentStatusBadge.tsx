@@ -1,5 +1,6 @@
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
-import type { PaymentStatus } from "@/app/lib/types/payment";
+import { PAYMENT_STATUS_META, paymentStatusLabel } from "./payment-status";
+import type { PaymentStatus } from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,16 +19,6 @@ interface PaymentStatusBadgeProps {
   flagReason?: string;
 }
 
-const statusConfig: Record<DisplayPaymentStatus, { label: string; variant: BadgeVariant }> = {
-  pending:    { label: "Pending",    variant: "warning"  },
-  processing: { label: "Processing", variant: "info"     },
-  completed:  { label: "Completed",  variant: "success"  },
-  failed:     { label: "Failed",     variant: "danger"   },
-  refunded:   { label: "Refunded",   variant: "neutral"  },
-  cancelled:  { label: "Cancelled",  variant: "neutral"  },
-  flagged:    { label: "Flagged",    variant: "warning"  },
-};
-
 export function PaymentStatusBadge({
   status,
   size = "sm",
@@ -35,20 +26,9 @@ export function PaymentStatusBadge({
   className,
   flagReason,
 }: PaymentStatusBadgeProps) {
-  const config = statusConfig[status] ?? { label: status, variant: "neutral" as BadgeVariant };
-
-  if (status === "flagged") {
-    return (
-      <span
-        className={`inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ${className ?? ""}`}
-        title={flagReason}
-        aria-label={flagReason ? `Flagged: ${flagReason}` : "Flagged"}
-      >
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
-        {flagReason ? `Flagged — ${flagReason}` : "Flagged"}
-      </span>
-    );
-  }
+  const meta = PAYMENT_STATUS_META[status];
+  const label = meta?.label ?? paymentStatusLabel(status);
+  const variant: BadgeVariant = meta?.variant ?? "neutral";
 
   return (
     <Badge

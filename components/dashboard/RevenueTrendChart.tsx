@@ -4,6 +4,7 @@
 import { Card, CardHeader, CardDivider } from "@/components/ui/card";
 import type { MonthlyRevenue } from "@/app/lib/api/dashboard";
 import { useFormat } from "@/lib/i18n/use-format";
+import { ChartDataTable, useChartSummaryId } from "@/components/ui/chart-data-table";
 
 function ChartBarIcon() {
   return (
@@ -19,7 +20,13 @@ interface RevenueTrendChartProps {
 
 export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
   const f = useFormat();
+  const summaryId = useChartSummaryId();
   if (data.length === 0) return null;
+
+  const total = data.reduce((s, d) => s + d.volumeUsd, 0);
+  const peak = data.reduce((best, d) => (d.volumeUsd > best.volumeUsd ? d : best), data[0]);
+  const money = (n: number) => f.fiat(n, "USD", { maximumFractionDigits: 0 });
+  const summary = `Monthly revenue from ${data[0].month} ${data[0].year} to ${data.at(-1)!.month} ${data.at(-1)!.year}. Highest was ${money(peak.volumeUsd)} in ${peak.month}; total ${money(total)}.`;
 
   // Chart dimensions
   const W = 540;
@@ -62,6 +69,7 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
         <svg
           viewBox={`0 0 ${W} ${H}`}
           aria-label="Monthly revenue bar chart"
+          aria-describedby={summaryId}
           role="img"
           className="w-full"
           style={{ minWidth: 260 }}
@@ -153,18 +161,30 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
         </svg>
       </div>
 
+      <p id={summaryId} className="sr-only">{summary}</p>
+      <ChartDataTable
+        caption="Monthly revenue"
+        rows={data}
+        rowKey={(d) => `${d.year}-${d.month}`}
+        columns={[
+          { key: "month", header: "Month", cell: (d) => `${d.month} ${d.year}` },
+          { key: "volumeUsd", header: "Volume (USD)", align: "right", cell: (d) => money(d.volumeUsd) },
+          { key: "count", header: "Payments", align: "right", cell: (d) => f.number(d.count) },
+        ]}
+      />
+
       {/* Legend row */}
       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-zinc-50">
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-[#55C2FF] shrink-0" />
-          <span className="text-xs text-zinc-500">Current month</span>
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#55C2FF] shrink-0" aria-hidden="true" />
+          <span className="text-xs text-zinc-600">Current month</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-[#A5D4FF]/75 shrink-0" />
-          <span className="text-xs text-zinc-500">Previous months</span>
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#A5D4FF]/75 shrink-0" aria-hidden="true" />
+          <span className="text-xs text-zinc-600">Previous months</span>
         </div>
-        <div className="ml-auto text-xs text-zinc-400 tabular-nums">
-          Total: {f.fiat(data.reduce((s, d) => s + d.volumeUsd, 0), "USD", { maximumFractionDigits: 0 })}
+        <div className="ml-auto text-xs text-zinc-600 tabular-nums">
+          Total: {money(total)}
         </div>
       </div>
     </Card>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { EndpointHealthSummary } from '@/lib/webhook-data';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 
 interface EndpointHealthChartProps {
   health: EndpointHealthSummary;
@@ -47,11 +48,11 @@ export default function EndpointHealthChart({
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
-            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
+            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" aria-hidden="true" />
             <span>Succeeded</span>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
-            <span className="h-2.5 w-2.5 rounded-sm bg-rose-500" />
+            <span className="h-2.5 w-2.5 rounded-sm bg-rose-500" aria-hidden="true" />
             <span>Failed</span>
           </div>
         </div>
@@ -96,7 +97,13 @@ export default function EndpointHealthChart({
 
       {/* 7-Day Bar Chart */}
       <div className="pt-2">
-        <div className="h-44 w-full flex items-end justify-between gap-2 sm:gap-6 px-2">
+        <div
+          role="img"
+          aria-label={`Deliveries over the last 7 days: ${sevenDayStats
+            .map((d) => `${d.dayLabel} ${d.succeeded} succeeded, ${d.failed} failed`)
+            .join('; ')}`}
+          className="h-44 w-full flex items-end justify-between gap-2 sm:gap-6 px-2"
+        >
           {sevenDayStats.map((stat, idx) => {
             const successHeightPercent = Math.round((stat.succeeded / maxVolume) * 100);
             const failHeightPercent = Math.round((stat.failed / maxVolume) * 100);
@@ -139,6 +146,16 @@ export default function EndpointHealthChart({
             );
           })}
         </div>
+        <ChartDataTable
+          caption="Webhook deliveries per day"
+          rows={sevenDayStats}
+          rowKey={(d) => d.date}
+          columns={[
+            { key: 'date', header: 'Day', cell: (d) => `${d.dayLabel} ${d.date}` },
+            { key: 'succeeded', header: 'Succeeded', align: 'right' },
+            { key: 'failed', header: 'Failed', align: 'right' },
+          ]}
+        />
       </div>
     </div>
   );

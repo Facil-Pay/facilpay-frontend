@@ -1,5 +1,6 @@
 'use client';
 
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 import {
   Area,
   AreaChart,
@@ -161,8 +162,8 @@ function LegendToggle({
   dashed?: boolean;
 }) {
   return (
-    <button className={active ? 'legend-item active' : 'legend-item'} onClick={onToggle}>
-      <span className={dashed ? 'legend-swatch dashed' : 'legend-swatch'} style={{ background: color }} />
+    <button type="button" aria-pressed={active} className={active ? 'legend-item active' : 'legend-item'} onClick={onToggle}>
+      <span aria-hidden="true" className={dashed ? 'legend-swatch dashed' : 'legend-swatch'} style={{ background: color }} />
       {label}
     </button>
   );
@@ -300,6 +301,24 @@ export default function AnalyticsCharts({ data, compareMode, compareLabel = "Pre
           </LineChart>
         </ResponsiveContainer>
       </ChartCard>
+      <section className="chart-card" aria-labelledby="analytics-data-heading">
+        <h2 id="analytics-data-heading">Chart data</h2>
+        <p>Every value plotted above, for screen readers and exact figures.</p>
+        <ChartDataTable
+          caption="Analytics by period"
+          rows={data}
+          rowKey={(point) => point.label}
+          columns={[
+            { key: 'label', header: 'Period' },
+            { key: 'revenue', header: 'Revenue', align: 'right', cell: (p) => formatMoney(p.revenue) },
+            { key: 'txCount', header: 'Transactions', align: 'right', cell: (p) => f.number(p.txCount) },
+            { key: 'successful', header: 'Successful', align: 'right', cell: (p) => f.number(p.successful) },
+            { key: 'failed', header: 'Failed', align: 'right', cell: (p) => f.number(p.failed) },
+            { key: 'refundVolume', header: 'Refunds', align: 'right', cell: (p) => formatMoney(p.refundVolume) },
+            { key: 'aov', header: 'Avg order', align: 'right', cell: (p) => formatMoney(p.aov) },
+          ]}
+        />
+      </section>
     </div>
   );
 }

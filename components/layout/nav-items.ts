@@ -8,6 +8,7 @@ import {
   Lock,
   RotateCcw,
   Settings,
+  Tag,
   Webhook,
   type LucideIcon,
 } from "lucide-react";
@@ -25,13 +26,7 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "payments", href: "/payments", icon: CreditCard },
   { label: "refunds", href: "/refunds", icon: RotateCcw },
   { label: "escrow", href: "/escrow", icon: Lock },
-  { label: "reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
-  {
-    label: "unmatchedInbox",
-    href: "/unmatched",
-    icon: Inbox,
-    badge: "unmatched_count",
-  },
+  { label: "coupons", href: "/coupons", icon: Tag },
   { label: "analytics", href: "/analytics", icon: BarChart3 },
   { label: "webhooks", href: "/webhooks", icon: Webhook },
   { label: "developers", href: "/developers", icon: Code2 },

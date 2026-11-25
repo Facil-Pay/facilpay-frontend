@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
+import EditKeyModal from '@/components/developers/EditKeyModal';
+import { useQuickAction } from '@/lib/command-palette';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
 import {
@@ -13,16 +15,23 @@ import {
   getStoredApiKeys,
   saveStoredApiKeys,
 } from '@/lib/apiKeys';
+import { getOnboardingState } from '@/lib/storage';
+import type { PaymentLinkData } from '@/types/onboarding';
 
 export default function ApiKeysPage() {
   const [network, setNetwork] = useState<NetworkMode>('testnet');
   const [keys, setKeys] = useState<ApiKeyItem[]>(INITIAL_API_KEYS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  useQuickAction('create-api-key', () => setIsCreateModalOpen(true));
+  const [editingKey, setEditingKey] = useState<ApiKeyItem | null>(null);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);
+  const [paymentLinks, setPaymentLinks] = useState<PaymentLinkData[]>([]);
 
   useEffect(() => {
     setKeys(getStoredApiKeys());
+    const paymentLink = getOnboardingState().paymentLink;
+    setPaymentLinks(paymentLink.paymentUrl ? [paymentLink] : []);
   }, []);
 
   // Active publishable key based on network
@@ -46,6 +55,14 @@ export default function ApiKeysPage() {
   const handleKeyCreated = (newKey: ApiKeyItem) => {
     setKeys((prev) => {
       const updated = [newKey, ...prev];
+      saveStoredApiKeys(updated);
+      return updated;
+    });
+  };
+
+  const handleKeyUpdated = (updatedKey: ApiKeyItem) => {
+    setKeys((prev) => {
+      const updated = prev.map((k) => (k.id === updatedKey.id ? updatedKey : k));
       saveStoredApiKeys(updated);
       return updated;
     });
@@ -121,6 +138,12 @@ export default function ApiKeysPage() {
             className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
           >
             Event Catalog
+          </Link>
+          <Link
+            href="/developers/logs"
+            className="rounded-lg px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Request Logs
           </Link>
         </div>
 
@@ -234,6 +257,7 @@ export default function ApiKeysPage() {
                   <th className="px-6 py-3.5">Name</th>
                   <th className="px-6 py-3.5">Key Prefix</th>
                   <th className="px-6 py-3.5">Permissions</th>
+                  <th className="px-6 py-3.5">IP Restriction</th>
                   <th className="px-6 py-3.5">Created Date</th>
                   <th className="px-6 py-3.5">Last Used</th>
                   <th className="px-6 py-3.5">Status</th>
@@ -243,7 +267,7 @@ export default function ApiKeysPage() {
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
                 {filteredKeys.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-10 text-center text-zinc-500">
+                    <td colSpan={8} className="px-6 py-10 text-center text-zinc-500">
                       No secret keys created for {network}. Click &ldquo;Create Secret Key&rdquo; to generate one.
                     </td>
                   </tr>
@@ -294,6 +318,32 @@ export default function ApiKeysPage() {
                           )}
                         </td>
 
+                        {/* IP Restriction */}
+                        <td className="px-6 py-4">
+                          {keyItem.ipAllowlist && keyItem.ipAllowlist.length > 0 ? (
+                            <div
+                              className="flex flex-wrap items-center gap-1"
+                              title={keyItem.ipAllowlist.join(', ')}
+                            >
+                              {keyItem.ipAllowlist.slice(0, 2).map((entry) => (
+                                <span
+                                  key={entry}
+                                  className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 font-mono text-[10px] text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300"
+                                >
+                                  {entry}
+                                </span>
+                              ))}
+                              {keyItem.ipAllowlist.length > 2 && (
+                                <span className="text-[10px] font-semibold text-zinc-400">
+                                  +{keyItem.ipAllowlist.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-zinc-400">Any IP</span>
+                          )}
+                        </td>
+
                         {/* Created Date */}
                         <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400">
                           {keyItem.createdDate.slice(0, 10)}
@@ -334,6 +384,13 @@ export default function ApiKeysPage() {
                             <>
                               <button
                                 type="button"
+                                onClick={() => setEditingKey(keyItem)}
+                                className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => setRollingKey(keyItem)}
                                 className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                               >
@@ -362,6 +419,7 @@ export default function ApiKeysPage() {
         <QuickstartSection
           publishableKey={activePublishableKey}
           network={network}
+          paymentLinks={paymentLinks}
         />
       </div>
 
@@ -371,6 +429,14 @@ export default function ApiKeysPage() {
         onClose={() => setIsCreateModalOpen(false)}
         network={network}
         onKeyCreated={handleKeyCreated}
+      />
+
+      {/* Modal: Edit Secret Key (IP allowlist) */}
+      <EditKeyModal
+        keyItem={editingKey}
+        isOpen={!!editingKey}
+        onClose={() => setEditingKey(null)}
+        onKeyUpdated={handleKeyUpdated}
       />
 
       {/* Modal: Roll Secret Key with Grace Period */}

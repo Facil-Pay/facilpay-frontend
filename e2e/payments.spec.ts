@@ -29,7 +29,7 @@ test.describe('Payments list — filter, search, and detail', () => {
       page.getByLabel(/status/i),
     );
     if (await statusFilter.first().isVisible()) {
-      await statusFilter.first().selectOption('COMPLETED');
+      await statusFilter.first().selectOption('completed');
       await page.waitForTimeout(300);
     }
   });
