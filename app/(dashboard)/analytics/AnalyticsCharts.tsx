@@ -52,8 +52,86 @@ export type VisibleSeries = {
 interface Props {
   data: ChartPoint[];
   compareMode: boolean;
+  /** Human-readable label for the dashed comparison line, e.g. "Previous period". */
+  compareLabel?: string;
   visibleSeries: VisibleSeries;
   toggleSeries: (key: string) => void;
+}
+
+/** Tooltip content that shows current value, compare value, and delta. */
+function CompareTooltip({
+  active,
+  payload,
+  label,
+  currentKey,
+  compareKey,
+  formatter,
+  compareMode,
+  compareLabel,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey: string; value: number; name: string }>;
+  label?: string;
+  currentKey: string;
+  compareKey: string;
+  formatter: (v: number) => string;
+  compareMode: boolean;
+  compareLabel: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const currentEntry = payload.find((p) => p.dataKey === currentKey);
+  const compareEntry = payload.find((p) => p.dataKey === compareKey);
+  const current = currentEntry?.value ?? 0;
+  const compare = compareEntry?.value ?? 0;
+  const delta = compare !== 0 ? ((current - compare) / compare) * 100 : null;
+
+  return (
+    <div
+      style={{
+        backgroundColor: "var(--surface, #fff)",
+        border: "1px solid var(--border, #e4e4e7)",
+        borderRadius: 12,
+        padding: "10px 14px",
+        fontSize: 12,
+      }}
+    >
+      <p style={{ fontWeight: 600, marginBottom: 6 }}>{label}</p>
+      {currentEntry && (
+        <p style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+          <span style={{ color: "var(--muted, #94a3b8)" }}>Current</span>
+          <span style={{ fontWeight: 600 }}>{formatter(current)}</span>
+        </p>
+      )}
+      {compareMode && compareEntry && (
+        <>
+          <p style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+            <span style={{ color: "var(--muted, #94a3b8)" }}>{compareLabel}</span>
+            <span>{formatter(compare)}</span>
+          </p>
+          {delta !== null && (
+            <p
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 16,
+                marginTop: 4,
+                fontWeight: 600,
+                color: delta >= 0 ? "#16a34a" : "#ef4444",
+              }}
+            >
+              <span>Δ</span>
+              <span>
+                {delta >= 0 ? "+" : ""}
+                {delta.toFixed(1)}% ({delta >= 0 ? "+" : ""}
+                {formatter(current - compare)})
+              </span>
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
@@ -91,7 +169,7 @@ function LegendToggle({
   );
 }
 
-export default function AnalyticsCharts({ data, compareMode, visibleSeries, toggleSeries }: Props) {
+export default function AnalyticsCharts({ data, compareMode, compareLabel = "Previous period", visibleSeries, toggleSeries }: Props) {
   const f = useFormat();
   const formatMoney = (value: number) => f.fiat(value, 'USD', { maximumFractionDigits: 0 });
 
@@ -101,7 +179,7 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
         <div className="legend-row">
           <LegendToggle label="Revenue" active={visibleSeries.revenue} onToggle={() => toggleSeries('revenue')} color={palette.primary} />
           {compareMode && (
-            <LegendToggle label="Previous period" active={visibleSeries.compareRevenue} onToggle={() => toggleSeries('compareRevenue')} color={palette.muted} dashed />
+            <LegendToggle label={compareLabel} active={visibleSeries.compareRevenue} onToggle={() => toggleSeries('compareRevenue')} color={palette.muted} dashed />
           )}
         </div>
         <ResponsiveContainer width="100%" height={260}>
@@ -115,7 +193,20 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
             <YAxis tickFormatter={(value: number) => f.fiat(value, 'USD', { compact: true })} tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
+            <Tooltip
+              content={(props) => (
+                <CompareTooltip
+                  active={props.active}
+                  payload={props.payload as Array<{ dataKey: string; value: number; name: string }> | undefined}
+                  label={props.label as string | undefined}
+                  currentKey="revenue"
+                  compareKey="compareRevenue"
+                  formatter={formatMoney}
+                  compareMode={compareMode}
+                  compareLabel={compareLabel}
+                />
+              )}
+            />
             {visibleSeries.revenue && <Area type="monotone" dataKey="revenue" stroke={palette.primary} fill="url(#revenueFill)" strokeWidth={3} />}
             {compareMode && visibleSeries.compareRevenue && (
               <Line type="monotone" dataKey="compareRevenue" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />
@@ -181,7 +272,7 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
         <div className="legend-row">
           <LegendToggle label="AOV" active={visibleSeries.aov} onToggle={() => toggleSeries('aov')} color={palette.purple} />
           {compareMode && (
-            <LegendToggle label="Previous AOV" active={visibleSeries.compareAov} onToggle={() => toggleSeries('compareAov')} color={palette.muted} dashed />
+            <LegendToggle label={`${compareLabel} AOV`} active={visibleSeries.compareAov} onToggle={() => toggleSeries('compareAov')} color={palette.muted} dashed />
           )}
         </div>
         <ResponsiveContainer width="100%" height={260}>
@@ -189,7 +280,20 @@ export default function AnalyticsCharts({ data, compareMode, visibleSeries, togg
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} stroke="var(--muted)" />
             <YAxis tickFormatter={(value: number) => formatMoney(value)} tickLine={false} axisLine={false} stroke="var(--muted)" />
-            <Tooltip formatter={(value: number) => [f.fiat(value, 'USD'), 'AOV']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderRadius: 12 }} />
+            <Tooltip
+              content={(props) => (
+                <CompareTooltip
+                  active={props.active}
+                  payload={props.payload as Array<{ dataKey: string; value: number; name: string }> | undefined}
+                  label={props.label as string | undefined}
+                  currentKey="aov"
+                  compareKey="compareAov"
+                  formatter={(v) => f.fiat(v, 'USD')}
+                  compareMode={compareMode}
+                  compareLabel={compareLabel}
+                />
+              )}
+            />
             {visibleSeries.aov && <Line type="monotone" dataKey="aov" stroke={palette.purple} strokeWidth={3} dot={{ r: 4 }} />}
             {compareMode && visibleSeries.compareAov && (
               <Line type="monotone" dataKey="compareAov" stroke={palette.muted} strokeDasharray="5 5" strokeWidth={2} dot={false} />

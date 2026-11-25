@@ -3,9 +3,9 @@ import {
   ArrowLeftRight,
   Code2,
   CreditCard,
+  Inbox,
   LayoutDashboard,
   Lock,
-  Repeat2,
   RotateCcw,
   Settings,
   Tag,
@@ -17,6 +17,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** When true, show a live pending-count badge in the sidebar. */
+  badge?: "unmatched_count";
 }
 
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [

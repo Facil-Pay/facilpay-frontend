@@ -552,8 +552,8 @@ function PaymentsPageContent() {
         onClose={() => setIsExportModalOpen(false)}
         type="payments"
         title="Payments"
-        data={filteredPayments}
-        columns={PAYMENT_EXPORT_COLUMNS}
+        data={filteredPayments as unknown as Record<string, unknown>[]}
+        columns={PAYMENT_EXPORT_COLUMNS as unknown as import('@/lib/types').ExportColumn<Record<string, unknown>>[]}
         filterStartDate={startDate}
         filterEndDate={endDate}
         filterSummary={filterSummary}
