@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookDelivery } from '@/types/webhooks';
+import { WebhookDelivery } from '@/lib/types';
 import SyntaxHighlightedJson from './SyntaxHighlightedJson';
 import { useFormat } from '@/lib/i18n/use-format';
 
@@ -83,8 +83,10 @@ export default function DeliveryDetailPanel({
             </div>
 
             <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
               title="Close panel"
             >
               ✕

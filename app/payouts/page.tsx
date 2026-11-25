@@ -6,7 +6,7 @@ import ExportModal from '@/components/ExportModal';
 import NewPayoutModal from '@/components/payouts/NewPayoutModal';
 import SavedDestinationsModal from '@/components/payouts/SavedDestinationsModal';
 import Sep24TrackerModal from '@/components/payouts/Sep24TrackerModal';
-import { Payout, AssetType, MerchantBalance, SavedDestination } from '@/lib/types';
+import { PayoutRecord, AssetType, MerchantBalance, SavedDestination } from '@/lib/types';
 import {
   INITIAL_PAYOUTS,
   INITIAL_BALANCES,
@@ -14,10 +14,11 @@ import {
   PAYOUT_EXPORT_COLUMNS,
 } from '@/lib/mockData';
 import { useFormat } from '@/lib/i18n/use-format';
+import { useQuickAction } from '@/lib/command-palette';
 
 export default function PayoutsPage() {
   const f = useFormat();
-  const [payouts, setPayouts] = useState<Payout[]>(INITIAL_PAYOUTS);
+  const [payouts, setPayouts] = useState<PayoutRecord[]>(INITIAL_PAYOUTS);
   const [balances, setBalances] = useState<Record<AssetType, MerchantBalance>>(INITIAL_BALANCES);
   const [savedDestinations, setSavedDestinations] = useState<SavedDestination[]>(
     INITIAL_SAVED_DESTINATIONS
@@ -33,8 +34,9 @@ export default function PayoutsPage() {
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isNewPayoutOpen, setIsNewPayoutOpen] = useState(false);
+  useQuickAction('new-payout', () => setIsNewPayoutOpen(true));
   const [isSavedDestinationsOpen, setIsSavedDestinationsOpen] = useState(false);
-  const [trackingPayout, setTrackingPayout] = useState<Payout | null>(null);
+  const [trackingPayout, setTrackingPayout] = useState<PayoutRecord | null>(null);
 
   // Filtered Payouts (strictly respects search, status, asset, and date range)
   const filteredPayouts = useMemo(() => {
@@ -91,7 +93,7 @@ export default function PayoutsPage() {
 
   // Payout Completion Handler (updates balance and prepends new payout)
   const handleCompletePayout = (
-    newPayout: Payout,
+    newPayout: PayoutRecord,
     deductedAmount: number,
     asset: AssetType
   ) => {
@@ -253,10 +255,10 @@ export default function PayoutsPage() {
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
                 <option value="ALL">All Statuses</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PROCESSING">Processing</option>
-                <option value="PENDING">Pending</option>
-                <option value="FAILED">Failed</option>
+                <option value="completed">Completed</option>
+                <option value="processing">Processing</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
 
@@ -392,9 +394,9 @@ export default function PayoutsPage() {
                       <td className="px-5 py-4">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
-                            payout.status === 'COMPLETED'
+                            payout.status === 'completed'
                               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                              : payout.status === 'PROCESSING'
+                              : payout.status === 'processing'
                               ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
                               : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
                           }`}

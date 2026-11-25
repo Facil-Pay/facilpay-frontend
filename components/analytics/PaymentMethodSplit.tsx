@@ -1,7 +1,7 @@
-import type { PaymentMethod, PaymentMethodShare } from "@/lib/types/analytics";
+import type { CheckoutMethod, PaymentMethodShare } from "@/lib/types";
 import { INSIGHT_COLORS, InsightCard, InsightEmpty, useInsightFormat } from "./InsightCard";
 
-const METHOD_LABEL: Record<PaymentMethod, string> = {
+const METHOD_LABEL: Record<CheckoutMethod, string> = {
   wallet_connect: "Wallet connect",
   qr_scan: "QR scan",
   manual_transfer: "Manual transfer",

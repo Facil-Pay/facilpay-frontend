@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { getPaymentFixtures } from '@/lib/mocks/fixtures';
+import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
+import type { Payment } from '@/lib/types';
+
+/** A customer is whoever paid: match by email, wallet or account ID. */
+function isCustomerPayment(payment: Payment, customerId: string): boolean {
+  const { email, walletAddress, accountId } = payment.sender;
+  return email === customerId || walletAddress === customerId || accountId === customerId;
+}
 
 interface CustomerDetailPageProps {
   params: Promise<{ id: string }>;
@@ -21,20 +29,20 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
   // Find customer payments
   const customerPayments = useMemo(() => {
-    return payments.filter(
-      (p: any) => p.customerEmail === customerId || p.customerWallet === customerId
-    );
+    return payments
+      .filter((p) => isCustomerPayment(p, customerId))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [payments, customerId]);
 
   if (customerPayments.length === 0) {
     notFound();
   }
 
-  const totalPaid = customerPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+  const totalPaid = customerPayments.reduce((sum, p) => sum + (p.amountUsd ?? p.amount ?? 0), 0);
   const paymentCount = customerPayments.length;
-  const firstPaymentAt = customerPayments[customerPayments.length - 1]?.date;
-  const lastPaymentAt = customerPayments[0]?.date;
-  const assets = [...new Set(customerPayments.map((p: any) => p.asset))];
+  const firstPaymentAt = customerPayments[customerPayments.length - 1]?.createdAt;
+  const lastPaymentAt = customerPayments[0]?.createdAt;
+  const assets = [...new Set(customerPayments.map((p) => p.currency))];
 
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -196,35 +204,23 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
-                {customerPayments.map((payment: any) => (
+                {customerPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
                     <td className="px-6 py-3 font-mono text-[11px] text-zinc-500">
                       {payment.id}
                     </td>
                     <td className="px-6 py-3 text-zinc-600 dark:text-zinc-400">
-                      {new Date(payment.date).toLocaleDateString()}
+                      {new Date(payment.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-3 font-semibold text-zinc-900 dark:text-white">
                       ${payment.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-3">{payment.asset}</td>
+                    <td className="px-6 py-3">{payment.currency}</td>
                     <td className="px-6 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
-                          payment.status === 'COMPLETED'
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                            : payment.status === 'PENDING'
-                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                            : payment.status === 'REFUNDED'
-                            ? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-                            : 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300'
-                        }`}
-                      >
-                        {payment.status}
-                      </span>
+                      <PaymentStatusBadge status={payment.status} />
                     </td>
                     <td className="px-6 py-3 text-right text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">
-                      {payment.description || payment.memo || '-'}
+                      {payment.description || payment.notes || '-'}
                     </td>
                   </tr>
                 ))}

@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CreateKeyModal from '@/components/developers/CreateKeyModal';
 import EditKeyModal from '@/components/developers/EditKeyModal';
+import { useQuickAction } from '@/lib/command-palette';
 import RollKeyModal from '@/components/developers/RollKeyModal';
 import QuickstartSection from '@/components/developers/QuickstartSection';
 import {
@@ -21,6 +22,7 @@ export default function ApiKeysPage() {
   const [network, setNetwork] = useState<NetworkMode>('testnet');
   const [keys, setKeys] = useState<ApiKeyItem[]>(INITIAL_API_KEYS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  useQuickAction('create-api-key', () => setIsCreateModalOpen(true));
   const [editingKey, setEditingKey] = useState<ApiKeyItem | null>(null);
   const [rollingKey, setRollingKey] = useState<ApiKeyItem | null>(null);
   const [copiedPk, setCopiedPk] = useState(false);

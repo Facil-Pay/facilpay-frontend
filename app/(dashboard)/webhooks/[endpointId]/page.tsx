@@ -5,12 +5,14 @@ import { useParams } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { AuthProvider } from '@/lib/auth-context';
+import RollSecretModal from '@/components/webhooks/RollSecretModal';
 import {
   WebhookDelivery,
   WebhookDeliveryStatus,
-  WebhookEndpoint,
+  Webhook,
+  WebhookEvent,
   WEBHOOK_EVENT_GROUPS,
-} from '@/types/webhooks';
+} from '@/lib/types';
 import {
   DEFAULT_ENDPOINT,
   getEndpointById,
@@ -29,16 +31,17 @@ function WebhookDeliveriesContent() {
   const params = useParams();
   const endpointId = (params?.endpointId as string) || DEFAULT_ENDPOINT.id;
 
-  const [endpoint, setEndpoint] = useState<WebhookEndpoint>(DEFAULT_ENDPOINT);
+  const [endpoint, setEndpoint] = useState<Webhook>(DEFAULT_ENDPOINT);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [activeFilterStatus, setActiveFilterStatus] = useState<WebhookDeliveryStatus | 'all'>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
-  const [testEventType, setTestEventType] = useState<string>('payment.completed');
+  const [testEventType, setTestEventType] = useState<WebhookEvent>('payment.completed');
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<WebhookDelivery | null>(null);
   const [testDispatchError, setTestDispatchError] = useState<string | null>(null);
+  const [isRotationOpen, setIsRotationOpen] = useState(false);
 
   // Load endpoint and deliveries
   useEffect(() => {
@@ -107,7 +110,7 @@ function WebhookDeliveriesContent() {
 
   const handleCopySecret = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(endpoint.secret);
+      navigator.clipboard.writeText(endpoint.secret ?? '');
       setCopiedSecret(true);
       setTimeout(() => setCopiedSecret(false), 2000);
     }
@@ -167,7 +170,7 @@ function WebhookDeliveriesContent() {
               <select
                 id="test-event-type"
                 value={testEventType}
-                onChange={(e) => setTestEventType(e.target.value)}
+                onChange={(e) => setTestEventType(e.target.value as WebhookEvent)}
                 disabled={isEndpointDisabled || isSendingTest}
                 title={
                   isEndpointDisabled

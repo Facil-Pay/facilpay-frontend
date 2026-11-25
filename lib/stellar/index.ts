@@ -154,6 +154,18 @@ export const contracts = {
 
 export { STELLAR_HORIZON, STELLAR_FRIENDBOT_URL, STELLAR_NETWORK } from "./config";
 
+// ─── Account helpers ──────────────────────────────────────────────────────────
+
+export {
+  STELLAR_TESTNET_HORIZON,
+  isValidStellarAddress,
+  truncateAddress,
+  checkStellarAccount,
+  fundWithFriendbot,
+  requestAddTrustline,
+} from "./account";
+export type { StellarAccountInfo } from "./account";
+
 // ─── Assets ───────────────────────────────────────────────────────────────────
 
 export { TESTNET_ASSETS } from "./assets";
