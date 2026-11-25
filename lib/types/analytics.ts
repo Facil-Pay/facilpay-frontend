@@ -61,3 +61,22 @@ export interface AnalyticsInsights {
   /** Only present when the backend has geo data */
   geography?: CountryVolume[];
 }
+
+/** One day of a payment link's view/checkout/completion volume (Issue #134). */
+export interface LinkAnalyticsPoint {
+  /** ISO date, e.g. "2026-11-01" */
+  date: string;
+  views: number;
+  checkoutStarts: number;
+  completedPayments: number;
+}
+
+/** Per-link analytics for a single payment link's detail view (Issue #134). */
+export interface LinkAnalytics {
+  linkId: string;
+  series: LinkAnalyticsPoint[];
+  funnel: FunnelStep[];
+  totalViews: number;
+  totalCompletedPayments: number;
+  conversionRate: number;
+}

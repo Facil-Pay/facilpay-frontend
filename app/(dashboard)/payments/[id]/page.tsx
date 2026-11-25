@@ -358,6 +358,10 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
         </div>
       </div>
 
+      <div className="mt-6">
+        <LinkAnalyticsSection linkId={payment.id} />
+      </div>
+
       {/* Printable Receipt Preview Modal */}
       <ReceiptPreviewModal
         payment={payment}
