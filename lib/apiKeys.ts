@@ -37,6 +37,8 @@ export interface ApiKeyItem {
   expiresAt: string | null;
   rollingExpiresAt?: string | null;
   gracePeriod?: 'now' | '1h' | '24h' | '7d' | null;
+  /** IP addresses / CIDR ranges allowed to use this key. Empty or undefined = any IP. */
+  ipAllowlist?: string[];
 }
 
 export const PUBLISHABLE_KEYS: Record<NetworkMode, string> = {
@@ -71,6 +73,183 @@ export function maskSecretKey(fullKey: string): string {
   if (!fullKey) return '';
   const prefix = fullKey.slice(0, 16);
   return `${prefix}••••••••••••••••••••••••`;
+}
+
+/**
+ * Validates a dotted-quad IPv4 address (0.0.0.0 - 255.255.255.255).
+ * Leading zeros are rejected to avoid ambiguous octal-style notations.
+ */
+export function isValidIPv4(value: string): boolean {
+  const parts = value.split('.');
+  if (parts.length !== 4) return false;
+
+  return parts.every((part) => {
+    if (!/^\d{1,3}$/.test(part)) return false;
+    if (part.length > 1 && part.startsWith('0')) return false;
+    const octet = Number(part);
+    return octet >= 0 && octet <= 255;
+  });
+}
+
+/**
+ * Validates an IPv6 address, including compressed (`::`) and IPv4-mapped
+ * (`::ffff:192.168.0.1`) notations.
+ */
+export function isValidIPv6(value: string): boolean {
+  if (!value || !value.includes(':')) return false;
+
+  let working = value;
+  let embeddedGroups = 0;
+
+  // An embedded IPv4 suffix occupies two of the eight groups.
+  if (working.includes('.')) {
+    const lastColon = working.lastIndexOf(':');
+    if (lastColon === -1) return false;
+
+    const ipv4Part = working.slice(lastColon + 1);
+    if (!isValidIPv4(ipv4Part)) return false;
+
+    working = `${working.slice(0, lastColon)}:0`;
+    embeddedGroups = 1;
+  }
+
+  const segments = working.split('::');
+  if (segments.length > 2) return false;
+
+  const parseGroups = (input: string): string[] | null => {
+    if (input === '') return [];
+    const groups = input.split(':');
+    if (groups.some((group) => !/^[0-9a-fA-F]{1,4}$/.test(group))) return null;
+    return groups;
+  };
+
+  if (segments.length === 2) {
+    const left = parseGroups(segments[0]);
+    const right = parseGroups(segments[1]);
+    if (left === null || right === null) return false;
+    // `::` must stand in for at least one group.
+    return left.length + right.length + embeddedGroups <= 7;
+  }
+
+  const groups = parseGroups(segments[0]);
+  if (groups === null) return false;
+  return groups.length + embeddedGroups === 8;
+}
+
+export interface IpAllowlistValidation {
+  valid: boolean;
+  /** Normalized value (e.g. lower-cased IPv6, trimmed CIDR prefix). */
+  normalized: string;
+  error?: string;
+}
+
+/**
+ * Validates a single allowlist entry: a bare IPv4/IPv6 address or a CIDR range
+ * such as `203.0.113.0/24` or `2001:db8::/32`.
+ */
+export function validateIpAllowlistEntry(raw: string): IpAllowlistValidation {
+  const value = raw.trim();
+  if (!value) {
+    return { valid: false, normalized: value, error: 'Enter an IP address or CIDR range.' };
+  }
+
+  const slashIndex = value.indexOf('/');
+  if (slashIndex === -1) {
+    if (isValidIPv4(value)) return { valid: true, normalized: value };
+    if (isValidIPv6(value)) return { valid: true, normalized: value.toLowerCase() };
+    return {
+      valid: false,
+      normalized: value,
+      error: `"${value}" is not a valid IPv4 or IPv6 address.`,
+    };
+  }
+
+  const address = value.slice(0, slashIndex);
+  const prefix = value.slice(slashIndex + 1);
+
+  if (!/^\d{1,3}$/.test(prefix)) {
+    return { valid: false, normalized: value, error: 'CIDR prefix must be a number (e.g. /24).' };
+  }
+
+  const prefixLength = Number(prefix);
+
+  if (isValidIPv4(address)) {
+    if (prefixLength > 32) {
+      return {
+        valid: false,
+        normalized: value,
+        error: 'IPv4 CIDR prefix must be between 0 and 32.',
+      };
+    }
+    return { valid: true, normalized: `${address}/${prefixLength}` };
+  }
+
+  if (isValidIPv6(address)) {
+    if (prefixLength > 128) {
+      return {
+        valid: false,
+        normalized: value,
+        error: 'IPv6 CIDR prefix must be between 0 and 128.',
+      };
+    }
+    return { valid: true, normalized: `${address.toLowerCase()}/${prefixLength}` };
+  }
+
+  return {
+    valid: false,
+    normalized: value,
+    error: `"${address}" is not a valid IPv4 or IPv6 address.`,
+  };
+}
+
+export interface IpAllowlistParseResult {
+  /** Valid, de-duplicated, normalized entries. */
+  entries: string[];
+  /** Human readable messages for every invalid entry. */
+  errors: string[];
+}
+
+/**
+ * Validates and normalizes a whole allowlist.
+ */
+export function parseIpAllowlistInput(values: string[]): IpAllowlistParseResult {
+  const entries: string[] = [];
+  const errors: string[] = [];
+
+  values.forEach((raw) => {
+    const result = validateIpAllowlistEntry(raw);
+    if (!result.valid) {
+      errors.push(result.error ?? `"${raw}" is not a valid IP address or CIDR range.`);
+      return;
+    }
+    if (!entries.some((entry) => entry.toLowerCase() === result.normalized.toLowerCase())) {
+      entries.push(result.normalized);
+    }
+  });
+
+  return { entries, errors };
+}
+
+/**
+ * Appends a single entry to an allowlist, returning an error when the value is
+ * invalid or already present.
+ */
+export function addIpAllowlistEntry(
+  entries: string[],
+  raw: string
+): { entries: string[]; error: string | null } {
+  if (!raw.trim()) return { entries, error: null };
+
+  const result = validateIpAllowlistEntry(raw);
+  if (!result.valid) {
+    return { entries, error: result.error ?? `"${raw}" is not a valid IP address or CIDR range.` };
+  }
+
+  if (entries.some((entry) => entry.toLowerCase() === result.normalized.toLowerCase())) {
+    return { entries, error: `"${result.normalized}" is already in the allowlist.` };
+  }
+
+  return { entries: [...entries, result.normalized], error: null };
 }
 
 export const DEFAULT_PERMISSIONS: KeyPermissions = {
@@ -123,6 +302,7 @@ export const INITIAL_API_KEYS: ApiKeyItem[] = [
       },
     },
     expiresAt: '2026-12-31T23:59:59.000Z',
+    ipAllowlist: ['203.0.113.7', '2001:db8::/32'],
   },
   {
     id: 'key_live_prod_01',
@@ -143,6 +323,7 @@ export const INITIAL_API_KEYS: ApiKeyItem[] = [
       },
     },
     expiresAt: null,
+    ipAllowlist: ['203.0.113.0/24', '198.51.100.42'],
   },
 ];
 

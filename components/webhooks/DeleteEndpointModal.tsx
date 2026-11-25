@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookEndpoint } from '@/types/webhooks';
+import { Webhook } from '@/lib/types';
 
 interface DeleteEndpointModalProps {
   isOpen: boolean;
-  endpoint: WebhookEndpoint | null;
+  endpoint: Webhook | null;
   onClose: () => void;
   onConfirmDelete: (endpointId: string) => void;
 }

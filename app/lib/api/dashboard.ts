@@ -1,5 +1,5 @@
 import { getMockPayments } from "@/app/lib/api/payments";
-import type { Payment, PaymentStatus, PaymentNetwork } from "@/app/lib/types/payment";
+import type { Payment, PaymentStatus, PaymentNetwork } from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

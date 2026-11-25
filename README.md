@@ -18,6 +18,7 @@ Merchant dashboard for FacilPay. Manage payments, view analytics, configure webh
 - [API Client Layer](#api-client-layer)
 - [Stellar Integration](#stellar-integration)
 - [Running the App](#running-the-app)
+- [Documentation](#documentation)
 - [Contribution](#contribution)
 
 ---
@@ -347,6 +348,18 @@ This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](h
 - Automatically runs `eslint --fix` and `prettier --write` on staged TypeScript/TSX files.
 - Commits containing unresolved lint errors are blocked automatically.
 - Initialize hooks locally with `npm run prepare`.
+
+---
+
+## Documentation
+
+Extended reference docs live in the `docs/` folder.
+
+| Document | Contents |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | Route groups, provider tree, data flow diagram, MSW mock mode |
+| [docs/stellar.md](docs/stellar.md) | Stellar modules (`lib/stellar/`), SEP-7/10/24, federation, testnet/mainnet switching, getting a funded testnet account |
+| [docs/components.md](docs/components.md) | Every `components/ui/` export — props, variants, accessibility notes |
 
 ---
 

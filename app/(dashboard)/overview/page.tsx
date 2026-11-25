@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -19,6 +19,12 @@ import {
   getOnboardingState,
   getGettingStartedTasks,
   saveGettingStartedTasks,
+  DEFAULT_DASHBOARD_LAYOUT,
+  getDashboardLayoutSnapshot,
+  saveDashboardLayout,
+  subscribeToDashboardLayout,
+  type DashboardLayout,
+  type DashboardWidgetId,
 } from '@/lib/storage';
 import { OnboardingState } from '@/types/onboarding';
 import { truncateAddress } from '@/lib/stellar';
@@ -26,8 +32,15 @@ import { generateQRSvg } from '@/lib/qr';
 import { PaymentStreamProvider, usePaymentStream } from '@/lib/payment-stream-context';
 import PaymentToast from '@/components/payments/PaymentToast';
 import { useFormat } from '@/lib/i18n/use-format';
+import DashboardCustomizer from '@/components/overview/DashboardCustomizer';
 
-function OverviewContent() {
+function OverviewContent({
+  layout,
+  onLayoutChange,
+}: {
+  layout: DashboardLayout;
+  onLayoutChange: (layout: DashboardLayout) => void;
+}) {
   const f = useFormat();
   const router = useRouter();
   const t = useTranslations('overview');
@@ -36,6 +49,7 @@ function OverviewContent() {
   const { payments } = usePaymentStream();
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [isChecklistDismissed, setIsChecklistDismissed] = useState(false);
+  const [isEditingDashboard, setIsEditingDashboard] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
 
@@ -137,6 +151,7 @@ function OverviewContent() {
   const business = onboarding.business;
   const settlement = onboarding.settlement;
   const paymentLink = onboarding.paymentLink;
+  const isWidgetVisible = (widget: DashboardWidgetId) => !layout.hidden.includes(widget);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
@@ -182,10 +197,32 @@ function OverviewContent() {
         </div>
       </div>
 
-      {/* Requirement 4: Getting Started Checklist Card */}
-      <GettingStartedCard paymentLink={paymentLink} />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setIsEditingDashboard((editing) => !editing)}
+          className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+        >
+          {isEditingDashboard ? 'Close dashboard editor' : 'Edit dashboard'}
+        </button>
+      </div>
+      {isEditingDashboard && (
+        <DashboardCustomizer
+          layout={layout}
+          onChange={onLayoutChange}
+          onToggleEditing={() => setIsEditingDashboard(false)}
+        />
+      )}
 
-      {/* Quick Stats Grid */}
+      <div className="flex flex-col gap-8">
+      {isWidgetVisible('gettingStarted') && (
+      <div style={{ order: layout.order.indexOf('gettingStarted') }}>
+        <GettingStartedCard paymentLink={paymentLink} />
+      </div>
+      )}
+
+      {isWidgetVisible('stats') && (
+      <div style={{ order: layout.order.indexOf('stats') }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
@@ -230,9 +267,12 @@ function OverviewContent() {
           </div>
         ))}
       </div>
+      </div>
+      )}
 
       {/* Active First Payment Link Card & QR Section */}
-      {paymentLink.id && (
+      {isWidgetVisible('paymentLink') && paymentLink.id && (
+      <div style={{ order: layout.order.indexOf('paymentLink') }}>
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/60 shadow-sm">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
             <div>
@@ -291,12 +331,19 @@ function OverviewContent() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Real-time Horizon On-Chain Payments Stream */}
+      {isWidgetVisible('recentPayments') && (
+      <div style={{ order: layout.order.indexOf('recentPayments') }}>
       <RecentPaymentsTable maxRows={5} showViewAll={true} />
+      </div>
+      )}
 
       {/* Developer Settings Links Grid */}
+      {isWidgetVisible('integrations') && (
+      <div style={{ order: layout.order.indexOf('integrations') }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link
           href="/settings/webhooks"
@@ -332,6 +379,49 @@ function OverviewContent() {
           </div>
         </Link>
       </div>
+      </div>
+      )}
+      </div>
+    </div>
+  );
+}
+
+function OverviewController() {
+  const { user, isLoading } = useAuth();
+  const userId = user?.id || 'anonymous';
+  const subscribe = useCallback(
+    (listener: () => void) => subscribeToDashboardLayout(userId, listener),
+    [userId]
+  );
+  const getSnapshot = useCallback(() => getDashboardLayoutSnapshot(userId), [userId]);
+  const layout = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    () => DEFAULT_DASHBOARD_LAYOUT
+  );
+  const handleLayoutChange = (nextLayout: DashboardLayout) => {
+    if (user?.id) saveDashboardLayout(user.id, nextLayout);
+  };
+  const shouldLoadPayments = !isLoading && layout.order.some(
+    (widget) =>
+      !layout.hidden.includes(widget) && (widget === 'stats' || widget === 'recentPayments')
+  );
+  const content = (
+    <main className="flex-1">
+      <OverviewContent layout={layout} onLayoutChange={handleLayoutChange} />
+    </main>
+  );
+
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100 flex flex-col">
+      {shouldLoadPayments ? (
+        <PaymentStreamProvider>
+          {content}
+          <PaymentToast />
+        </PaymentStreamProvider>
+      ) : (
+        content
+      )}
     </div>
   );
 }
@@ -339,14 +429,7 @@ function OverviewContent() {
 export default function OverviewPage() {
   return (
     <AuthProvider>
-      <PaymentStreamProvider>
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100 flex flex-col">
-          <main className="flex-1">
-            <OverviewContent />
-          </main>
-          <PaymentToast />
-        </div>
-      </PaymentStreamProvider>
+      <OverviewController />
     </AuthProvider>
   );
 }

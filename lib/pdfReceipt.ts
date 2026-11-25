@@ -1,4 +1,5 @@
-import { Payment } from './types';
+import type { PaymentRecord } from '@/lib/types';
+import { paymentStatusLabel } from '@/components/payments/payment-status';
 
 /**
  * Escapes characters for PDF string literals.
@@ -14,7 +15,7 @@ function escapePdfText(str: string): string {
  * Includes FacilPay vector branding, merchant info, amount, asset, date,
  * payment ID, transaction hash, and an interactive clickable Stellar Expert link.
  */
-export function generateReceiptPdf(payment: Payment): Blob {
+export function generateReceiptPdf(payment: PaymentRecord): Blob {
   const stellarUrl =
     payment.stellarExpertUrl ||
     `https://stellar.expert/explorer/testnet/tx/${payment.txHash}`;
@@ -116,22 +117,22 @@ export function generateReceiptPdf(payment: Payment): Blob {
     'ET',
 
     // Status Badge (Right side of card)
-    payment.status === 'COMPLETED'
+    payment.status === 'completed'
       ? '0.85 0.96 0.89 rg' // Light green
-      : payment.status === 'PENDING'
+      : payment.status === 'pending'
       ? '1.0 0.95 0.8 rg' // Light yellow
       : '0.98 0.88 0.88 rg', // Light red
     `415 ${pageHeight - 202} 110 28 re f`,
 
     'BT',
     '/F2 11 Tf',
-    payment.status === 'COMPLETED'
+    payment.status === 'completed'
       ? '0.05 0.55 0.25 rg' // Green text
-      : payment.status === 'PENDING'
+      : payment.status === 'pending'
       ? '0.65 0.45 0.05 rg' // Yellow text
       : '0.75 0.15 0.15 rg', // Red text
     `435 ${pageHeight - 192} Td`,
-    `(${escapePdfText(payment.status)}) Tj`,
+    `(${escapePdfText(paymentStatusLabel(payment.status).toUpperCase())}) Tj`,
     'ET',
 
     // 6. Section Divider: Merchant Information
@@ -398,7 +399,7 @@ export function generateReceiptPdf(payment: Payment): Blob {
 /**
  * Generates and triggers download of the PDF receipt for a payment.
  */
-export function downloadPaymentReceipt(payment: Payment): void {
+export function downloadPaymentReceipt(payment: PaymentRecord): void {
   const blob = generateReceiptPdf(payment);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

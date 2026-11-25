@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AlertIntegrations from "@/components/settings/AlertIntegrations";
 import { NOTIFICATION_TYPES, channelPrefs, prefsStore, useNotificationPrefs, type NotificationType } from "@/lib/notifications";
 
 export default function NotificationSettingsPage() {
@@ -15,6 +16,7 @@ export default function NotificationSettingsPage() {
     });
 
   return (
+    <>
     <form
       onSubmit={(e) => { e.preventDefault(); prefsStore.set(draft); setStatus("Preferences saved."); }}
       className="space-y-6 rounded-xl border border-zinc-200 bg-white p-6"
@@ -48,5 +50,7 @@ export default function NotificationSettingsPage() {
         {status && <span role="status" className="text-sm text-emerald-600">{status}</span>}
       </div>
     </form>
+    <AlertIntegrations />
+    </>
   );
 }

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Payout } from '@/lib/types';
+import { PayoutRecord } from '@/lib/types';
 import { useFormat } from '@/lib/i18n/use-format';
 
 interface Sep24TrackerModalProps {
-  payout: Payout | null;
+  payout: PayoutRecord | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,9 +21,9 @@ export default function Sep24TrackerModal({
 
   useEffect(() => {
     if (payout) {
-      if (payout.status === 'COMPLETED') setCurrentStep(5);
-      else if (payout.status === 'PROCESSING') setCurrentStep(4);
-      else if (payout.status === 'PENDING') setCurrentStep(3);
+      if (payout.status === 'completed') setCurrentStep(5);
+      else if (payout.status === 'processing') setCurrentStep(4);
+      else if (payout.status === 'pending') setCurrentStep(3);
       else setCurrentStep(2);
     }
   }, [payout]);
@@ -117,8 +117,10 @@ export default function Sep24TrackerModal({
               {isRefreshing ? 'Checking...' : 'Refresh'}
             </button>
             <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

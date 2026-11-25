@@ -4,7 +4,8 @@ import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
-import { Payment } from '@/lib/types';
+import { PaymentRecord } from '@/lib/types';
+import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
 import { INITIAL_PAYMENTS } from '@/lib/mockData';
 import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
 import { useFormat } from '@/lib/i18n/use-format';
@@ -21,7 +22,7 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
       : (params as any);
   const paymentId = resolvedParams?.id || '';
 
-  const [payment, setPayment] = useState<Payment | null>(null);
+  const [payment, setPayment] = useState<PaymentRecord | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -114,17 +115,7 @@ export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <span
-                className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${
-                  payment.status === 'COMPLETED'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                    : payment.status === 'PENDING'
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                }`}
-              >
-                {payment.status}
-              </span>
+              <PaymentStatusBadge status={payment.status} size="md" />
             </div>
           </div>
         </div>

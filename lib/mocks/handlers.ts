@@ -19,6 +19,7 @@ import {
   REFUND_FIXTURES,
   ESCROW_FIXTURES,
   WEBHOOK_FIXTURES,
+  WEBHOOK_DELIVERY_FIXTURE,
   API_KEY_FIXTURES,
   MERCHANT_FIXTURE,
   TEAM_FIXTURES,
@@ -58,12 +59,18 @@ const paymentHandlers = [
     let items = getPaymentFixtures();
     if (status)  items = items.filter((p) => p.status  === status);
     if (network) items = items.filter((p) => p.network === network);
-    if (search)  items = items.filter(
-      (p) =>
-        p.reference.toLowerCase().includes(search) ||
-        p.sender.name.toLowerCase().includes(search) ||
-        p.recipient.name.toLowerCase().includes(search) ||
-        p.description?.toLowerCase().includes(search)
+    // Matches IDs, transaction hash, customer email/address and free text.
+    if (search)  items = items.filter((p) =>
+      [
+        p.id,
+        p.reference,
+        p.onChain?.txHash,
+        p.sender.name,
+        p.sender.email,
+        p.sender.walletAddress,
+        p.recipient.name,
+        p.description,
+      ].some((value) => value?.toLowerCase().includes(search))
     );
 
     return HttpResponse.json(paginate(items, page, pageSize));
@@ -285,17 +292,7 @@ const webhookHandlers = [
     await delay(LATENCY);
     // Return empty paginated list for non-fixture IDs
     const deliveries = params.id === WEBHOOK_FIXTURES[0].id
-      ? [{
-          id: "del_01",
-          webhookId: WEBHOOK_FIXTURES[0].id,
-          event: "payment.completed" as const,
-          status: "success" as const,
-          responseStatus: 200,
-          requestBody: JSON.stringify({ type: "payment.completed" }),
-          attemptCount: 1,
-          createdAt: "2026-09-24T09:18:43Z",
-          deliveredAt: "2026-09-24T09:18:44Z",
-        }]
+      ? [WEBHOOK_DELIVERY_FIXTURE]
       : [];
     return HttpResponse.json(paginate(deliveries, 1, 10));
   }),
