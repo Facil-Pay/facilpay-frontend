@@ -54,6 +54,7 @@ export default function RollKeyModal({
       status: 'active',
       permissions: keyItem.permissions,
       expiresAt: keyItem.expiresAt,
+      ipAllowlist: keyItem.ipAllowlist,
     };
 
     onKeyRolled(keyItem.id, newKey, gracePeriod);
