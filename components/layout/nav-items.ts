@@ -8,6 +8,7 @@ import {
   Repeat2,
   RotateCcw,
   Settings,
+  Tag,
   Webhook,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "payments", href: "/payments", icon: CreditCard },
   { label: "refunds", href: "/refunds", icon: RotateCcw },
   { label: "escrow", href: "/escrow", icon: Lock },
+  { label: "coupons", href: "/coupons", icon: Tag },
   { label: "analytics", href: "/analytics", icon: BarChart3 },
   { label: "webhooks", href: "/webhooks", icon: Webhook },
   { label: "developers", href: "/developers", icon: Code2 },
