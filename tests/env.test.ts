@@ -51,6 +51,16 @@ async function loadEnv(overrides: Record<string, string | undefined> = {}) {
   return (await import("@/lib/env")).env;
 }
 
+/** Resolves with the validation error thrown while importing lib/env. */
+async function loadEnvError(overrides: Record<string, string | undefined> = {}): Promise<Error> {
+  try {
+    await loadEnv(overrides);
+  } catch (err) {
+    return err as Error;
+  }
+  throw new Error("Expected lib/env to reject");
+}
+
 /** Schema keys that do not appear as `KEY=` in .env.example. */
 function missingExampleKeys(schemaKeys: string[]): string[] {
   const example = readFileSync(EXAMPLE_PATH, "utf8");
@@ -124,10 +134,10 @@ describe("env validation: missing variables", () => {
   });
 
   it("names every missing variable in one error", async () => {
-    const error = await loadEnv({
+    const error = await loadEnvError({
       NEXT_PUBLIC_API_BASE_URL: undefined,
       NEXT_PUBLIC_APP_URL: undefined,
-    }).catch((err: unknown) => err as Error);
+    });
 
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toContain("NEXT_PUBLIC_API_BASE_URL:");
@@ -135,7 +145,7 @@ describe("env validation: missing variables", () => {
   });
 
   it("tells the developer how to fix the configuration", async () => {
-    const error = await loadEnv({ NEXT_PUBLIC_SOROBAN_RPC_URL: undefined }).catch((err: unknown) => err as Error);
+    const error = await loadEnvError({ NEXT_PUBLIC_SOROBAN_RPC_URL: undefined });
 
     expect(error.message).toContain("Copy .env.example to .env.local");
   });
@@ -173,10 +183,10 @@ describe("env validation: malformed values", () => {
   });
 
   it("reports every invalid value rather than stopping at the first", async () => {
-    const error = await loadEnv({
+    const error = await loadEnvError({
       NEXT_PUBLIC_STELLAR_NETWORK: "devnet",
       NEXT_PUBLIC_USE_MOCKS: "maybe",
-    }).catch((err: unknown) => err as Error);
+    });
 
     expect(error.message).toContain("NEXT_PUBLIC_STELLAR_NETWORK");
     expect(error.message).toContain("NEXT_PUBLIC_USE_MOCKS");

@@ -16,6 +16,16 @@ const BASE = env.NEXT_PUBLIC_API_BASE_URL;
 const LOGOUT_URL = env.NEXT_PUBLIC_AUTH_LOGOUT_URL;
 const TOKEN_KEY = "fp_access_token";
 
+/** Resolves with the rejection reason, failing the test if the request unexpectedly succeeds. */
+async function rejectionOf(promise: Promise<unknown>): Promise<ApiError> {
+  try {
+    await promise;
+  } catch (err) {
+    return err as ApiError;
+  }
+  throw new Error("Expected the request to reject");
+}
+
 /** Captures the most recent request seen by an MSW handler. */
 function captureRequests() {
   const seen: Request[] = [];
@@ -256,7 +266,7 @@ describe("apiClient error handling", () => {
     const body = { code: "payment_not_found", message: "Payment pay_9 not found." };
     server.use(http.get(`${BASE}/payments/pay_9`, () => HttpResponse.json(body, { status: 404 })));
 
-    const error = await apiClient.get("/payments/pay_9").catch((err: unknown) => err);
+    const error = await rejectionOf(apiClient.get("/payments/pay_9"));
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({
@@ -274,7 +284,7 @@ describe("apiClient error handling", () => {
       http.post(`${BASE}/payouts`, () => new HttpResponse("Gateway exploded", { status: 502, headers: { "Content-Type": "text/plain" } })),
     );
 
-    const error = await apiClient.post("/payouts").catch((err: unknown) => err as ApiError);
+    const error = await rejectionOf(apiClient.post("/payouts"));
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(502);
@@ -287,7 +297,7 @@ describe("apiClient error handling", () => {
   it("uses the api_error code when a JSON error body lacks string fields", async () => {
     server.use(http.put(`${BASE}/merchant/branding`, () => HttpResponse.json({ code: 42 }, { status: 422 })));
 
-    const error = await apiClient.put("/merchant/branding").catch((err: unknown) => err as ApiError);
+    const error = await rejectionOf(apiClient.put("/merchant/branding"));
 
     expect(error.code).toBe("api_error");
     expect(error.message).toBe("Request failed with status 422");
@@ -302,7 +312,7 @@ describe("apiClient error handling", () => {
   ] as const)("status %i exposes the %s getter", async (status, getter) => {
     server.use(http.get(`${BASE}/status-check`, () => HttpResponse.json({ message: "x" }, { status })));
 
-    const error = await apiClient.get("/status-check").catch((err: unknown) => err as ApiError);
+    const error = await rejectionOf(apiClient.get("/status-check"));
 
     expect(error[getter]).toBe(true);
   });
@@ -310,7 +320,7 @@ describe("apiClient error handling", () => {
   it("wraps network failures in ApiError with status 0", async () => {
     server.use(http.get(`${BASE}/offline`, () => HttpResponse.error()));
 
-    const error = await apiClient.get("/offline").catch((err: unknown) => err as ApiError);
+    const error = await rejectionOf(apiClient.get("/offline"));
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(0);
@@ -325,7 +335,7 @@ describe("apiClient error handling", () => {
       }),
     );
     const controller = new AbortController();
-    const pending = apiClient.get("/slow", { signal: controller.signal }).catch((err: unknown) => err as ApiError);
+    const pending = rejectionOf(apiClient.get("/slow", { signal: controller.signal }));
     controller.abort();
 
     const error = await pending;
@@ -339,7 +349,7 @@ describe("apiClient 401 handling", () => {
     setToken("expired_token");
     server.use(http.get(`${BASE}/merchant/profile`, () => HttpResponse.json({ code: "expired" }, { status: 401 })));
 
-    const error = await apiClient.get("/merchant/profile").catch((err: unknown) => err as ApiError);
+    const error = await rejectionOf(apiClient.get("/merchant/profile"));
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(401);
