@@ -27,6 +27,11 @@ const ACTION_COPY: Record<SensitiveAction, { title: string; description: string;
     description: "Enter the 6-digit code from your authenticator app. New payments will settle to the updated address.",
     submitLabel: "Confirm change",
   },
+  create_payout_schedule: {
+    title: "Confirm scheduled payout",
+    description: "Enter the 6-digit code from your authenticator app to create this recurring payout schedule.",
+    submitLabel: "Create schedule",
+  },
 };
 
 interface PendingStepUp {

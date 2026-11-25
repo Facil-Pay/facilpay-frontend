@@ -1,10 +1,11 @@
 import type { Refund, RefundEvent, RefundReason, RefundStatus } from "@/lib/types/refund";
 
-export const REFUND_STATUSES: RefundStatus[] = ["pending", "processing", "completed", "failed"];
+export const REFUND_STATUSES: RefundStatus[] = ["pending", "pending_approval", "processing", "completed", "failed"];
 export const REFUND_ASSETS = ["XLM", "USDC", "EURC"];
 
 export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
   pending: "Pending",
+  pending_approval: "Pending approval",
   processing: "Processing",
   completed: "Completed",
   failed: "Failed",
@@ -13,13 +14,14 @@ export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
 
 export const REFUND_STATUS_CLASS: Record<RefundStatus, string> = {
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
+  pending_approval: "bg-violet-50 text-violet-700 ring-violet-200",
   processing: "bg-sky-50 text-sky-700 ring-sky-200",
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   failed: "bg-red-50 text-red-700 ring-red-200",
   cancelled: "bg-zinc-100 text-zinc-600 ring-zinc-200",
 };
 
-const REASON_LABEL: Record<RefundReason, string> = {
+export const REASON_LABEL: Record<RefundReason, string> = {
   customer_request: "Customer request",
   duplicate_payment: "Duplicate payment",
   fraudulent: "Fraudulent",
@@ -28,6 +30,8 @@ const REASON_LABEL: Record<RefundReason, string> = {
   subscription_cancelled: "Subscription cancelled",
   other: "Other",
 };
+
+export const REFUND_REASONS = Object.keys(REASON_LABEL) as RefundReason[];
 
 export function formatReason(reason: RefundReason): string {
   return REASON_LABEL[reason] ?? reason;

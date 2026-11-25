@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { SavedDestination } from '@/lib/types';
+import { AssetType, SavedDestination } from '@/lib/types';
 import { StrKey } from '@/lib/stellar/strkey';
 import { isFederationAddress, resolveFederationAddress } from '@/lib/stellar/federation';
 import { getExchangeDetails } from '@/lib/stellar/exchanges';
+import { isAddressInCooldown, formatCooldownRemaining, usePayoutSettings, payoutSettingsStore } from '@/lib/payout-settings';
 
 interface SavedDestinationsModalProps {
   isOpen: boolean;
@@ -26,10 +27,12 @@ export default function SavedDestinationsModal({
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [label, setLabel] = useState('');
   const [address, setAddress] = useState('');
+  const [asset, setAsset] = useState<AssetType | ''>('');
   const [memo, setMemo] = useState('');
   const [memoType, setMemoType] = useState<'text' | 'id' | 'hash'>('text');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const payoutSettings = usePayoutSettings();
 
   if (!isOpen) return null;
 
@@ -86,6 +89,7 @@ export default function SavedDestinationsModal({
       label: cleanLabel,
       address: cleanAddress,
       resolvedAddress: resolvedKey !== cleanAddress ? resolvedKey : undefined,
+      asset: asset || undefined,
       memo: memo.trim() || undefined,
       memoType: memo.trim() ? memoType : undefined,
       isExchange,
@@ -97,6 +101,7 @@ export default function SavedDestinationsModal({
     setIsAddingNew(false);
     setLabel('');
     setAddress('');
+    setAsset('');
     setMemo('');
   };
 
@@ -143,6 +148,19 @@ export default function SavedDestinationsModal({
                 </button>
               </div>
 
+              <label className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-900/60">
+                <span>
+                  <span className="font-semibold text-zinc-900 dark:text-white block">Allowlist-only payouts</span>
+                  <span className="text-zinc-500">When on, payouts may only be sent to a saved destination below.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={payoutSettings.allowlistOnly}
+                  onChange={(e) => payoutSettingsStore.set({ allowlistOnly: e.target.checked })}
+                  className="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500"
+                />
+              </label>
+
               {destinations.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-xs text-zinc-500 dark:border-zinc-700">
                   No saved destinations yet. Add your external wallets or exchange deposit addresses for quick access.
@@ -159,9 +177,22 @@ export default function SavedDestinationsModal({
                           <span className="font-semibold text-xs text-zinc-900 dark:text-white truncate">
                             {dest.label}
                           </span>
+                          {dest.asset && (
+                            <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                              {dest.asset}
+                            </span>
+                          )}
                           {dest.isExchange && (
                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                               {dest.exchangeName || 'Exchange'}
+                            </span>
+                          )}
+                          {isAddressInCooldown(dest) && (
+                            <span
+                              className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                              title="New destinations are held in a 24-hour security cooldown before they can be used for a payout"
+                            >
+                              Cooldown: {formatCooldownRemaining(dest)} left
                             </span>
                           )}
                         </div>
@@ -258,6 +289,22 @@ export default function SavedDestinationsModal({
                 <p className="mt-1 text-[11px] text-zinc-500">
                   Supports Ed25519 Public Keys (56 chars starting with G) and SEP-2 Federation addresses.
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Asset (Optional)
+                </label>
+                <select
+                  value={asset}
+                  onChange={(e) => setAsset(e.target.value as AssetType | '')}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                >
+                  <option value="">Any Asset</option>
+                  <option value="USDC">USDC</option>
+                  <option value="XLM">XLM</option>
+                  <option value="EURC">EURC</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-3 gap-2">

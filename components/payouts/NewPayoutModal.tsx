@@ -24,6 +24,7 @@ import {
 } from '@/lib/sep24/anchors';
 import { useFormat } from '@/lib/i18n/use-format';
 import { useStepUp } from '@/components/security/use-step-up';
+import { findMatchingDestination, isAddressInCooldown, formatCooldownRemaining, usePayoutSettings } from '@/lib/payout-settings';
 
 interface NewPayoutModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export default function NewPayoutModal({
 }: NewPayoutModalProps) {
   const f = useFormat();
   const { requestStepUp, stepUpDialog } = useStepUp();
+  const payoutSettings = usePayoutSettings();
   const [tab, setTab] = useState<PayoutTab>('stellar');
 
   // Stellar Address Form State
@@ -181,6 +183,22 @@ export default function NewPayoutModal({
       return;
     }
 
+    const matchedDestination = findMatchingDestination(savedDestinations, cleanDest, resolvedKey);
+
+    if (payoutSettings.allowlistOnly && !matchedDestination) {
+      setStellarError(
+        'Allowlist-only payouts are enabled. Add this address to Saved Destinations before sending to it.'
+      );
+      return;
+    }
+
+    if (matchedDestination && isAddressInCooldown(matchedDestination)) {
+      setStellarError(
+        `This destination was added recently and is in a 24-hour security cooldown. Available in ${formatCooldownRemaining(matchedDestination)}.`
+      );
+      return;
+    }
+
     if (numAmount <= 0) {
       setStellarError('Please enter an amount greater than 0.');
       return;
@@ -246,6 +264,7 @@ export default function NewPayoutModal({
           label: saveLabel.trim(),
           address: destinationInput.trim(),
           resolvedAddress: resolvedKey !== destinationInput ? resolvedKey || undefined : undefined,
+          asset: selectedAsset,
           memo: memoInput.trim() || undefined,
           memoType: memoInput.trim() ? memoType : undefined,
           isExchange: !!exchangeInfo,
