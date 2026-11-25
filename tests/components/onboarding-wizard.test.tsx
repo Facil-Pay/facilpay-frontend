@@ -126,7 +126,7 @@ beforeEach(() => {
 
 describe("OnboardingWizard", () => {
   it("step indicator reflects the current step", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<OnboardingWizard />);
 
     expect(screen.getByText(/Step 1 of 7/)).toHaveTextContent("Welcome");
@@ -152,7 +152,7 @@ describe("OnboardingWizard", () => {
   });
 
   it("blocks Next on business details until required fields are valid", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<OnboardingWizard />);
     await user.click(screen.getByRole("button", { name: "Begin Merchant Setup" }));
     await screen.findByText(/Step 2 of 7/);
@@ -190,7 +190,7 @@ describe("OnboardingWizard", () => {
   });
 
   it("blocks settlement Next until a custom address is a valid Stellar key", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<OnboardingWizard />);
     await user.click(screen.getByRole("button", { name: "Begin Merchant Setup" }));
     await fillBusinessDetails(user);
@@ -221,7 +221,7 @@ describe("OnboardingWizard", () => {
   });
 
   it("Back preserves data entered on earlier steps", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<OnboardingWizard />);
     await reachSettlementStep(user);
 
@@ -286,7 +286,7 @@ describe("OnboardingWizard", () => {
     });
 
     it("requires funding before a trustline can be added", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       render(<OnboardingWizard />);
       await screen.findByText("Unfunded");
 
@@ -300,7 +300,7 @@ describe("OnboardingWizard", () => {
     });
 
     it("funds via Friendbot, adds USDC, and surfaces wallet rejections", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       render(<OnboardingWizard />);
       await screen.findByText("Unfunded");
 
@@ -326,7 +326,7 @@ describe("OnboardingWizard", () => {
     });
 
     it("saves trustline results and continues to branding", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       render(<OnboardingWizard />);
       await screen.findByText("Unfunded");
 
@@ -349,7 +349,7 @@ describe("OnboardingWizard", () => {
   });
 
   it("walks every step and completion lands on StepDone", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<OnboardingWizard />);
     await reachSettlementStep(user);
 
