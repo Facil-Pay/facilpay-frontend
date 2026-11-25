@@ -5,6 +5,17 @@
 
 import { StrKey } from './strkey';
 
+/**
+ * Result of resolving a SEP-2 federation address such as `name*domain.com`.
+ *
+ * @property stellar_address - The federation address that was resolved.
+ * @property account_id - Ed25519 public key (G...) the address points to.
+ * @property memo_type - Memo type the receiving service expects, if any.
+ * @property memo - Memo value the receiving service expects, if any.
+ * @property domain - Domain that issued the federation record.
+ * @property isExchange - True when the record belongs to a known centralised exchange.
+ * @property exchangeName - Display name of the exchange when `isExchange` is true.
+ */
 export interface FederationRecord {
   stellar_address: string;
   account_id: string;

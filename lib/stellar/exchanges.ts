@@ -11,6 +11,11 @@ export interface ExchangeInfo {
   memoTypeDescription: string;
 }
 
+/**
+ * Registry of hot-wallet addresses for centralised exchanges, keyed by Stellar account ID.
+ * Exchanges pool deposits into these accounts and identify the customer with a memo,
+ * so a payment here usually needs the memo the exchange provides.
+ */
 export const KNOWN_EXCHANGE_ADDRESSES: Record<string, ExchangeInfo> = {
   // Binance
   GCO2IP3MJNUOKS45K4MKDU6QKONKVI4ZXCUYTDN7TYGDM6ZFAKIRURCG: {
@@ -122,6 +127,18 @@ export function getExchangeDetails(
   return null;
 }
 
+/**
+ * Returns true when {@link getExchangeDetails} recognises the address or federation domain.
+ *
+ * @param address - Stellar account ID to check.
+ * @param federationDomain - Optional domain from a federation lookup, matched against known exchange domains.
+ * @returns `true` for a known exchange, otherwise `false`.
+ *
+ * @example
+ * ```ts
+ * isKnownExchangeAddress("GCO2IP3MJNUOKS45K4MKDU6QKONKVI4ZXCUYTDN7TYGDM6ZFAKIRURCG"); // true
+ * ```
+ */
 export function isKnownExchangeAddress(
   address: string,
   federationDomain?: string

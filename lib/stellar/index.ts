@@ -161,4 +161,7 @@ export { TESTNET_ASSETS } from "./assets";
 // ─── Utility re-exports ───────────────────────────────────────────────────────
 
 export { xdr, TransactionBuilder, BASE_FEE, Networks, Contract } from "@stellar/stellar-sdk";
+/**
+ * Soroban RPC namespace types from the Stellar SDK, re-exported so callers can import them from this module.
+ */
 export type { rpc };

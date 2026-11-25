@@ -1,10 +1,27 @@
+/**
+ * Memo types allowed by the SEP-7 `web+stellar:pay` URI scheme.
+ * Mapped to the `memo_type` query value (`MEMO_TEXT`, `MEMO_ID`, `MEMO_HASH`).
+ */
 export type Sep7MemoType = "text" | "id" | "hash";
 
+/**
+ * Asset to request in a payment URI: `"native"` for XLM, or an issued asset with its code and issuer account.
+ */
 export type Sep7Asset = "native" | {
   code: string;
   issuer: string;
 };
 
+/**
+ * Inputs for {@link buildSep7PayUri}.
+ *
+ * @property destination - Stellar account (G...) or federation address to pay.
+ * @property amount - Positive decimal amount. Numbers in exponent notation are expanded.
+ * @property asset - Asset to request. Defaults to `"native"`.
+ * @property memo - Optional memo text, ID or hash. Must not be empty when provided.
+ * @property memoType - Memo type for `memo`. Defaults to `"text"`.
+ * @property message - Optional human-readable message shown by the wallet.
+ */
 export type BuildSep7PayUriOptions = {
   destination: string;
   amount: string | number;
@@ -36,6 +53,27 @@ function decimalAmount(amount: string | number) {
   return `${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
 }
 
+/**
+ * Builds a SEP-7 `web+stellar:pay` URI that wallets can open to send a payment.
+ *
+ * Parameters are percent-encoded per RFC 3986, so memos and messages containing
+ * spaces, `&` or `=` survive the round trip.
+ *
+ * @throws {Error} When the destination is blank, the amount is not a positive
+ *   decimal, an issued asset lacks a code or issuer, or the memo is empty or
+ *   missing while a non-text memo type is requested.
+ *
+ * @example
+ * ```ts
+ * buildSep7PayUri({
+ *   destination: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+ *   amount: "12.50",
+ *   asset: { code: "USDC", issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5" },
+ *   memo: "INV-42",
+ * });
+ * // web+stellar:pay?destination=G...&amount=12.50&asset_code=USDC&...
+ * ```
+ */
 export function buildSep7PayUri({
   destination,
   amount,

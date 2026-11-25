@@ -20,6 +20,15 @@ const NETWORKS = {
 
 const config = NETWORKS[NETWORK as keyof typeof NETWORKS] || NETWORKS.testnet;
 
+/**
+ * Horizon REST endpoint for the configured network. Falls back to testnet when `NEXT_PUBLIC_STELLAR_NETWORK` is unrecognised.
+ */
 export const STELLAR_HORIZON = config.horizon;
+/**
+ * Friendbot faucet URL used to fund testnet accounts, or `null` on the public network where no faucet exists.
+ */
 export const STELLAR_FRIENDBOT_URL = config.friendbot;
+/**
+ * Network name read from `NEXT_PUBLIC_STELLAR_NETWORK`. Defaults to `"testnet"`.
+ */
 export const STELLAR_NETWORK = NETWORK;
