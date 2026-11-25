@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Montserrat, Roboto_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { TimeZoneSync } from "@/components/i18n/TimeZoneSync";
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { Providers as WalletProviders } from "@/components/wallet/providers";
 import "./globals.css";
 import { Providers } from "@/app/providers";
@@ -30,6 +31,10 @@ export const metadata: Metadata = {
   description: "Manage payments and issue refunds with FacilPay.",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#20A7EE",
+};
+
 // ─── Root layout ──────────────────────────────────────────────────────────────
 
 export default async function RootLayout({
@@ -45,6 +50,7 @@ export default async function RootLayout({
         {/* Inherits locale, time zone and messages from i18n/request.ts */}
         <NextIntlClientProvider>
           <TimeZoneSync />
+          <ServiceWorkerRegistration />
           <Providers>
             <WalletProviders>{children}</WalletProviders>
           </Providers>

@@ -3,7 +3,7 @@
  * Enables merchants to off-ramp crypto funds into external bank accounts via regulated anchors.
  */
 
-import { AssetType } from '../types';
+import { AssetType } from '@/lib/types';
 import { roundTo } from '@/lib/i18n/format';
 
 export interface Sep24Anchor {

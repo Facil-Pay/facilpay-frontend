@@ -37,6 +37,8 @@ export const paymentKeys = {
   detail: (id: string)             => [...paymentKeys.details(), id]         as const,
   /** Timeline events for one payment */
   events: (id: string)             => [...paymentKeys.detail(id), "events"]  as const,
+  /** Per-link analytics for one payment link (Issue #134) */
+  linkAnalytics: (id: string)      => [...paymentKeys.detail(id), "link-analytics"] as const,
 } as const;
 
 // ─── Refunds ──────────────────────────────────────────────────────────────────

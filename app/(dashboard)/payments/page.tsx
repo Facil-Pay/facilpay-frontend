@@ -1,10 +1,28 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Payment, PaymentStatus, AssetType } from '@/lib/types';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ASSET_TYPES, PAYMENT_STATUSES, type PaymentRecord } from '@/lib/types';
+import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
+import { PAYMENT_STATUS_META } from '@/components/payments/payment-status';
+import { SavedViewsTabs } from '@/components/payments/SavedViewsTabs';
+import {
+  EMPTY_PAYMENT_LIST_STATE,
+  findActiveView,
+  getViewStore,
+  parsePaymentListState,
+  serializePaymentListState,
+  useSavedViews,
+  type PaymentListState,
+  type PaymentSort,
+} from '@/lib/saved-views';
+import { getMerchantUser } from '@/lib/storage';
 
-const ExportModal = dynamic(() => import('@/components/ExportModal'), { ssr: false });
+// next/dynamic drops the generic signature, so restore it for typed columns.
+const ExportModal = dynamic(() => import('@/components/ExportModal'), {
+  ssr: false,
+}) as typeof import('@/components/ExportModal').default;
 const PaymentDetailModal = dynamic(() => import('@/components/PaymentDetailModal'), { ssr: false });
 import {
   INITIAL_PAYMENTS,
@@ -13,21 +31,98 @@ import {
 } from '@/lib/mockData';
 import { useFormat } from '@/lib/i18n/use-format';
 
+const SORT_OPTIONS: { value: PaymentSort; label: string }[] = [
+  { value: 'date_desc', label: 'Newest first' },
+  { value: 'date_asc', label: 'Oldest first' },
+  { value: 'amount_desc', label: 'Amount: high to low' },
+  { value: 'amount_asc', label: 'Amount: low to high' },
+];
+
+const SEARCH_DEBOUNCE_MS = 250;
+
+function sortPayments(items: PaymentRecord[], sort: PaymentSort): PaymentRecord[] {
+  const sorted = [...items];
+  switch (sort) {
+    case 'date_asc':
+      return sorted.sort((a, b) => a.date.localeCompare(b.date));
+    case 'amount_desc':
+      return sorted.sort((a, b) => b.amount - a.amount);
+    case 'amount_asc':
+      return sorted.sort((a, b) => a.amount - b.amount);
+    default:
+      return sorted.sort((a, b) => b.date.localeCompare(a.date));
+  }
+}
+
 export default function PaymentsPage() {
+  // useSearchParams needs a Suspense boundary for static prerendering.
+  return (
+    <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" aria-busy="true" />}>
+      <PaymentsPageContent />
+    </Suspense>
+  );
+}
+
+function PaymentsPageContent() {
   const f = useFormat();
-  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [payments, setPayments] = useState<PaymentRecord[]>(INITIAL_PAYMENTS);
   const [isLargeDataSimulated, setIsLargeDataSimulated] = useState(false);
 
-  // Filters State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [assetFilter, setAssetFilter] = useState<string>('ALL');
-  const [startDate, setStartDate] = useState<string>('2026-01-01');
-  const [endDate, setEndDate] = useState<string>('2026-01-31');
+  // Filters, search and sort live in the URL so views can be shared and saved.
+  const query = searchParams.toString();
+  const listState = useMemo(() => parsePaymentListState(query), [query]);
+  const { q: searchTerm, status: statusFilter, asset: assetFilter, from: startDate, to: endDate, sort } = listState;
+
+  const navigate = useCallback(
+    (next: PaymentListState | string) => {
+      const qs = typeof next === 'string' ? next : serializePaymentListState(next);
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router],
+  );
+
+  const updateFilters = useCallback(
+    (patch: Partial<PaymentListState>) => navigate({ ...listState, ...patch }),
+    [listState, navigate],
+  );
+
+  // Search box keeps a local draft and writes to the URL after a pause.
+  const [searchDraft, setSearchDraft] = useState(searchTerm);
+  const [syncedSearch, setSyncedSearch] = useState(searchTerm);
+  if (syncedSearch !== searchTerm) {
+    setSyncedSearch(searchTerm);
+    setSearchDraft(searchTerm);
+  }
+  useEffect(() => {
+    if (searchDraft.trim() === searchTerm) return;
+    const timer = window.setTimeout(() => updateFilters({ q: searchDraft }), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchDraft, searchTerm, updateFilters]);
+
+  // Saved views, persisted per merchant.
+  const [merchantId] = useState(() => getMerchantUser().id);
+  const savedViews = useSavedViews(merchantId);
+  const activeView = findActiveView(savedViews.views, query);
+
+  // Open the merchant's default view when the page loads without filters.
+  const defaultApplied = useRef(false);
+  useEffect(() => {
+    if (defaultApplied.current) return;
+    defaultApplied.current = true;
+    if (query) return;
+    const { views, defaultViewId } = getViewStore(merchantId).get();
+    const view = [...views, ...savedViews.views].find((v) => v.id === defaultViewId);
+    if (view?.query) navigate(view.query);
+    // Run once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
 
   // Toggle large dataset simulation (>1,000 rows)
   const toggleLargeData = () => {
@@ -39,14 +134,13 @@ export default function PaymentsPage() {
       setPayments(largeList);
       setIsLargeDataSimulated(true);
       // Expand date range to cover the generated range
-      setStartDate('2026-01-01');
-      setEndDate('2026-03-31');
+      updateFilters({ from: '2026-01-01', to: '2026-03-31' });
     }
   };
 
   // Filtered Payments Calculation (Strictly respects all active filters and date range)
   const filteredPayments = useMemo(() => {
-    return payments.filter((item) => {
+    const matching = payments.filter((item) => {
       // 1. Search Query (ID, Customer email, Customer wallet, TxHash, Memo)
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
@@ -61,43 +155,38 @@ export default function PaymentsPage() {
       }
 
       // 2. Status Filter
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
+      if (statusFilter && item.status !== statusFilter) {
         return false;
       }
 
       // 3. Asset Filter
-      if (assetFilter !== 'ALL' && item.asset !== assetFilter) {
+      if (assetFilter && item.asset !== assetFilter) {
         return false;
       }
 
       // 4. Date Range Filter
-      if (startDate) {
-        const itemDate = item.date.slice(0, 10);
-        if (itemDate < startDate) return false;
-      }
-      if (endDate) {
-        const itemDate = item.date.slice(0, 10);
-        if (itemDate > endDate) return false;
-      }
+      const itemDate = item.date.slice(0, 10);
+      if (startDate && itemDate < startDate) return false;
+      if (endDate && itemDate > endDate) return false;
 
       return true;
     });
-  }, [payments, searchTerm, statusFilter, assetFilter, startDate, endDate]);
+    return sortPayments(matching, sort);
+  }, [payments, searchTerm, statusFilter, assetFilter, startDate, endDate, sort]);
 
   const filterSummary = useMemo(() => {
     const parts = [];
-    if (statusFilter !== 'ALL') parts.push(`Status: ${statusFilter}`);
-    if (assetFilter !== 'ALL') parts.push(`Asset: ${assetFilter}`);
+    if (statusFilter) parts.push(`Status: ${PAYMENT_STATUS_META[statusFilter].label}`);
+    if (assetFilter) parts.push(`Asset: ${assetFilter}`);
     if (startDate && endDate) parts.push(`${startDate} to ${endDate}`);
     return parts.length > 0 ? parts.join(' • ') : 'All Dates & Assets';
   }, [statusFilter, assetFilter, startDate, endDate]);
 
+  const hasActiveFilters = serializePaymentListState({ ...listState, sort: EMPTY_PAYMENT_LIST_STATE.sort }) !== '';
+
   const handleResetFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('ALL');
-    setAssetFilter('ALL');
-    setStartDate('');
-    setEndDate('');
+    setSearchDraft('');
+    navigate({ ...EMPTY_PAYMENT_LIST_STATE, sort });
   };
 
   return (
@@ -159,29 +248,53 @@ export default function PaymentsPage() {
           </div>
         </div>
 
+        {/* Saved views */}
+        <SavedViewsTabs
+          views={savedViews.views}
+          customViews={savedViews.state.views}
+          activeViewId={activeView?.id ?? null}
+          defaultViewId={savedViews.state.defaultViewId}
+          canAddMore={savedViews.canAddMore}
+          controlsId="payments-table"
+          onSelect={(view) => {
+            setSearchDraft(parsePaymentListState(view.query).q);
+            navigate(view.query);
+          }}
+          onSave={(name) => savedViews.add(name, query)}
+          onRename={savedViews.rename}
+          onDelete={savedViews.remove}
+          onSetDefault={savedViews.setDefault}
+        />
+
         {/* Filters Card */}
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
             {/* Search Input */}
             <div className="lg:col-span-2">
-              <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5">
+              <label htmlFor="payments-search" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                 Search Transactions
               </label>
               <div className="relative">
                 <input
-                  type="text"
+                  id="payments-search"
+                  type="search"
                   data-shortcut-search
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchDraft}
+                  onChange={(e) => setSearchDraft(e.target.value)}
                   placeholder="ID, customer, hash, or memo..."
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-2 text-xs text-zinc-900 placeholder-zinc-400 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white pr-8 placeholder-zinc-500"
                 />
-                {searchTerm && (
+                {searchDraft && (
                   <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => {
+                      setSearchDraft('');
+                      updateFilters({ q: '' });
+                    }}
+                    className="absolute right-2 top-1.5 rounded px-1 text-zinc-500 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
-                    ×
+                    <span aria-hidden="true">×</span>
                   </button>
                 )}
               </div>
@@ -189,81 +302,105 @@ export default function PaymentsPage() {
 
             {/* Status Filter */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5">
+              <label htmlFor="payments-status" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                 Status
               </label>
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                id="payments-status"
+                value={statusFilter ?? ''}
+                onChange={(e) => updateFilters({ status: parsePaymentListState(`status=${e.target.value}`).status })}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
-                <option value="ALL">All Statuses</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PENDING">Pending</option>
-                <option value="FAILED">Failed</option>
-                <option value="REFUNDED">Refunded</option>
+                <option value="">All Statuses</option>
+                {PAYMENT_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {PAYMENT_STATUS_META[status].label}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Asset Filter */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5">
+              <label htmlFor="payments-asset" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                 Asset
               </label>
               <select
-                value={assetFilter}
-                onChange={(e) => setAssetFilter(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                id="payments-asset"
+                value={assetFilter ?? ''}
+                onChange={(e) => updateFilters({ asset: parsePaymentListState(`asset=${e.target.value}`).asset })}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               >
-                <option value="ALL">All Assets</option>
-                <option value="USDC">USDC</option>
-                <option value="XLM">XLM</option>
-                <option value="EURC">EURC</option>
+                <option value="">All Assets</option>
+                {ASSET_TYPES.map((asset) => (
+                  <option key={asset} value={asset}>
+                    {asset}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <label htmlFor="payments-sort" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                Sort by
+              </label>
+              <select
+                id="payments-sort"
+                value={sort}
+                onChange={(e) => updateFilters({ sort: parsePaymentListState(`sort=${e.target.value}`).sort })}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Date Range Start & End */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-6 xl:col-span-6">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5">
+                <label htmlFor="payments-from" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                   Start Date
                 </label>
                 <input
+                  id="payments-from"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-2.5 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  max={endDate || undefined}
+                  onChange={(e) => updateFilters({ from: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5">
+                <label htmlFor="payments-to" className="mb-1.5 block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                   End Date
                 </label>
                 <input
+                  id="payments-to"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-2.5 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  min={startDate || undefined}
+                  onChange={(e) => updateFilters({ to: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-900 focus:border-sky-500 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 />
               </div>
             </div>
           </div>
 
           {/* Active Filter Pills Bar */}
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
             <div className="flex items-center gap-2">
-              <span>
+              <span role="status" aria-live="polite">
                 Showing{' '}
                 <strong className="text-zinc-900 dark:text-white">
                   {f.number(filteredPayments.length)}
                 </strong>{' '}
                 of {f.number(payments.length)} transactions
               </span>
-              {(searchTerm ||
-                statusFilter !== 'ALL' ||
-                assetFilter !== 'ALL' ||
-                startDate !== '2026-01-01' ||
-                endDate !== '2026-01-31') && (
+              {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -283,17 +420,26 @@ export default function PaymentsPage() {
 
         {/* Payments Data Table */}
         <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/60">
-          <div className="overflow-x-auto">
+          <div
+            id="payments-table"
+            role="tabpanel"
+            aria-labelledby={activeView ? `saved-view-tab-${activeView.id}` : undefined}
+            aria-label={activeView ? undefined : 'Payments'}
+            className="overflow-x-auto"
+          >
             <table className="w-full text-left text-xs">
+              <caption className="sr-only">
+                Payments matching the current filters, {f.number(filteredPayments.length)} results
+              </caption>
               <thead className="border-b border-zinc-200 bg-zinc-50/80 uppercase tracking-wider text-[11px] font-semibold text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
                 <tr>
-                  <th className="px-5 py-3.5">Payment ID</th>
-                  <th className="px-5 py-3.5">Date (UTC)</th>
-                  <th className="px-5 py-3.5">Customer</th>
-                  <th className="px-5 py-3.5">Amount</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5">Stellar Tx</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th scope="col" className="px-5 py-3.5">Payment ID</th>
+                  <th scope="col" className="px-5 py-3.5">Date (UTC)</th>
+                  <th scope="col" className="px-5 py-3.5">Customer</th>
+                  <th scope="col" className="px-5 py-3.5">Amount</th>
+                  <th scope="col" className="px-5 py-3.5">Status</th>
+                  <th scope="col" className="px-5 py-3.5">Stellar Tx</th>
+                  <th scope="col" className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
@@ -357,17 +503,7 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
-                            payment.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                              : payment.status === 'PENDING'
-                              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
-                          }`}
-                        >
-                          {payment.status}
-                        </span>
+                        <PaymentStatusBadge status={payment.status} size="sm" />
                       </td>
                       <td className="px-5 py-4">
                         <a
@@ -416,8 +552,8 @@ export default function PaymentsPage() {
         onClose={() => setIsExportModalOpen(false)}
         type="payments"
         title="Payments"
-        data={filteredPayments}
-        columns={PAYMENT_EXPORT_COLUMNS}
+        data={filteredPayments as unknown as Record<string, unknown>[]}
+        columns={PAYMENT_EXPORT_COLUMNS as unknown as import('@/lib/types').ExportColumn<Record<string, unknown>>[]}
         filterStartDate={startDate}
         filterEndDate={endDate}
         filterSummary={filterSummary}

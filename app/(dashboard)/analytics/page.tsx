@@ -1,9 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { AnalyticsInsights } from "@/components/analytics/AnalyticsInsights";
 import { useFormat } from "@/lib/i18n/use-format";
+import {
+  parseCompareParam,
+  formatDelta,
+  calcDelta,
+  COMPARE_LABELS,
+  type CompareMode,
+} from "@/lib/analytics/comparison";
 import type { ChartPoint, VisibleSeries } from "./AnalyticsCharts";
 
 // Lazy-load recharts so it doesn't inflate the initial JS bundle for other routes.
@@ -58,17 +66,46 @@ const seriesByGranularity: Record<Granularity, ChartPoint[]> = {
 
 export default function AnalyticsPage() {
   const f = useFormat();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const formatCompactMoney = (value: number) => f.fiat(value, "USD", { compact: true });
+
   const [granularity, setGranularity] = useState<Granularity>("month");
   const [dateRange, setDateRange] = useState<RangePreset>("90d");
   const [asset, setAsset] = useState<Asset>("All");
-  const [compareMode, setCompareMode] = useState(true);
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
+
+  // ── Compare mode: read from URL, fall back to "none" ──
+  const [compareMode, setCompareModeState] = useState<CompareMode>(() =>
+    parseCompareParam(searchParams.get("compare")),
+  );
+
+  // Sync compare mode → URL param
+  const setCompareMode = useCallback(
+    (mode: CompareMode) => {
+      setCompareModeState(mode);
+      const params = new URLSearchParams(searchParams.toString());
+      if (mode === "none") {
+        params.delete("compare");
+      } else {
+        params.set("compare", mode);
+      }
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  // Keep local state in sync when URL changes externally (browser back/forward)
+  useEffect(() => {
+    setCompareModeState(parseCompareParam(searchParams.get("compare")));
+  }, [searchParams]);
 
   const data = useMemo(() => {
     if (granularity === "month") return baseSeries;
     return seriesByGranularity[granularity];
   }, [granularity]);
+
+  const isComparing = compareMode !== "none";
 
   const visibleSeries: VisibleSeries = {
     revenue: !hiddenSeries.revenue,
@@ -90,7 +127,17 @@ export default function AnalyticsPage() {
     const totalTx = data.reduce((sum, item) => sum + item.txCount, 0);
     const totalRefunds = data.reduce((sum, item) => sum + item.refundVolume, 0);
     const avgAov = data.reduce((sum, item) => sum + item.aov, 0) / data.length;
-    return { totalRevenue, totalTx, totalRefunds, avgAov };
+
+    // Comparison totals (from compareRevenue / compareAov fields in data)
+    const compareTotalRevenue = data.reduce((sum, item) => sum + (item.compareRevenue ?? 0), 0);
+    const compareTotalTx = data.reduce((sum, item) => sum + item.txCount * 0.88, 0); // approx compare
+    const compareTotalRefunds = data.reduce((sum, item) => sum + item.refundVolume * 1.04, 0);
+    const compareAvgAov = data.reduce((sum, item) => sum + (item.compareAov ?? 0), 0) / data.length;
+
+    return {
+      totalRevenue, totalTx, totalRefunds, avgAov,
+      compareTotalRevenue, compareTotalTx, compareTotalRefunds, compareAvgAov,
+    };
   }, [data]);
 
   return (
@@ -114,9 +161,24 @@ export default function AnalyticsPage() {
               <option>XLM</option>
               <option>EURC</option>
             </select>
-            <button className="toggle-btn" onClick={() => setCompareMode((v) => !v)}>
-              {compareMode ? "Hide previous" : "Compare previous"}
-            </button>
+
+            {/* ── Compare to selector ── */}
+            <div className="compare-selector">
+              <label htmlFor="compare-mode" className="sr-only">
+                Compare to
+              </label>
+              <select
+                id="compare-mode"
+                value={compareMode}
+                onChange={(e) => setCompareMode(e.target.value as CompareMode)}
+                className="compare-select"
+                aria-label="Comparison period"
+              >
+                <option value="none">Compare: None</option>
+                <option value="previous_period">Previous period</option>
+                <option value="previous_year">Previous year</option>
+              </select>
+            </div>
           </div>
         </header>
 
@@ -145,17 +207,50 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+        {isComparing && (
+          <div className="compare-banner" role="status" aria-live="polite">
+            <span className="compare-badge">
+              Comparing to: <strong>{COMPARE_LABELS[compareMode]}</strong>
+            </span>
+          </div>
+        )}
+
         <section className="stats-grid">
-          <StatCard label="Revenue" value={formatCompactMoney(stats.totalRevenue)} delta={f.percent(0.182, { signDisplay: "exceptZero" })} tone="primary" />
-          <StatCard label="Transactions" value={f.number(stats.totalTx)} delta={f.percent(0.124, { signDisplay: "exceptZero" })} tone="secondary" />
-          <StatCard label="Refund volume" value={formatCompactMoney(stats.totalRefunds)} delta={f.percent(-0.041, { signDisplay: "exceptZero" })} tone="warning" />
-          <StatCard label="Avg. order value" value={f.fiat(stats.avgAov, "USD")} delta={f.percent(0.097, { signDisplay: "exceptZero" })} tone="success" />
+          <StatCard
+            label="Revenue"
+            value={formatCompactMoney(stats.totalRevenue)}
+            delta={isComparing ? calcDelta(stats.totalRevenue, stats.compareTotalRevenue) : null}
+            hardcodedDelta={isComparing ? undefined : f.percent(0.182, { signDisplay: "exceptZero" })}
+            tone="primary"
+          />
+          <StatCard
+            label="Transactions"
+            value={f.number(stats.totalTx)}
+            delta={isComparing ? calcDelta(stats.totalTx, stats.compareTotalTx) : null}
+            hardcodedDelta={isComparing ? undefined : f.percent(0.124, { signDisplay: "exceptZero" })}
+            tone="secondary"
+          />
+          <StatCard
+            label="Refund volume"
+            value={formatCompactMoney(stats.totalRefunds)}
+            delta={isComparing ? calcDelta(stats.totalRefunds, stats.compareTotalRefunds) : null}
+            hardcodedDelta={isComparing ? undefined : f.percent(-0.041, { signDisplay: "exceptZero" })}
+            tone="warning"
+          />
+          <StatCard
+            label="Avg. order value"
+            value={f.fiat(stats.avgAov, "USD")}
+            delta={isComparing ? calcDelta(stats.avgAov, stats.compareAvgAov) : null}
+            hardcodedDelta={isComparing ? undefined : f.percent(0.097, { signDisplay: "exceptZero" })}
+            tone="success"
+          />
         </section>
 
         {/* Charts are code-split: recharts loads only when this route is visited */}
         <AnalyticsCharts
           data={data}
-          compareMode={compareMode}
+          compareMode={isComparing}
+          compareLabel={COMPARE_LABELS[compareMode]}
           visibleSeries={visibleSeries}
           toggleSeries={toggleSeries}
         />
@@ -166,14 +261,46 @@ export default function AnalyticsPage() {
   );
 }
 
-function StatCard({ label, value, delta, tone }: { label: string; value: string; delta: string; tone: "primary" | "secondary" | "warning" | "success" }) {
+interface StatCardProps {
+  label: string;
+  value: string;
+  /** Live computed delta (number, null = no change data). Used when comparing. */
+  delta: number | null | undefined;
+  /** Static pre-formatted delta string shown when not in compare mode. */
+  hardcodedDelta?: string;
+  tone: "primary" | "secondary" | "warning" | "success";
+}
+
+function StatCard({ label, value, delta, hardcodedDelta, tone }: StatCardProps) {
+  const isComparing = delta !== undefined;
+  const deltaStr = isComparing ? formatDelta(delta ?? null) : (hardcodedDelta ?? "");
+  const isPositive = deltaStr.startsWith("+");
+  const isNegative = deltaStr.startsWith("-");
+
   return (
     <div className="stat-card">
       <div className={`stat-accent ${tone}`} />
       <div>
         <span>{label}</span>
         <strong>{value}</strong>
-        <small>{delta}</small>
+        {deltaStr && deltaStr !== "—" ? (
+          <small
+            className={
+              isComparing
+                ? isPositive
+                  ? "delta-badge positive"
+                  : isNegative
+                  ? "delta-badge negative"
+                  : "delta-badge neutral"
+                : ""
+            }
+            aria-label={`${isPositive ? "Up" : isNegative ? "Down" : "No change"} ${deltaStr}`}
+          >
+            {deltaStr}
+          </small>
+        ) : (
+          <small>{deltaStr}</small>
+        )}
       </div>
     </div>
   );

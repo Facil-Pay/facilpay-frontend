@@ -46,8 +46,10 @@ export default function InviteTeammateModal({
             </h3>
           </div>
           <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
-            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 transition-colors"
+            className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 transition-colors"
           >
             ✕
           </button>

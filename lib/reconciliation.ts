@@ -1,4 +1,4 @@
-import type { Payment, Payout, Refund } from "@/lib/types";
+import type { PaymentRecord, PayoutRecord, RefundRecord } from "@/lib/types";
 
 /**
  * Kind of ledger activity compared against a settlement statement.
@@ -72,12 +72,12 @@ const dateWindowMs = 3 * 24 * 60 * 60 * 1000;
  * @returns Activities in the order payments, refunds, payouts.
  */
 export function createReconciliationActivities(
-  payments: Payment[],
-  refunds: Refund[],
-  payouts: Payout[],
+  payments: PaymentRecord[],
+  refunds: RefundRecord[],
+  payouts: PayoutRecord[],
 ): ReconciliationActivity[] {
   const paymentActivities = payments
-    .filter((payment) => payment.status === "COMPLETED" || payment.status === "REFUNDED")
+    .filter((payment) => payment.status === "completed" || payment.status === "refunded")
     .map((payment): ReconciliationActivity => ({
       id: payment.id,
       date: payment.date,
@@ -88,7 +88,7 @@ export function createReconciliationActivities(
     }));
 
   const refundActivities = refunds
-    .filter((refund) => refund.status === "COMPLETED")
+    .filter((refund) => refund.status === "completed")
     .map((refund): ReconciliationActivity => ({
       id: refund.id,
       date: refund.date,
@@ -99,7 +99,7 @@ export function createReconciliationActivities(
     }));
 
   const payoutActivities = payouts
-    .filter((payout) => payout.status === "COMPLETED")
+    .filter((payout) => payout.status === "completed")
     .map((payout): ReconciliationActivity => ({
       id: payout.id,
       date: payout.date,

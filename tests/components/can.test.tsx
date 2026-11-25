@@ -26,7 +26,7 @@ function setRole(role: TeamMember["role"] | null) {
           role,
           status: "active",
         } as TeamMember)
-      : null,
+      : undefined,
   );
 }
 
