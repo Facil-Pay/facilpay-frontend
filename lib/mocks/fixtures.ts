@@ -13,7 +13,7 @@ import type { Payment }   from "@/lib/types/payment";
 import type { Refund }    from "@/lib/types/refund";
 import type { AnalyticsInsights, AnalyticsRange, LinkAnalytics } from "@/lib/types/analytics";
 import type { Escrow }    from "@/lib/types/escrow";
-import type { Webhook }   from "@/lib/types/webhook";
+import type { Webhook, WebhookDelivery } from "@/lib/types/webhook";
 import type { ApiKey }    from "@/lib/types/apiKey";
 import type { Merchant, TeamMember } from "@/lib/types/merchant";
 import type { Payout }    from "@/lib/types/payout";
@@ -168,6 +168,41 @@ export const ESCROW_FIXTURES: Escrow[] = [
 ];
 
 // ─── Webhooks ─────────────────────────────────────────────────────────────────
+
+export const WEBHOOK_DELIVERY_FIXTURE: WebhookDelivery = {
+  id: "del_01",
+  eventId: "evt_01",
+  eventType: "payment.completed",
+  status: "succeeded",
+  httpStatus: 200,
+  statusText: "OK",
+  attemptCount: 1,
+  deliveredAt: "2026-09-24T09:18:44Z",
+  endpointId: "wh_01a2b3c4d5e6f7a8b9c0d1e2",
+  request: {
+    url: "https://example.com/webhooks/facilpay",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    payload: { type: "payment.completed" },
+  },
+  response: {
+    statusCode: 200,
+    statusText: "OK",
+    responseTimeMs: 182,
+    headers: { "Content-Type": "application/json" },
+    body: "{\"received\":true}",
+  },
+  attempts: [
+    {
+      attemptNumber: 1,
+      timestamp: "2026-09-24T09:18:43Z",
+      httpStatus: 200,
+      statusText: "OK",
+      responseTimeMs: 182,
+      result: "succeeded",
+    },
+  ],
+};
 
 export const WEBHOOK_FIXTURES: Webhook[] = [
   {

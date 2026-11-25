@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Download } from "lucide-react";
 import { Can } from "@/components/auth/Can";
 import { generateCsv, triggerCsvDownload } from "@/lib/csvExport";
 import type { ExportColumn } from "@/lib/types";
+import {
+  getStoredAuditEvents,
+  subscribeToAuditEvents,
+  type StoredAuditEvent,
+} from "@/lib/storage";
 
 type AuditActionType = "Authentication" | "API keys" | "Webhooks" | "Team" | "Payouts" | "Settings";
 
@@ -36,6 +41,11 @@ const AUDIT_EVENTS: AuditEvent[] = [
 ];
 
 const ACTION_TYPES: AuditActionType[] = ["Authentication", "API keys", "Webhooks", "Team", "Payouts", "Settings"];
+const EMPTY_AUDIT_EVENTS: StoredAuditEvent[] = [];
+
+function getServerAuditEvents(): StoredAuditEvent[] {
+  return EMPTY_AUDIT_EVENTS;
+}
 
 const EXPORT_COLUMNS: ExportColumn<AuditEvent>[] = [
   { key: "actor", label: "Actor", selected: true },
@@ -54,12 +64,18 @@ function formatTimestamp(timestamp: string): string {
 }
 
 export default function AuditLogPage() {
+  const storedEvents = useSyncExternalStore(
+    subscribeToAuditEvents,
+    getStoredAuditEvents,
+    getServerAuditEvents
+  );
+  const events: AuditEvent[] = [...storedEvents, ...AUDIT_EVENTS];
   const [actorFilter, setActorFilter] = useState("ALL");
   const [actionFilter, setActionFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const filteredEvents = AUDIT_EVENTS.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const eventDate = event.timestamp.slice(0, 10);
     return (
       (actorFilter === "ALL" || event.actor === actorFilter) &&
@@ -119,7 +135,7 @@ export default function AuditLogPage() {
             Actor
             <select value={actorFilter} onChange={(event) => setActorFilter(event.target.value)} className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900">
               <option value="ALL">All actors</option>
-              {Array.from(new Set(AUDIT_EVENTS.map((event) => event.actor))).map((actor) => (
+              {Array.from(new Set(events.map((event) => event.actor))).map((actor) => (
                 <option key={actor} value={actor}>{actor}</option>
               ))}
             </select>

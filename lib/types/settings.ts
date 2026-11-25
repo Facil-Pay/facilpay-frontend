@@ -142,3 +142,27 @@ export interface LinkedWallet {
   isSettlement: boolean;
   linkedAt: string;
 }
+
+// ─── Custom Checkout Fields (#125) ───────────────────────────────────────────
+
+export type CheckoutFieldType = "text" | "email" | "phone" | "address" | "dropdown";
+
+export interface CheckoutFieldOption {
+  value: string;
+  label: string;
+}
+
+export interface CheckoutField {
+  id: string;
+  type: CheckoutFieldType;
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  /** Only used when type === "dropdown" */
+  options?: CheckoutFieldOption[];
+}
+
+/** GET/PATCH /merchant/checkout-fields */
+export interface CheckoutFieldsConfig {
+  fields: CheckoutField[];
+}

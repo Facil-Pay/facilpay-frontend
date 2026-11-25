@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookEndpoint } from '@/types/webhooks';
+import { Webhook } from '@/lib/types';
 
 interface SecretCreatedModalProps {
   isOpen: boolean;
-  endpoint: WebhookEndpoint | null;
+  endpoint: Webhook | null;
   secret: string;
   onClose: () => void;
   onOpenVerificationGuide?: () => void;

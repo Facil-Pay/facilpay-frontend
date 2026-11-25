@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { Payment } from "@/app/lib/types/payment";
+import type { Payment } from "@/lib/types";
 import { useFormat } from "@/lib/i18n/use-format";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

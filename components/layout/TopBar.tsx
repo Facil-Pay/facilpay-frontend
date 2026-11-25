@@ -3,20 +3,143 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, Menu, FlaskConical, Zap } from "lucide-react";
-import { AccountSwitcher } from "@/components/layout/AccountSwitcher";
+import { ChevronRight, Menu, FlaskConical, Search, Zap } from "lucide-react";
+import { useCommandPalette } from "@/components/command-palette/CommandPalette";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/components/ui/utils";
 import { DASHBOARD_NAV_ITEMS } from "./nav-items";
 import { useNetworkMode } from "@/lib/network-mode-context";
+import { fetchHorizonStatus, type HorizonNetworkStatus } from "@/lib/stellar/horizon";
 
 type StellarNetwork = "mainnet" | "testnet" | "futurenet";
+
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const STELLAR_STATUS_PAGE = "https://status.stellar.org";
 
 function getConfiguredNetwork(): StellarNetwork {
   const value = process.env.NEXT_PUBLIC_STELLAR_NETWORK;
   return value === "mainnet" || value === "futurenet" ? value : "testnet";
 }
+
+// ─── Horizon Status Hook (#123) ───────────────────────────────────────────────
+
+function useHorizonStatus(): HorizonNetworkStatus | null {
+  const [status, setStatus] = useState<HorizonNetworkStatus | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const poll = useCallback(async () => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    const result = await fetchHorizonStatus();
+    setStatus(result);
+  }, []);
+
+  useEffect(() => {
+    poll();
+    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        poll();
+        if (!intervalRef.current) {
+          intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+        }
+      } else {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [poll]);
+
+  return status;
+}
+
+// ─── Horizon Status Indicator (#123) ─────────────────────────────────────────
+
+export function HorizonStatusIndicator() {
+  const networkStatus = useHorizonStatus();
+  const network = getConfiguredNetwork();
+
+  if (!networkStatus) {
+    // Show neutral dot while loading
+    return (
+      <span className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-500">
+        <span className="h-2 w-2 rounded-full bg-zinc-300 animate-pulse" aria-hidden="true" />
+        Horizon
+      </span>
+    );
+  }
+
+  const { status, latestLedger, baseFee } = networkStatus;
+  const isDegraded = status === "degraded" || status === "down";
+
+  const colorClass =
+    status === "healthy"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : status === "degraded"
+      ? "border-amber-200 bg-amber-50 text-amber-800"
+      : "border-rose-200 bg-rose-50 text-rose-800";
+
+  const dotClass =
+    status === "healthy"
+      ? "bg-emerald-500"
+      : status === "degraded"
+      ? "bg-amber-500 animate-pulse"
+      : "bg-rose-500 animate-pulse";
+
+  const tooltipParts: string[] = [`Network: ${network}`];
+  if (latestLedger) tooltipParts.push(`Ledger: ${latestLedger.toLocaleString()}`);
+  if (baseFee) tooltipParts.push(`Base fee: ${baseFee} stroops`);
+  if (networkStatus.error) tooltipParts.push(`Error: ${networkStatus.error}`);
+  const tooltip = tooltipParts.join(" · ");
+
+  const indicator = (
+    <span
+      className={cn(
+        "hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+        colorClass,
+        isDegraded && "cursor-pointer hover:opacity-80",
+      )}
+      title={tooltip}
+      aria-label={`Stellar Horizon: ${status}. ${tooltip}`}
+    >
+      <span className={cn("h-2 w-2 rounded-full", dotClass)} aria-hidden="true" />
+      Horizon
+    </span>
+  );
+
+  if (isDegraded) {
+    return (
+      <a
+        href={STELLAR_STATUS_PAGE}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Stellar Horizon status: ${status}. Visit Stellar status page.`}
+        title={tooltip}
+        className={cn(
+          "hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+          colorClass,
+          "hover:opacity-80",
+        )}
+      >
+        <span className={cn("h-2 w-2 rounded-full", dotClass)} aria-hidden="true" />
+        Horizon ↗
+      </a>
+    );
+  }
+
+  return indicator;
+}
+
+
 
 function humanize(segment: string, translate: (key: string) => string): string {
   const navMatch = DASHBOARD_NAV_ITEMS.find((item) => item.href === `/${segment}`);
@@ -83,6 +206,26 @@ export function NetworkModeToggle() {
   );
 }
 
+function CommandPaletteTrigger() {
+  const { open } = useCommandPalette();
+  const t = useTranslations("shell");
+  return (
+    <button
+      type="button"
+      onClick={open}
+      aria-keyshortcuts="Meta+K Control+K"
+      aria-label={t("searchHint")}
+      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 lg:w-56"
+    >
+      <Search className="h-4 w-4" aria-hidden="true" />
+      <span className="hidden lg:inline">{t("search")}…</span>
+      <kbd className="ml-auto hidden rounded border border-zinc-300 bg-white px-1.5 font-sans text-[10px] font-medium text-zinc-600 lg:inline" aria-hidden="true">
+        ⌘K
+      </kbd>
+    </button>
+  );
+}
+
 export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const crumbs = useBreadcrumbs();
   const tNavigation = useTranslations("navigation");
@@ -119,9 +262,11 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         <h1 className="truncate text-base font-semibold text-zinc-900">{title}</h1>
       </div>
 
-      <AccountSwitcher />
+      <CommandPaletteTrigger />
 
       <NetworkModeToggle />
+
+      <HorizonStatusIndicator />
 
       <NetworkBadge />
 

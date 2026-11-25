@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { WebhookDelivery } from '@/types/webhooks';
+import { WebhookDelivery } from '@/lib/types';
 import SyntaxHighlightedJson from './SyntaxHighlightedJson';
 import { useFormat } from '@/lib/i18n/use-format';
 
@@ -72,11 +72,21 @@ export default function DeliveryDetailPanel({
                 />
                 {delivery.status.replace('_', ' ')}
               </span>
+              {delivery.isTest && (
+                <span
+                  className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300"
+                  title="Manually dispatched test event"
+                >
+                  Test Event
+                </span>
+              )}
             </div>
 
             <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
               title="Close panel"
             >
               ✕

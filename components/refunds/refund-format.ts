@@ -12,11 +12,11 @@ export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
 };
 
 export const REFUND_STATUS_CLASS: Record<RefundStatus, string> = {
-  pending: "bg-amber-50 text-amber-700 ring-amber-200",
-  processing: "bg-sky-50 text-sky-700 ring-sky-200",
-  completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  failed: "bg-red-50 text-red-700 ring-red-200",
-  cancelled: "bg-zinc-100 text-zinc-600 ring-zinc-200",
+  pending: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-800",
+  processing: "bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-950/60 dark:text-sky-200 dark:ring-sky-800",
+  completed: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:ring-emerald-800",
+  failed: "bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-800",
+  cancelled: "bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-zinc-700",
 };
 
 const REASON_LABEL: Record<RefundReason, string> = {

@@ -49,3 +49,67 @@ export function CheckoutPreview({ logo, brandColor, businessName }: { logo: stri
     </div>
   );
 }
+
+import type { CheckoutField } from "@/lib/types/settings";
+
+/** Preview variant that shows configured custom fields. Used by CheckoutFieldsForm. */
+export function CheckoutPreviewWithFields({ fields }: { fields: CheckoutField[] }) {
+  const color = "#20A7EE";
+
+  const fieldPlaceholder = (f: CheckoutField): string => {
+    if (f.placeholder) return f.placeholder;
+    if (f.type === "email") return "your@email.com";
+    if (f.type === "phone") return "+1 555 000 0000";
+    if (f.type === "address") return "123 Main St, City, Country";
+    if (f.type === "dropdown") return "Select an option";
+    return "";
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm" aria-label="Checkout fields preview">
+      <div className="h-1.5" style={{ background: color }} />
+      <div className="space-y-3 p-4">
+        <div className="rounded-lg bg-white p-3 ring-1 ring-zinc-200">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">Order total</p>
+          <p className="text-xl font-semibold text-zinc-900">
+            25.00 <span className="text-xs font-medium text-zinc-500">USDC</span>
+          </p>
+        </div>
+
+        {fields.length > 0 && (
+          <div className="space-y-2">
+            {fields.map((f) => (
+              <div key={f.id}>
+                <label className="mb-0.5 block text-[10px] font-medium text-zinc-600">
+                  {f.label || "Unlabelled field"}{f.required && <span className="ml-0.5 text-rose-500">*</span>}
+                </label>
+                {f.type === "dropdown" ? (
+                  <div className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-[11px] text-zinc-400">
+                    {fieldPlaceholder(f)}
+                  </div>
+                ) : f.type === "address" ? (
+                  <div className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-[11px] text-zinc-400">
+                    {fieldPlaceholder(f)}
+                  </div>
+                ) : (
+                  <div className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-[11px] text-zinc-400">
+                    {fieldPlaceholder(f)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {fields.length === 0 && (
+          <p className="text-center text-[10px] text-zinc-400 py-2">No custom fields configured</p>
+        )}
+
+        <button type="button" tabIndex={-1} className="w-full rounded-lg py-2 text-xs font-semibold text-white" style={{ background: color }}>
+          Connect wallet to pay
+        </button>
+        <p className="text-center text-[10px] text-zinc-400">Payments powered by FacilPay</p>
+      </div>
+    </div>
+  );
+}
