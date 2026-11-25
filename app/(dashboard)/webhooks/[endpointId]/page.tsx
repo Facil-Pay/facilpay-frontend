@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import {
   WebhookDelivery,
   WebhookDeliveryStatus,
   WebhookEndpoint,
+  WEBHOOK_EVENT_GROUPS,
 } from '@/types/webhooks';
 import {
   DEFAULT_ENDPOINT,
@@ -17,12 +18,12 @@ import {
   calculateEndpointHealth,
   retrySingleDelivery,
   bulkRetryDeliveries,
-  saveStoredDeliveries,
+  dispatchTestWebhookEvent,
 } from '@/lib/webhook-data';
 import EndpointHealthChart from '@/components/webhooks/EndpointHealthChart';
 import FailureWarningBanner from '@/components/webhooks/FailureWarningBanner';
 import DeliveriesList from '@/components/webhooks/DeliveriesList';
-import RollSecretModal from '@/components/webhooks/RollSecretModal';
+import SyntaxHighlightedJson from '@/components/webhooks/SyntaxHighlightedJson';
 
 function WebhookDeliveriesContent() {
   const params = useParams();
@@ -34,8 +35,10 @@ function WebhookDeliveriesContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
-  const [isRotationOpen, setIsRotationOpen] = useState(false);
-  const fallbackId = useId();
+  const [testEventType, setTestEventType] = useState<string>('payment.completed');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testResult, setTestResult] = useState<WebhookDelivery | null>(null);
+  const [testDispatchError, setTestDispatchError] = useState<string | null>(null);
 
   // Load endpoint and deliveries
   useEffect(() => {
@@ -71,62 +74,35 @@ function WebhookDeliveriesContent() {
     showToast(`✓ Bulk resent ${deliveryIds.length} failed deliveries! Updated to 200 OK.`);
   };
 
-  // Trigger test delivery injection
-  const handleSendTestWebhook = () => {
-    const nowIso = new Date().toISOString();
-    const newDelivery: WebhookDelivery = {
-      id: `del_${Date.now().toString(36)}`,
-      eventId: `evt_test_${fallbackId.replace(/:/g, '')}`,
-      eventType: 'payment.completed',
-      status: 'succeeded',
-      httpStatus: 200,
-      statusText: 'OK',
-      attemptCount: 1,
-      deliveredAt: nowIso,
-      endpointId,
-      request: {
-        url: endpoint.url,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'FacilPay-Webhooks/1.0',
-          'X-FacilPay-Signature': `t=${Math.floor(Date.now() / 1000)},v1=7a9b8c0d1e2f...`,
-          'X-FacilPay-Event-ID': `evt_test_${Date.now()}`,
-          'X-FacilPay-Delivery-ID': `del_${Date.now().toString(36)}`,
-        },
-        payload: {
-          id: `evt_test_${Date.now()}`,
-          event: 'payment.completed',
-          data: {
-            amount: '25.00',
-            currency: 'USDC',
-            status: 'settled',
-          },
-        },
-      },
-      response: {
-        statusCode: 200,
-        statusText: 'OK',
-        responseTimeMs: Math.floor(Math.random() * 50) + 65,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ received: true, ping: 'test' }, null, 2),
-      },
-      attempts: [
-        {
-          attemptNumber: 1,
-          timestamp: nowIso,
-          httpStatus: 200,
-          statusText: 'OK',
-          responseTimeMs: 85,
-          result: 'succeeded',
-        },
-      ],
-    };
+  // Send test event action (event picker + request/response inspection)
+  const isEndpointDisabled = endpoint.status !== 'active';
 
-    const updated = [newDelivery, ...deliveries];
-    setDeliveries(updated);
-    saveStoredDeliveries(updated);
-    showToast('✓ Dispatched test payment.completed webhook ping (200 OK)');
+  const handleSendTestEvent = () => {
+    if (isEndpointDisabled || isSendingTest) return;
+
+    setIsSendingTest(true);
+    setTestResult(null);
+    setTestDispatchError(null);
+
+    // Simulate the round trip so the UI mirrors a real outbound dispatch.
+    setTimeout(() => {
+      try {
+        const { delivery } = dispatchTestWebhookEvent(endpointId, testEventType);
+        setDeliveries((prev) => [delivery, ...prev]);
+        setTestResult(delivery);
+        showToast(
+          delivery.status === 'succeeded'
+            ? `✓ Test ${delivery.eventType} delivered — HTTP ${delivery.response.statusCode} (${delivery.response.responseTimeMs} ms)`
+            : `✕ Test ${delivery.eventType} failed — ${delivery.statusText} (${delivery.response.responseTimeMs} ms)`
+        );
+      } catch {
+        setTestDispatchError(
+          'Unable to dispatch the test event. Verify the endpoint URL is reachable and try again.'
+        );
+      } finally {
+        setIsSendingTest(false);
+      }
+    }, 600);
   };
 
   const handleCopySecret = () => {
@@ -183,18 +159,59 @@ function WebhookDeliveriesContent() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleSendTestWebhook}
-              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 cursor-pointer"
-            >
-              <span>+ Send Test Ping</span>
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <label htmlFor="test-event-type" className="sr-only">
+                Test event type
+              </label>
+              <select
+                id="test-event-type"
+                value={testEventType}
+                onChange={(e) => setTestEventType(e.target.value)}
+                disabled={isEndpointDisabled || isSendingTest}
+                title={
+                  isEndpointDisabled
+                    ? 'Enable this endpoint to send a test event'
+                    : 'Choose the event type to dispatch'
+                }
+                className="max-w-[220px] rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-mono font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {WEBHOOK_EVENT_GROUPS.map((group) => (
+                  <optgroup key={group.id} label={group.name}>
+                    {group.events.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleSendTestEvent}
+                disabled={isEndpointDisabled || isSendingTest}
+                title={
+                  isEndpointDisabled
+                    ? 'Enable this endpoint to send a test event'
+                    : 'Dispatch a sample event and inspect the response'
+                }
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#55C2FF] to-[#0066FF] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-opacity cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isSendingTest ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Sending…</span>
+                  </>
+                ) : (
+                  <span>⚡ Send Test Event</span>
+                )}
+              </button>
+            </div>
 
             <Link
               href="/webhooks"
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 text-center"
             >
               All Webhooks
             </Link>
@@ -249,6 +266,131 @@ function WebhookDeliveriesContent() {
           </div>
         </div>
       </div>
+
+      {/* Send Test Event dispatch error */}
+      {testDispatchError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          {testDispatchError}
+        </div>
+      )}
+
+      {/* Send Test Event result: request payload, response status, latency, response body */}
+      {testResult && (
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
+                  Test Event Result
+                </h2>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase border ${
+                    testResult.status === 'succeeded'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800'
+                      : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800'
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      testResult.status === 'succeeded' ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  />
+                  {testResult.status === 'succeeded' ? 'Delivered' : 'Failed'}
+                </span>
+                <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                  Test
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500">
+                <code className="font-mono text-zinc-700 dark:text-zinc-300">
+                  {testResult.eventType}
+                </code>
+                <span className="mx-1.5">•</span>
+                <span className="font-mono">{testResult.id}</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTestResult(null)}
+              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+              title="Dismiss test result"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Response status, latency & destination */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+              <span className="text-[11px] text-zinc-500 block">Response Status</span>
+              <span
+                className={`mt-1 block text-sm font-bold font-mono ${
+                  testResult.status === 'succeeded'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                HTTP {testResult.response.statusCode} {testResult.response.statusText}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+              <span className="text-[11px] text-zinc-500 block">Roundtrip Latency</span>
+              <span className="mt-1 block text-sm font-bold font-mono text-zinc-900 dark:text-white">
+                {testResult.response.responseTimeMs} ms
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+              <span className="text-[11px] text-zinc-500 block">Destination</span>
+              <span className="mt-1 block text-[11px] font-mono text-zinc-700 dark:text-zinc-300 break-all">
+                {testResult.request.url}
+              </span>
+            </div>
+          </div>
+
+          {/* Failure guidance */}
+          {testResult.status !== 'succeeded' && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+              <span className="mb-0.5 block font-bold">
+                {testResult.response.statusCode === 504
+                  ? 'Request timed out'
+                  : 'Endpoint rejected the test event'}
+              </span>
+              {testResult.attempts[0]?.errorMessage ||
+                'Your endpoint must return a 2xx status within 10s to acknowledge a webhook delivery.'}
+            </div>
+          )}
+
+          {/* Request payload */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Request Payload (POST application/json)
+              </span>
+              <span className="font-mono text-[10px] text-zinc-400">{testResult.eventId}</span>
+            </div>
+            <SyntaxHighlightedJson
+              data={testResult.request.payload}
+              maxHeight="max-h-72"
+              showCopy={true}
+            />
+          </div>
+
+          {/* Response body */}
+          <div className="space-y-2">
+            <span className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              Response Body
+            </span>
+            <SyntaxHighlightedJson
+              data={testResult.response.body}
+              maxHeight="max-h-56"
+              showCopy={true}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Requirement 4: High Failure Rate Warning Banner */}
       <FailureWarningBanner

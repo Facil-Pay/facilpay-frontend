@@ -51,6 +51,8 @@ export interface WebhookDelivery {
   attemptCount: number;
   deliveredAt: string;
   endpointId: string;
+  /** True when this delivery was triggered manually via "Send test event". */
+  isTest?: boolean;
   request: WebhookRequestData;
   response: WebhookResponseData;
   attempts: WebhookAttempt[];
