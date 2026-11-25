@@ -15,7 +15,8 @@ import { z } from "zod";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const envSchema = z.object({
+/** Zod schema for every NEXT_PUBLIC_* variable. Exported so tests can check it against .env.example. */
+export const envSchema = z.object({
   // ── API ──────────────────────────────────────────────────────────────────
   /** FacilPay backend REST API base URL — no trailing slash */
   NEXT_PUBLIC_API_BASE_URL: z
