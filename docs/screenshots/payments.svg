@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="FacilPay Payments (illustrative preview)">
+  <rect width="1440" height="900" fill="#F5F7FA"/>
+  <rect width="240" height="900" fill="#000F24"/>
+  <text x="32" y="56" font-family="Montserrat, Arial, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">facilpay<tspan fill="#55C2FF">.</tspan></text>
+  <g font-family="Inter, Arial, sans-serif" font-size="15" fill="#A5D4FF">
+    <text x="32" y="130">Overview</text><text x="32" y="170">Payments</text><text x="32" y="210">Refunds</text><text x="32" y="250">Balances</text><text x="32" y="290">Webhooks</text><text x="32" y="330">Developers</text><text x="32" y="370">Settings</text>
+  </g>
+  <rect x="240" width="1200" height="64" fill="#FFFFFF"/>
+  <text x="280" y="40" font-family="Inter, Arial, sans-serif" font-size="14" fill="#64748B">/payments</text>
+  <rect x="1180" y="18" width="220" height="28" rx="14" fill="#FEF3C7"/>
+  <text x="1290" y="37" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#92400E">TEST MODE · Testnet</text>
+  <text x="280" y="120" font-family="Montserrat, Arial, sans-serif" font-size="30" font-weight="700" fill="#000F24">Payments</text>
+  <rect x="280" y="150" width="1120" height="70" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="300" y="168" width="210" height="34" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="314" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B">Search payments…</text>
+  <rect x="530" y="168" width="210" height="34" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="544" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B">Status: All</text>
+  <rect x="760" y="168" width="210" height="34" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="774" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B">Asset: All</text>
+  <rect x="990" y="168" width="210" height="34" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="1004" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B">2026-01-01 → 2026-01-31</text>
+  <rect x="1250" y="168" width="130" height="34" rx="8" fill="#000F24"/>
+  <text x="1315" y="190" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Export CSV</text>
+  <rect x="280" y="240" width="1120" height="600" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="304" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">PAYMENT ID</text>
+  <text x="520" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">DATE</text>
+  <text x="700" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">AMOUNT</text>
+  <text x="900" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">STATUS</text>
+  <text x="1030" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">CUSTOMER</text>
+  <text x="1230" y="280" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#64748B">TX HASH</text>
+  <line x1="296" y1="294" x2="1384" y2="294" stroke="#F1F5F9"/>
+  <text x="304" y="330" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260115_9f8a2c</text>
+  <text x="520" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 15, 2026</text>
+  <text x="700" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">1,250.00 USDC</text>
+  <text x="900" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#059669">Completed</text>
+  <text x="1030" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">alex.chen@…</text>
+  <text x="1230" y="330" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">e3b0…b855</text>
+  <line x1="296" y1="364" x2="1384" y2="364" stroke="#F1F5F9"/>
+  <text x="304" y="400" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260118_8d7e6f</text>
+  <text x="520" y="400" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 18, 2026</text>
+  <text x="700" y="400" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">450.50 USDC</text>
+  <text x="900" y="400" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#059669">Completed</text>
+  <text x="1030" y="400" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">sarah.j@…</text>
+  <text x="1230" y="400" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">a5c7…bcde</text>
+  <line x1="296" y1="434" x2="1384" y2="434" stroke="#F1F5F9"/>
+  <text x="304" y="470" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260122_3b4c5d</text>
+  <text x="520" y="470" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 22, 2026</text>
+  <text x="700" y="470" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">3,200.00 XLM</text>
+  <text x="900" y="470" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#059669">Completed</text>
+  <text x="1030" y="470" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">devin@…</text>
+  <text x="1230" y="470" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">7f98…9abc</text>
+  <line x1="296" y1="504" x2="1384" y2="504" stroke="#F1F5F9"/>
+  <text x="304" y="540" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260125_1a2b3c</text>
+  <text x="520" y="540" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 25, 2026</text>
+  <text x="700" y="540" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">150.00 EURC</text>
+  <text x="900" y="540" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#B45309">Pending</text>
+  <text x="1030" y="540" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">maria@…</text>
+  <text x="1230" y="540" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">4c1d…77e0</text>
+  <line x1="296" y1="574" x2="1384" y2="574" stroke="#F1F5F9"/>
+  <text x="304" y="610" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260127_5e6f7a</text>
+  <text x="520" y="610" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 27, 2026</text>
+  <text x="700" y="610" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">89.99 USDC</text>
+  <text x="900" y="610" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#DC2626">Failed</text>
+  <text x="1030" y="610" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">li.wei@…</text>
+  <text x="1230" y="610" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">9a0b…12cd</text>
+  <line x1="296" y1="644" x2="1384" y2="644" stroke="#F1F5F9"/>
+  <text x="304" y="680" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">pay_20260129_0c1d2e</text>
+  <text x="520" y="680" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">Jan 29, 2026</text>
+  <text x="700" y="680" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">2,000.00 USDC</text>
+  <text x="900" y="680" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#6366F1">Refunded</text>
+  <text x="1030" y="680" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#0F172A">ops@…</text>
+  <text x="1230" y="680" text-anchor="start" font-family="Roboto Mono, monospace" font-size="14" font-weight="400" fill="#0F172A">c3d4…ef56</text>
+
+  <text x="1400" y="880" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#94A3B8">Illustrative preview — mock data</text>
+</svg>

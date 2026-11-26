@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="FacilPay Checkout (illustrative preview)">
+  <rect width="1440" height="900" fill="#F5F7FA"/>
+  <rect width="240" height="900" fill="#000F24"/>
+  <text x="32" y="56" font-family="Montserrat, Arial, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">facilpay<tspan fill="#55C2FF">.</tspan></text>
+  <g font-family="Inter, Arial, sans-serif" font-size="15" fill="#A5D4FF">
+    <text x="32" y="130">Overview</text><text x="32" y="170">Payments</text><text x="32" y="210">Refunds</text><text x="32" y="250">Balances</text><text x="32" y="290">Webhooks</text><text x="32" y="330">Developers</text><text x="32" y="370">Settings</text>
+  </g>
+  <rect x="240" width="1200" height="64" fill="#FFFFFF"/>
+  <text x="280" y="40" font-family="Inter, Arial, sans-serif" font-size="14" fill="#64748B">/pay/[linkId]</text>
+  <rect x="1180" y="18" width="220" height="28" rx="14" fill="#FEF3C7"/>
+  <text x="1290" y="37" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#92400E">TEST MODE · Testnet</text>
+  <text x="280" y="120" font-family="Montserrat, Arial, sans-serif" font-size="30" font-weight="700" fill="#000F24">Checkout</text>
+  <rect x="520" y="150" width="640" height="690" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="552" y="182" width="48" height="48" rx="12" fill="#55C2FF"/>
+  <text x="576" y="214" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">N</text>
+  <text x="616" y="204" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">Northstar Goods</text>
+  <text x="616" y="226" text-anchor="start" font-family="Roboto Mono, monospace" font-size="12" font-weight="400" fill="#94A3B8">Order ID: pl_test_9x2k…</text>
+  <text x="840" y="290" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B">First Test Order</text>
+  <text x="840" y="340" text-anchor="middle" font-family="Roboto Mono, monospace" font-size="40" font-weight="800" fill="#0F172A">$12.00 USDC</text>
+  <rect x="560" y="370" width="560" height="96" rx="14" fill="#F8FAFC" stroke="#E2E8F0"/>
+  <text x="580" y="398" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569">Subtotal</text>
+  <text x="1100" y="398" text-anchor="end" font-family="Roboto Mono, monospace" font-size="13" font-weight="400" fill="#475569">10.00 USDC</text>
+  <text x="580" y="424" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569">VAT 20%</text>
+  <text x="1100" y="424" text-anchor="end" font-family="Roboto Mono, monospace" font-size="13" font-weight="400" fill="#475569">2.00 USDC</text>
+  <text x="580" y="450" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#0F172A">Total</text>
+  <text x="1100" y="450" text-anchor="end" font-family="Roboto Mono, monospace" font-size="13" font-weight="700" fill="#0F172A">12.00 USDC</text>
+  <rect x="560" y="490" width="180" height="40" rx="10" fill="#F0F9FF" stroke="#0EA5E9"/>
+  <text x="650" y="516" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#0369A1">USDC</text>
+  <rect x="750" y="490" width="180" height="40" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="840" y="516" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#334155">XLM</text>
+  <rect x="940" y="490" width="180" height="40" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="1030" y="516" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#334155">EURC</text>
+  <rect x="760" y="550" width="160" height="160" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="770" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="812" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="868" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="560" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="868" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="574" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="812" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="868" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="588" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="812" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="868" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="602" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="616" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="616" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="616" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="616" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="630" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="630" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="630" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="630" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="630" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="644" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="644" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="644" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="658" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="882" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="672" width="14" height="14" fill="#000000"/>
+  <rect x="770" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="784" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="798" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="826" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="840" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="854" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="896" y="686" width="14" height="14" fill="#000000"/>
+  <rect x="560" y="740" width="560" height="52" rx="12" fill="#55C2FF"/>
+  <text x="840" y="772" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF">Pay $12.00 USDC</text>
+  <text x="840" y="820" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" fill="#94A3B8">Powered by FacilPay • Stellar Network</text>
+
+  <text x="1400" y="880" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#94A3B8">Illustrative preview — mock data</text>
+</svg>

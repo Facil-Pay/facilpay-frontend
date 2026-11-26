@@ -202,4 +202,16 @@ export interface PaymentRecord {
   conversionRate?: number;
   /** Stellar network fee in XLM */
   networkFeeXlm?: number;
+  // Tax / VAT (issue #137) — omitted for payments made without a tax rate.
+  // `amount` stays the total paid; these describe how it splits.
+  /** e.g. "VAT" */
+  taxName?: string;
+  /** Percentage, e.g. 20 */
+  taxRate?: number;
+  /** true when the price already included tax */
+  taxInclusive?: boolean;
+  /** Tax portion of `amount`, in the payment asset */
+  taxAmount?: number;
+  /** `amount` − `taxAmount` */
+  subtotal?: number;
 }

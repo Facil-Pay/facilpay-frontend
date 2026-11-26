@@ -1,3 +1,5 @@
+import type { TaxBreakdown } from '@/lib/tax';
+
 export interface BusinessDetails {
   name: string;
   country: string;
@@ -37,6 +39,11 @@ export interface PaymentLinkData {
   paymentUrl: string;
   createdAt: string;
   status: 'active' | 'paid' | 'expired';
+  /**
+   * Tax applied when the link was created. `amount` is always the total the
+   * customer pays; links created without tax omit this field.
+   */
+  tax?: TaxBreakdown;
   /** Maximum number of times this link can be paid. null = unlimited. */
   maxUses?: number | null;
   /** Current number of times this link has been successfully paid. */

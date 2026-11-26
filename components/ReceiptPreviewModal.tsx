@@ -5,6 +5,7 @@ import { PaymentRecord } from '@/lib/types';
 import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge';
 import { downloadPaymentReceipt, printPaymentReceipt } from '@/lib/pdfReceipt';
 import { useFormat } from '@/lib/i18n/use-format';
+import { formatTaxLabel, getPaymentTax } from '@/lib/tax';
 
 /** Receipt branding overrides (Issue #135) — falls back to FacilPay defaults when omitted. */
 export interface ReceiptBrandingOverrides {
@@ -33,6 +34,7 @@ export default function ReceiptPreviewModal({
 
   if (!isOpen || !payment) return null;
 
+  const tax = getPaymentTax(payment);
   const accentColor = /^#[0-9a-fA-F]{6}$/.test(branding?.accentColor ?? "") ? branding!.accentColor! : "#55C2FF";
 
   const stellarUrl =
@@ -190,6 +192,22 @@ export default function ReceiptPreviewModal({
                   {payment.fee} XLM
                 </span>
               </div>
+              {tax && (
+                <>
+                  <div>
+                    <span className="text-zinc-500 block">Subtotal</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">
+                      {f.amount(tax.subtotal, payment.asset)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 block">{formatTaxLabel(tax)}</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">
+                      {f.amount(tax.taxAmount, payment.asset)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div>
                 <span className="text-zinc-500 block">Customer Email</span>
                 <span className="font-medium text-zinc-900 dark:text-white truncate block">

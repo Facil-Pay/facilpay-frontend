@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="FacilPay Overview (illustrative preview)">
+  <rect width="1440" height="900" fill="#F5F7FA"/>
+  <rect width="240" height="900" fill="#000F24"/>
+  <text x="32" y="56" font-family="Montserrat, Arial, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">facilpay<tspan fill="#55C2FF">.</tspan></text>
+  <g font-family="Inter, Arial, sans-serif" font-size="15" fill="#A5D4FF">
+    <text x="32" y="130">Overview</text><text x="32" y="170">Payments</text><text x="32" y="210">Refunds</text><text x="32" y="250">Balances</text><text x="32" y="290">Webhooks</text><text x="32" y="330">Developers</text><text x="32" y="370">Settings</text>
+  </g>
+  <rect x="240" width="1200" height="64" fill="#FFFFFF"/>
+  <text x="280" y="40" font-family="Inter, Arial, sans-serif" font-size="14" fill="#64748B">/overview</text>
+  <rect x="1180" y="18" width="220" height="28" rx="14" fill="#FEF3C7"/>
+  <text x="1290" y="37" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#92400E">TEST MODE · Testnet</text>
+  <text x="280" y="120" font-family="Montserrat, Arial, sans-serif" font-size="30" font-weight="700" fill="#000F24">Overview</text>
+  <rect x="280" y="150" width="265" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="304" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B">Total volume</text>
+  <text x="304" y="235" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#000F24">58,420.50 USDC</text>
+  <rect x="565" y="150" width="265" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="589" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B">Payments</text>
+  <text x="589" y="235" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#000F24">1,284</text>
+  <rect x="850" y="150" width="265" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="874" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B">Success rate</text>
+  <text x="874" y="235" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#000F24">98.6%</text>
+  <rect x="1135" y="150" width="265" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="1159" y="190" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748B">Pending</text>
+  <text x="1159" y="235" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#000F24">12</text>
+  <rect x="280" y="290" width="760" height="380" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="304" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#000F24">Revenue trend (30 days)</text>
+  <polyline points="304,620 328,542 352,464 376,584 400,506 424,428 448,548 472,470 496,392 520,512 544,434 568,554 592,476 616,398 640,518 664,440 688,362 712,482 736,404 760,326 784,446 808,368 832,488 856,410 880,332 904,452 928,374 952,296 976,416 1000,338" fill="none" stroke="#55C2FF" stroke-width="4" stroke-linejoin="round"/>
+  <rect x="1060" y="290" width="340" height="380" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="1084" y="330" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#000F24">Recent activity</text>
+  <text x="1084" y="380" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0F172A">1,250.00 USDC</text>
+  <text x="1376" y="380" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#059669">Completed</text>
+  <text x="1084" y="436" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0F172A">450.50 USDC</text>
+  <text x="1376" y="436" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#059669">Completed</text>
+  <text x="1084" y="492" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0F172A">3,200.00 XLM</text>
+  <text x="1376" y="492" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#059669">Completed</text>
+  <text x="1084" y="548" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0F172A">150.00 EURC</text>
+  <text x="1376" y="548" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#B45309">Pending</text>
+  <text x="1084" y="604" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0F172A">89.99 USDC</text>
+  <text x="1376" y="604" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#059669">Completed</text>
+  <rect x="280" y="690" width="1120" height="150" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="304" y="730" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#000F24">Getting started</text>
+  <text x="304" y="770" text-anchor="start" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569">✓ Business profile   ✓ Settlement wallet   ✓ First payment link   ○ Add a webhook   ○ Invite a teammate</text>
+
+  <text x="1400" y="880" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#94A3B8">Illustrative preview — mock data</text>
+</svg>

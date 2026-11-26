@@ -1,5 +1,9 @@
 # facilpay-frontend
 
+[![CI](https://github.com/Facil-Pay/facilpay-frontend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Facil-Pay/facilpay-frontend/actions/workflows/ci.yml)
+[![E2E](https://github.com/Facil-Pay/facilpay-frontend/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/Facil-Pay/facilpay-frontend/actions/workflows/e2e.yml)
+[![License](https://img.shields.io/github/license/Facil-Pay/facilpay-frontend)](https://github.com/Facil-Pay/facilpay-frontend)
+
 Merchant dashboard for FacilPay. Manage payments, view analytics, configure webhooks, and handle refunds through an intuitive web interface.
 
 ---
@@ -7,6 +11,7 @@ Merchant dashboard for FacilPay. Manage payments, view analytics, configure webh
 ## Table of Contents
 
 - [Project Overview](#project-overview)
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Environment Variables](#environment-variables)
@@ -18,6 +23,7 @@ Merchant dashboard for FacilPay. Manage payments, view analytics, configure webh
 - [API Client Layer](#api-client-layer)
 - [Stellar Integration](#stellar-integration)
 - [Running the App](#running-the-app)
+- [Deployment](#deployment)
 - [Documentation](#documentation)
 - [Contribution](#contribution)
 
@@ -31,6 +37,15 @@ A **production-ready Next.js 16 application** built with TypeScript and modern t
 - Analytics dashboards with on-chain metrics
 - Webhook configuration and delivery monitoring
 - Refund management and escrow handling
+
+## Screenshots
+
+| Overview | Payments | Checkout |
+|---|---|---|
+| [![Merchant overview](docs/screenshots/overview.svg)](docs/screenshots/overview.svg) | [![Payments list](docs/screenshots/payments.svg)](docs/screenshots/payments.svg) | [![Hosted checkout](docs/screenshots/checkout.svg)](docs/screenshots/checkout.svg) |
+| `/overview` | `/payments` | `/pay/[linkId]` |
+
+These are illustrative previews built from mock data. To replace them with real captures, run the app in mock mode (`npm run dev`) and capture each page at 1440 × 900. Save the captures in [`docs/screenshots/`](docs/screenshots/).
 
 **Tech stack:**
 
@@ -57,7 +72,7 @@ overrides the semantic surface colors.
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/facilpay-frontend.git
+git clone https://github.com/Facil-Pay/facilpay-frontend.git
 cd facilpay-frontend
 npm install
 cp .env.example .env.local   # then fill in the values
@@ -159,7 +174,7 @@ afterAll(() => server.close());
 
 ## Refund flow integration
 
-The refund screen currently uses sample payment records because this starter repository does not include a payment API or query cache. Replace the `initialPayments` data in `app/page.tsx` with the merchant payment source and invalidate/refetch its payment and refund queries after confirmation.
+The refund screen currently uses sample payment records because this starter repository does not include a payment API or query cache. Replace the `initialPayments` data in `app/dev/soroban/SorobanDemo.tsx` with the merchant payment source and invalidate/refetch its payment and refund queries after confirmation.
 
 The Soroban call expects the configured refund contract to expose `refund(payment_id: u64, amount: i128, destination: Address, reason: String)`. Amounts are sent in Stellar's 7-decimal base units. The transaction is simulated through `NEXT_PUBLIC_SOROBAN_RPC_URL` (or the connected wallet's RPC URL), signed through Freighter, and submitted to that network. Confirm this ABI and the payment ID mapping against the deployed contract before enabling production refunds.
 
@@ -219,40 +234,53 @@ npm start       # start production server (after build)
 ```
 facilpay-frontend/
 │
-├── app/                        # Next.js App Router
-│   ├── layout.tsx              # Root layout (nav, footer, Providers)
-│   ├── providers.tsx           # QueryClientProvider + MSW init + Devtools
-│   ├── dashboard/page.tsx      # Overview page
-│   ├── payments/
-│   │   ├── page.tsx            # Payments list
-│   │   └── [id]/page.tsx       # Payment detail
-│   ├── components/
-│   │   ├── ui/                 # Badge, Button, Card, Select, Spinner, …
-│   │   ├── payments/           # PaymentStatusBadge, Timeline, Actions, …
-│   │   └── dashboard/          # KpiCards, RevenueTrendChart, …
-│   └── lib/                    # App-layer mock API (used before backend)
-│       ├── api/payments.ts
-│       └── types/payment.ts
+├── app/                          # Next.js App Router
+│   ├── layout.tsx                # Root layout (fonts, i18n, Providers)
+│   ├── providers.tsx             # QueryClientProvider + MSW init + Devtools
+│   ├── page.tsx                  # Redirects to /overview or /login
+│   ├── (auth)/                   # login/, onboarding/
+│   ├── (dashboard)/              # Authenticated dashboard (shared AppShell layout)
+│   │   ├── overview/             # Merchant overview
+│   │   ├── payments/             # Payments list + [id]/ detail
+│   │   ├── refunds/  escrow/  subscriptions/  customers/
+│   │   ├── analytics/  reconciliation/  trustlines/  notifications/
+│   │   ├── webhooks/             # Endpoints + [endpointId]/ deliveries
+│   │   ├── developers/           # API keys, events, request logs
+│   │   └── settings/             # profile, branding, preferences, tax, security, team, …
+│   ├── balances/  payouts/       # Stellar balances & payouts
+│   ├── pay/[linkId]/             # Hosted payment-link checkout
+│   ├── checkout/                 # Hosted SEP-7 checkout
+│   ├── api/export/route.ts       # Server-side CSV export
+│   ├── dev/                      # Component gallery & Soroban demo
+│   └── lib/                      # App-layer mock API (used before backend)
 │
-├── lib/                        # Framework-agnostic infrastructure
-│   ├── env.ts                  # Zod env validation (fail-fast)
-│   ├── api/
-│   │   ├── client.ts           # Typed fetch wrapper (ApiError, auth, logout)
-│   │   ├── keys.ts             # TanStack Query key factories
-│   │   └── hooks/              # usePayments, useDashboard, useRefunds, …
-│   ├── types/                  # Domain types: Payment, Refund, Escrow, …
-│   ├── stellar/index.ts        # Horizon server, Soroban RPC, contract helpers
-│   └── mocks/
-│       ├── fixtures.ts         # Realistic mock data
-│       ├── handlers.ts         # MSW request handlers
-│       ├── browser.ts          # MSW browser worker entry-point
-│       └── server.ts           # MSW Node server entry-point (tests)
+├── components/                   # React components, grouped by feature
+│   ├── ui/                       # Badge, Button, Card, Dialog, Toast, …
+│   ├── layout/                   # AppShell, Sidebar, TopBar, TestModeBanner
+│   ├── payments/  refunds/  payouts/  balances/  webhooks/  …
+│   └── wallet/                   # Wallet provider & connect button
 │
+├── lib/                          # Framework-agnostic infrastructure
+│   ├── env.ts                    # Zod env validation (fail-fast)
+│   ├── api/                      # client.ts, keys.ts, hooks/
+│   ├── types/  types.ts          # Domain types: Payment, Refund, Escrow, …
+│   ├── stellar/                  # Horizon, Soroban, SEP-7, federation, prices
+│   ├── i18n/                     # Locale-aware formatting (useFormat)
+│   ├── mocks/                    # MSW fixtures, handlers, browser/server entry-points
+│   └── csvExport.ts  pdfReceipt.ts  tax.ts  network-mode.ts  …
+│
+├── i18n/                         # next-intl routing & request config
+├── messages/                     # en / es / fr / pt translations
+├── types/                        # Shared UI types (onboarding, payments, webhooks)
+├── tests/                        # Vitest unit & component tests
+├── e2e/                          # Playwright end-to-end tests
+├── docs/                         # Deployment guide, screenshots
 ├── public/
-│   └── mockServiceWorker.js    # MSW service worker (auto-generated)
-│
-├── .env.example                # Template — copy to .env.local
-└── .env.local                  # Your local secrets — git-ignored
+│   └── mockServiceWorker.js      # MSW service worker (auto-generated)
+├── .github/                      # CI workflows, issue & PR templates
+├── middleware.ts                 # next-intl locale middleware
+├── next.config.ts                # Security headers, redirects, i18n plugin
+└── .env.example                  # Template — copy to .env.local
 ```
 
 ---
@@ -351,6 +379,12 @@ This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](h
 
 ---
 
+## Deployment
+
+See [docs/deployment.md](docs/deployment.md) for Vercel and Docker/self-hosted deployment, per-environment variables, security headers and the mainnet checklist.
+
+---
+
 ## Documentation
 
 Extended reference docs live in the `docs/` folder.
@@ -360,6 +394,7 @@ Extended reference docs live in the `docs/` folder.
 | [docs/architecture.md](docs/architecture.md) | Route groups, provider tree, data flow diagram, MSW mock mode |
 | [docs/stellar.md](docs/stellar.md) | Stellar modules (`lib/stellar/`), SEP-7/10/24, federation, testnet/mainnet switching, getting a funded testnet account |
 | [docs/components.md](docs/components.md) | Every `components/ui/` export — props, variants, accessibility notes |
+| [docs/deployment.md](docs/deployment.md) | Vercel and Docker/self-hosted deployment, environment variables, security headers, mainnet checklist |
 
 ---
 
