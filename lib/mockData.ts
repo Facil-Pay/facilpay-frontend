@@ -1,14 +1,23 @@
-import { Payment, Refund, Payout, ExportColumn } from './types';
+import type {
+  AssetType,
+  ExportColumn,
+  MerchantBalance,
+  PaymentRecord,
+  PaymentStatus,
+  PayoutRecord,
+  RefundRecord,
+  SavedDestination,
+} from '@/lib/types';
 import { roundTo, toDecimalString } from '@/lib/i18n/format';
 import { taxExportColumns } from './csvExport';
 
-export const INITIAL_PAYMENTS: Payment[] = [
+export const INITIAL_PAYMENTS: PaymentRecord[] = [
   {
     id: 'pay_20260115_9f8a2c',
     date: '2026-01-15T14:32:00.000Z',
     amount: 1250.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'alex.chen@innovate.co',
     customerWallet: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -25,7 +34,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-01-18T09:15:22.000Z',
     amount: 450.5,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'sarah.j@acmeflow.com',
     customerWallet: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
     merchantId: 'merch_facilpay_01',
@@ -48,7 +57,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-01-22T18:45:00.000Z',
     amount: 3200.0,
     asset: 'XLM',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'devin@stellarforge.org',
     customerWallet: 'GCKAZ67QPF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFL',
     merchantId: 'merch_facilpay_01',
@@ -65,7 +74,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-01-25T11:20:10.000Z',
     amount: 150.0,
     asset: 'EURC',
-    status: 'REFUNDED',
+    status: 'refunded',
     customerEmail: 'marc.dubois@paris-fin.fr',
     customerWallet: 'GAYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -82,7 +91,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-01-29T16:04:30.000Z',
     amount: 890.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'clara.m@techbridge.io',
     customerWallet: 'GDRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -99,7 +108,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-02-02T10:11:45.000Z',
     amount: 2100.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'samuel.k@blockpay.net',
     customerWallet: 'GBTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -116,7 +125,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-02-06T13:22:15.000Z',
     amount: 75.0,
     asset: 'XLM',
-    status: 'FAILED',
+    status: 'failed',
     customerEmail: 'test.user@sandbox.org',
     customerWallet: 'GCTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -133,7 +142,7 @@ export const INITIAL_PAYMENTS: Payment[] = [
     date: '2026-02-10T17:50:30.000Z',
     amount: 1850.0,
     asset: 'EURC',
-    status: 'COMPLETED',
+    status: 'completed',
     customerEmail: 'helena.v@nordicpay.se',
     customerWallet: 'GDAYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     merchantId: 'merch_facilpay_01',
@@ -147,14 +156,14 @@ export const INITIAL_PAYMENTS: Payment[] = [
   },
 ];
 
-export const INITIAL_REFUNDS: Refund[] = [
+export const INITIAL_REFUNDS: RefundRecord[] = [
   {
     id: 'ref_20260125_1a2b3c',
     paymentId: 'pay_20260125_1a2b3c',
     date: '2026-01-25T14:10:00.000Z',
     amount: 150.0,
     asset: 'EURC',
-    status: 'COMPLETED',
+    status: 'completed',
     reason: 'Customer requested cancellation, full refund issued',
     customerWallet: 'GAYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     txHash: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -166,7 +175,7 @@ export const INITIAL_REFUNDS: Refund[] = [
     date: '2026-01-27T09:40:12.000Z',
     amount: 250.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     reason: 'Partial discount credit applied, "Special Promo voucher"',
     customerWallet: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     txHash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90',
@@ -178,7 +187,7 @@ export const INITIAL_REFUNDS: Refund[] = [
     date: '2026-02-05T16:15:45.000Z',
     amount: 500.0,
     asset: 'USDC',
-    status: 'PENDING',
+    status: 'pending',
     reason: 'Disputed overcharge; under merchant review',
     customerWallet: 'GBTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     txHash: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3',
@@ -243,13 +252,13 @@ export const INITIAL_SAVED_DESTINATIONS: SavedDestination[] = [
   },
 ];
 
-export const INITIAL_PAYOUTS: Payout[] = [
+export const INITIAL_PAYOUTS: PayoutRecord[] = [
   {
     id: 'pout_20260131_01a2b3',
     date: '2026-01-31T23:59:59.000Z',
     amount: 14500.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     destinationWallet: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
     destinationLabel: 'Anclap Global Bank Wire',
     payoutMethod: 'SEP-24 Bank Off-Ramp (Anclap)',
@@ -264,7 +273,7 @@ export const INITIAL_PAYOUTS: Payout[] = [
     date: '2026-02-15T12:00:00.000Z',
     amount: 8200.0,
     asset: 'USDC',
-    status: 'COMPLETED',
+    status: 'completed',
     destinationWallet: 'GCO2IP3MJNUOKS45K4MKDU6QKONKVI4ZXCUYTDN7TYGDM6ZFAKIRURCG',
     destinationLabel: 'Binance Treasury Deposit',
     payoutMethod: 'Stellar Direct Transfer',
@@ -278,7 +287,7 @@ export const INITIAL_PAYOUTS: Payout[] = [
     date: '2026-02-28T18:30:00.000Z',
     amount: 4500.0,
     asset: 'EURC',
-    status: 'PROCESSING',
+    status: 'processing',
     destinationWallet: 'GDRQYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
     destinationLabel: 'MyKobo SEPA Gateway',
     payoutMethod: 'SEP-24 Bank Off-Ramp (MyKobo)',
@@ -293,7 +302,7 @@ export const INITIAL_PAYOUTS: Payout[] = [
 /**
  * Standard column definitions for Payments export
  */
-export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
+export const PAYMENT_EXPORT_COLUMNS: ExportColumn<PaymentRecord>[] = [
   { key: 'id', label: 'Payment ID', selected: true },
   { key: 'date', label: 'Date (ISO 8601)', selected: true },
   {
@@ -339,7 +348,7 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
         ? '0.1250 USD/XLM'
         : '1.0800 USD/EURC',
   },
-  ...taxExportColumns<Payment>(),
+  ...taxExportColumns<PaymentRecord>(),
   { key: 'description', label: 'Description', selected: true },
   { key: 'memo', label: 'Memo', selected: true },
 ];
@@ -347,7 +356,7 @@ export const PAYMENT_EXPORT_COLUMNS: ExportColumn<Payment>[] = [
 /**
  * Standard column definitions for Refunds export
  */
-export const REFUND_EXPORT_COLUMNS: ExportColumn<Refund>[] = [
+export const REFUND_EXPORT_COLUMNS: ExportColumn<RefundRecord>[] = [
   { key: 'id', label: 'Refund ID', selected: true },
   { key: 'paymentId', label: 'Original Payment ID', selected: true },
   { key: 'date', label: 'Date (ISO 8601)', selected: true },
@@ -368,7 +377,7 @@ export const REFUND_EXPORT_COLUMNS: ExportColumn<Refund>[] = [
 /**
  * Standard column definitions for Payouts export
  */
-export const PAYOUT_EXPORT_COLUMNS: ExportColumn<Payout>[] = [
+export const PAYOUT_EXPORT_COLUMNS: ExportColumn<PayoutRecord>[] = [
   { key: 'id', label: 'Payout ID', selected: true },
   { key: 'date', label: 'Date (ISO 8601)', selected: true },
   {
@@ -388,18 +397,19 @@ export const PAYOUT_EXPORT_COLUMNS: ExportColumn<Payout>[] = [
 /**
  * Generates a realistic large dataset (>1,000 rows) for testing progress indicators
  */
-export function generateLargePayments(count = 2500): Payment[] {
+export function generateLargePayments(count = 2500): PaymentRecord[] {
   const assets: ('USDC' | 'XLM' | 'EURC')[] = ['USDC', 'XLM', 'EURC'];
-  const statuses: ('COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED')[] = [
-    'COMPLETED',
-    'COMPLETED',
-    'COMPLETED',
-    'PENDING',
-    'FAILED',
-    'REFUNDED',
+  const statuses: PaymentStatus[] = [
+    'completed',
+    'completed',
+    'completed',
+    'pending',
+    'failed',
+    'refunded',
+    'partially_refunded',
   ];
 
-  const results: Payment[] = [];
+  const results: PaymentRecord[] = [];
   const baseTime = new Date('2026-01-01T08:00:00.000Z').getTime();
 
   for (let i = 1; i <= count; i++) {

@@ -22,7 +22,7 @@ export default function DashboardError({
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
           We encountered an error loading this section. Your account data is safe.
         </p>
-        <Button onClick={() => reset()} variant="default">
+        <Button onClick={() => reset()} variant="primary">
           Try again
         </Button>
       </Card>

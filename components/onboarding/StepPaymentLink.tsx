@@ -33,6 +33,12 @@ export default function StepPaymentLink({
   const [description, setDescription] = useState(
     initialData.description || 'Test payment link created during FacilPay merchant onboarding'
   );
+  const [maxUses, setMaxUses] = useState<string>(
+    initialData.maxUses != null ? String(initialData.maxUses) : ''
+  );
+  const [expiresAt, setExpiresAt] = useState<string>(
+    initialData.expiresAt ? initialData.expiresAt.slice(0, 16) : ''
+  );
 
   const taxRates = useTaxRates();
   const [taxRateId, setTaxRateId] = useState<string>(initialData.tax?.rateId ?? '');
@@ -57,6 +63,22 @@ export default function StepPaymentLink({
     if (!amount || parseFloat(amount) <= 0 || isNaN(parseFloat(amount))) {
       errs.amount = 'Please enter a valid amount greater than 0';
     }
+    // Validate maxUses: must be a positive integer when provided
+    if (maxUses !== '') {
+      const parsed = parseInt(maxUses, 10);
+      if (isNaN(parsed) || parsed < 1 || String(parsed) !== maxUses.trim()) {
+        errs.maxUses = 'Usage limit must be a whole number greater than 0';
+      }
+    }
+    // Validate expiresAt: must not be in the past when provided
+    if (expiresAt !== '') {
+      const expDate = new Date(expiresAt);
+      if (isNaN(expDate.getTime())) {
+        errs.expiresAt = 'Enter a valid expiry date and time';
+      } else if (expDate.getTime() <= Date.now()) {
+        errs.expiresAt = 'Expiry must be in the future';
+      }
+    }
 
     setErrors(errs);
     if (Object.keys(errs).length > 0) return null;
@@ -78,6 +100,9 @@ export default function StepPaymentLink({
       createdAt: new Date().toISOString(),
       status: 'active',
       ...(tax ? { tax } : {}),
+      maxUses: maxUses !== '' ? parseInt(maxUses, 10) : null,
+      useCount: 0,
+      expiresAt: expiresAt !== '' ? new Date(expiresAt).toISOString() : null,
     };
 
     setPaymentData(newPaymentLink);
@@ -250,6 +275,54 @@ export default function StepPaymentLink({
             />
           </div>
 
+          {/* Usage Limit & Expiry */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Usage Limit (Optional)
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Unlimited"
+                value={maxUses}
+                onChange={(e) => {
+                  setMaxUses(e.target.value);
+                  if (errors.maxUses) setErrors((prev) => ({ ...prev, maxUses: '' }));
+                }}
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm font-mono transition-all focus:outline-none dark:bg-zinc-900 dark:text-white ${
+                  errors.maxUses
+                    ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 dark:border-rose-600'
+                    : 'border-zinc-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:border-zinc-700'
+                }`}
+              />
+              {errors.maxUses && <p className="mt-1 text-xs text-rose-500">{errors.maxUses}</p>}
+              <p className="mt-1 text-[11px] text-zinc-400">Leave blank for unlimited uses</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Expiry Date &amp; Time (Optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => {
+                  setExpiresAt(e.target.value);
+                  if (errors.expiresAt) setErrors((prev) => ({ ...prev, expiresAt: '' }));
+                }}
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none dark:bg-zinc-900 dark:text-white ${
+                  errors.expiresAt
+                    ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 dark:border-rose-600'
+                    : 'border-zinc-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:border-zinc-700'
+                }`}
+              />
+              {errors.expiresAt && <p className="mt-1 text-xs text-rose-500">{errors.expiresAt}</p>}
+              <p className="mt-1 text-[11px] text-zinc-400">Leave blank for no expiry</p>
+            </div>
+          </div>
+
           {/* Refresh / Update Link Button */}
           <button
             type="button"
@@ -314,6 +387,20 @@ export default function StepPaymentLink({
                     Ready to Test
                   </span>
                 </div>
+                {(maxUses !== '' || expiresAt !== '') && (
+                  <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-zinc-500">
+                    {maxUses !== '' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-sky-700 border border-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900">
+                        Max {maxUses} use{parseInt(maxUses) !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {expiresAt !== '' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
+                        Expires {new Date(expiresAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

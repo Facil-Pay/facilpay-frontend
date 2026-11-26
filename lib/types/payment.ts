@@ -2,20 +2,31 @@
  * lib/types/payment.ts
  *
  * Payment domain types aligned with the FacilPay REST API.
- * These mirror and extend the existing app/lib/types/payment.ts but live in
- * the framework-agnostic lib/ layer so they can be used outside Next.js too.
+ * This is the single source for payment types: import them from
+ * "@/lib/types", never redeclare them locally.
  */
+
+import type { AssetType } from "./asset";
 
 // ─── Enumerations ─────────────────────────────────────────────────────────────
 
-export type PaymentStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "refunded"
-  | "cancelled"
-  | "expired";
+/** Lowercase status values exactly as returned by the API. */
+export const PAYMENT_STATUSES = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "refunded",
+  "partially_refunded",
+  "cancelled",
+  "expired",
+] as const;
+
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export function isPaymentStatus(value: unknown): value is PaymentStatus {
+  return typeof value === "string" && (PAYMENT_STATUSES as readonly string[]).includes(value);
+}
 
 export type PaymentNetwork = "stellar" | "ethereum" | "bitcoin" | "solana";
 
@@ -30,13 +41,14 @@ export type TimelineEventType =
   | "failed"
   | "refund_initiated"
   | "refunded"
+  | "partially_refunded"
   | "cancelled"
   | "expired";
 
 // ─── Sub-objects ──────────────────────────────────────────────────────────────
 
 export interface Participant {
-  id: string;
+  id?: string;
   name: string;
   accountId: string;
   walletAddress?: string;
@@ -139,9 +151,67 @@ export interface PaymentFilter {
 export type PaymentSortField = "createdAt" | "amount" | "status" | "reference";
 export type PaymentSortOrder = "asc" | "desc";
 
+export interface PaginatedPayments {
+  data: Payment[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export interface PaymentListParams extends PaymentFilter {
   page?: number;
   pageSize?: number;
   sortField?: PaymentSortField;
   sortOrder?: PaymentSortOrder;
+}
+
+// ─── Ledger record ────────────────────────────────────────────────────────────
+
+/**
+ * Flattened, settled view of a payment used by CSV export, PDF receipts,
+ * reconciliation and the mock-backed payments table. It shares
+ * `PaymentStatus` with the API `Payment` so badges and filters agree.
+ */
+export interface PaymentRecord {
+  id: string;
+  /** ISO 8601, e.g. 2026-01-15T14:32:00.000Z */
+  date: string;
+  amount: number;
+  asset: AssetType;
+  status: PaymentStatus;
+  customerEmail: string;
+  customerWallet: string;
+  merchantId: string;
+  merchantName: string;
+  merchantEmail: string;
+  txHash: string;
+  stellarExpertUrl: string;
+  fee: number;
+  description: string;
+  memo: string;
+  sourceAsset?: string;
+  sourceAmount?: number;
+  path?: string[];
+  /** FacilPay platform fee in the payment asset */
+  facilpayFee?: number;
+  /** Amount the merchant actually received (amount − facilpayFee) */
+  netAmount?: number;
+  /** Exchange rate applied when the asset was converted (e.g. XLM→USDC) */
+  conversionRate?: number;
+  /** Stellar network fee in XLM */
+  networkFeeXlm?: number;
+  // Tax / VAT (issue #137) — omitted for payments made without a tax rate.
+  // `amount` stays the total paid; these describe how it splits.
+  /** e.g. "VAT" */
+  taxName?: string;
+  /** Percentage, e.g. 20 */
+  taxRate?: number;
+  /** true when the price already included tax */
+  taxInclusive?: boolean;
+  /** Tax portion of `amount`, in the payment asset */
+  taxAmount?: number;
+  /** `amount` − `taxAmount` */
+  subtotal?: number;
 }

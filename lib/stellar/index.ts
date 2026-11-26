@@ -154,6 +154,18 @@ export const contracts = {
 
 export { STELLAR_HORIZON, STELLAR_FRIENDBOT_URL, STELLAR_NETWORK } from "./config";
 
+// ─── Account helpers ──────────────────────────────────────────────────────────
+
+export {
+  STELLAR_TESTNET_HORIZON,
+  isValidStellarAddress,
+  truncateAddress,
+  checkStellarAccount,
+  fundWithFriendbot,
+  requestAddTrustline,
+} from "./account";
+export type { StellarAccountInfo } from "./account";
+
 // ─── Assets ───────────────────────────────────────────────────────────────────
 
 export { TESTNET_ASSETS } from "./assets";
@@ -161,4 +173,7 @@ export { TESTNET_ASSETS } from "./assets";
 // ─── Utility re-exports ───────────────────────────────────────────────────────
 
 export { xdr, TransactionBuilder, BASE_FEE, Networks, Contract } from "@stellar/stellar-sdk";
+/**
+ * Soroban RPC namespace types from the Stellar SDK, re-exported so callers can import them from this module.
+ */
 export type { rpc };

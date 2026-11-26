@@ -24,6 +24,7 @@ Merchant dashboard for FacilPay. Manage payments, view analytics, configure webh
 - [Stellar Integration](#stellar-integration)
 - [Running the App](#running-the-app)
 - [Deployment](#deployment)
+- [Documentation](#documentation)
 - [Contribution](#contribution)
 
 ---
@@ -381,6 +382,19 @@ This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](h
 ## Deployment
 
 See [docs/deployment.md](docs/deployment.md) for Vercel and Docker/self-hosted deployment, per-environment variables, security headers and the mainnet checklist.
+
+---
+
+## Documentation
+
+Extended reference docs live in the `docs/` folder.
+
+| Document | Contents |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | Route groups, provider tree, data flow diagram, MSW mock mode |
+| [docs/stellar.md](docs/stellar.md) | Stellar modules (`lib/stellar/`), SEP-7/10/24, federation, testnet/mainnet switching, getting a funded testnet account |
+| [docs/components.md](docs/components.md) | Every `components/ui/` export — props, variants, accessibility notes |
+| [docs/deployment.md](docs/deployment.md) | Vercel and Docker/self-hosted deployment, environment variables, security headers, mainnet checklist |
 
 ---
 

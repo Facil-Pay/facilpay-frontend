@@ -21,6 +21,13 @@ import type {
   UpdateWebhookRequest,
 } from "@/lib/types/webhook";
 
+/**
+ * React Query hook for a paginated list of webhook endpoints.
+ *
+ * @param params - Pagination parameters. Defaults to an empty object, which uses the API's default page.
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `Paginated<Webhook>` data. Errors are reported as an {@link ApiError}.
+ */
 export function useWebhooks(
   params: PaginationParams = {},
   options?: Partial<UseQueryOptions<Paginated<Webhook>, ApiError>>
@@ -36,6 +43,15 @@ export function useWebhooks(
   });
 }
 
+/**
+ * React Query hook for a single webhook endpoint.
+ *
+ * The query stays disabled while `id` is empty.
+ *
+ * @param id - Webhook ID, or `undefined` to keep the query idle.
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result. Errors are reported as an {@link ApiError}.
+ */
 export function useWebhook(
   id: string | undefined,
   options?: Partial<UseQueryOptions<Webhook, ApiError>>
@@ -49,6 +65,15 @@ export function useWebhook(
   });
 }
 
+/**
+ * React Query hook for recent delivery attempts of one webhook.
+ *
+ * The query stays disabled while `webhookId` is empty.
+ *
+ * @param webhookId - Webhook whose deliveries to load, or `undefined` to keep the query idle.
+ * @param options - Extra React Query options merged over the defaults.
+ * @returns The query result with `Paginated<WebhookDelivery>` data. Errors are reported as an {@link ApiError}.
+ */
 export function useWebhookDeliveries(
   webhookId: string | undefined,
   options?: Partial<UseQueryOptions<Paginated<WebhookDelivery>, ApiError>>
@@ -65,6 +90,11 @@ export function useWebhookDeliveries(
   });
 }
 
+/**
+ * Mutation that creates a webhook endpoint and refreshes the webhook lists on success.
+ *
+ * @returns A React Query mutation that sends `CreateWebhookRequest`. Rejects with an {@link ApiError} when the API returns a validation or server error.
+ */
 export function useCreateWebhook() {
   const qc = useQueryClient();
   return useMutation<Webhook, ApiError, CreateWebhookRequest>({
@@ -75,6 +105,14 @@ export function useCreateWebhook() {
   });
 }
 
+/**
+ * Mutation that updates one webhook endpoint.
+ *
+ * On success the cached detail is replaced with the response and the webhook lists are invalidated.
+ *
+ * @param id - Webhook ID to update.
+ * @returns A React Query mutation that sends `UpdateWebhookRequest`. Rejects with an {@link ApiError} on failure.
+ */
 export function useUpdateWebhook(id: string) {
   const qc = useQueryClient();
   return useMutation<Webhook, ApiError, UpdateWebhookRequest>({
@@ -87,6 +125,11 @@ export function useUpdateWebhook(id: string) {
   });
 }
 
+/**
+ * Mutation that deletes a webhook endpoint by ID and invalidates all cached webhook queries on success.
+ *
+ * @returns A React Query mutation whose variable is the webhook ID. Rejects with an {@link ApiError} on failure.
+ */
 export function useDeleteWebhook() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({

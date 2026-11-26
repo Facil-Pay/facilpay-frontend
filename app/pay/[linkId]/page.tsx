@@ -12,6 +12,18 @@ import { formatTaxLabel, toAssetAmountString } from '@/lib/tax';
 
 const AVAILABLE_PAY_ASSETS = ['USDC', 'XLM', 'EURC'] as const;
 
+/** Returns true if the link has passed its expiry date. */
+function isExpired(expiresAt?: string | null): boolean {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() <= Date.now();
+}
+
+/** Returns true if the link has reached its usage cap. */
+function isSoldOut(maxUses?: number | null, useCount?: number): boolean {
+  if (maxUses == null) return false;
+  return (useCount ?? 0) >= maxUses;
+}
+
 export default function HostedPayPage() {
   const params = useParams();
   const linkId = params?.linkId as string;
@@ -29,6 +41,22 @@ export default function HostedPayPage() {
   const [secondsRemaining, setSecondsRemaining] = useState<number>(30);
   const [quoteExpired, setQuoteExpired] = useState<boolean>(false);
 
+  // Coupon / discount state (#110)
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; finalAmount: number } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+  // Custom checkout fields (#125)
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Configured fields — in a full implementation these would come from the API
+  const customFields = [
+    { id: 'field_email', type: 'email' as const, label: 'Email address', placeholder: 'you@example.com', required: true },
+    { id: 'field_phone', type: 'phone' as const, label: 'Phone number', placeholder: '+1 555 000 0000', required: false },
+  ];
+
   const business = onboarding?.business;
   const branding = onboarding?.branding;
   const paymentLink = onboarding?.paymentLink;
@@ -43,6 +71,15 @@ export default function HostedPayPage() {
   const tax = paymentLink?.tax;
 
   const isPathPayment = selectedAsset !== settlementCurrency;
+
+  // Derived link-access guards (#109)
+  const linkExpired = isExpired(paymentLink?.expiresAt);
+  const linkSoldOut = isSoldOut(paymentLink?.maxUses, paymentLink?.useCount);
+  const isBlocked = linkExpired || linkSoldOut;
+  const usesRemaining =
+    paymentLink?.maxUses != null
+      ? paymentLink.maxUses - (paymentLink.useCount ?? 0)
+      : null;
 
   const fetchQuote = useCallback(async () => {
     if (!isPathPayment) {
@@ -106,7 +143,47 @@ export default function HostedPayPage() {
     return () => clearInterval(timer);
   }, [isPathPayment, quote]);
 
+  // Apply coupon code (#110)
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsValidatingCoupon(true);
+    setCouponError('');
+    // Simulate API call to POST /coupons/validate
+    await new Promise((r) => setTimeout(r, 400));
+    const code = couponCode.trim().toUpperCase();
+    const amount = parseFloat(targetAmount);
+    // Hardcoded fixture validation matching MSW handlers
+    if (code === 'LAUNCH20') {
+      const discount = Math.round(amount * 0.2 * 100) / 100;
+      setAppliedCoupon({ code, discountAmount: discount, finalAmount: Math.round((amount - discount) * 100) / 100 });
+    } else if (code === 'SAVE5') {
+      const discount = Math.min(amount, 5);
+      setAppliedCoupon({ code, discountAmount: discount, finalAmount: Math.round((amount - discount) * 100) / 100 });
+    } else if (code === 'OLDPROMO') {
+      setCouponError('This coupon has expired.');
+    } else {
+      setCouponError('Coupon code not found.');
+    }
+    setIsValidatingCoupon(false);
+  };
+
   const handlePay = () => {
+    // Validate required custom fields (#125)
+    const errs: Record<string, string> = {};
+    for (const f of customFields) {
+      if (f.required && !fieldValues[f.id]?.trim()) {
+        errs[f.id] = `${f.label} is required`;
+      } else if (f.type === 'email' && fieldValues[f.id] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fieldValues[f.id])) {
+        errs[f.id] = 'Enter a valid email address';
+      } else if (f.type === 'phone' && fieldValues[f.id] && !/^\+?[\d\s\-().]{7,}$/.test(fieldValues[f.id])) {
+        errs[f.id] = 'Enter a valid phone number';
+      }
+    }
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
     if (isPathPayment && quoteExpired) {
       // Expired quotes cannot be submitted
       fetchQuote();
@@ -157,7 +234,32 @@ export default function HostedPayPage() {
           </span>
         </div>
 
-        {!isPaid ? (
+        {/* Expired / Sold-out screen (#109) */}
+        {isBlocked ? (
+          <div className="text-center py-6 space-y-4">
+            <div className={`inline-flex h-14 w-14 items-center justify-center rounded-full text-2xl mx-auto shadow-sm ${
+              linkExpired ? 'bg-amber-100 text-amber-600' : 'bg-rose-100 text-rose-600'
+            }`}>
+              {linkExpired ? '⏰' : '🚫'}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+                {linkExpired ? 'This link has expired' : 'No more slots available'}
+              </h3>
+              <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
+                {linkExpired
+                  ? 'This payment link is no longer accepting payments — it passed its expiry date.'
+                  : 'This payment link has reached its maximum number of uses and is no longer accepting payments.'}
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              Go to homepage
+            </Link>
+          </div>
+        ) : !isPaid ? (
           <div className="space-y-5">
             {/* Amount details */}
             <div className="text-center py-2 space-y-1">
@@ -165,6 +267,24 @@ export default function HostedPayPage() {
               <div className="text-3xl font-extrabold tracking-tight font-mono text-zinc-900 dark:text-white">
                 ${targetAmount} <span className="text-base font-semibold text-zinc-500">{settlementCurrency}</span>
               </div>
+              {/* Remaining uses badge */}
+              {usesRemaining !== null && (
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+                  usesRemaining <= 3
+                    ? 'border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                    : 'border-sky-200 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+                }`}>
+                  {usesRemaining} use{usesRemaining !== 1 ? 's' : ''} remaining
+                </span>
+              )}
+              {/* Expiry badge */}
+              {paymentLink?.expiresAt && (
+                <div>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    Expires {new Date(paymentLink.expiresAt).toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Tax breakdown */}
@@ -261,6 +381,37 @@ export default function HostedPayPage() {
               </div>
             )}
 
+            {/* Custom Fields (#125) */}
+            {customFields.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Your details</p>
+                {customFields.map((f) => (
+                  <div key={f.id}>
+                    <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {f.label}{f.required && <span className="ml-0.5 text-rose-500">*</span>}
+                    </label>
+                    <input
+                      type={f.type === 'phone' ? 'tel' : f.type === 'email' ? 'email' : 'text'}
+                      placeholder={f.placeholder ?? ''}
+                      value={fieldValues[f.id] ?? ''}
+                      onChange={(e) => {
+                        setFieldValues((prev) => ({ ...prev, [f.id]: e.target.value }));
+                        if (fieldErrors[f.id]) setFieldErrors((prev) => ({ ...prev, [f.id]: '' }));
+                      }}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-xs transition-all focus:outline-none dark:bg-zinc-900 dark:text-white ${
+                        fieldErrors[f.id]
+                          ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
+                          : 'border-zinc-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:border-zinc-700'
+                      }`}
+                    />
+                    {fieldErrors[f.id] && (
+                      <p className="mt-0.5 text-[11px] text-rose-500">{fieldErrors[f.id]}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* QR Code Container */}
             <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-2xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900">
               {qrSvg ? (
@@ -286,6 +437,50 @@ export default function HostedPayPage() {
               </span>
             </div>
 
+            {/* Coupon / Discount Code (#110) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Have a code?"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    if (couponError) setCouponError('');
+                    if (appliedCoupon) setAppliedCoupon(null);
+                  }}
+                  className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-mono focus:border-sky-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isValidatingCoupon || !couponCode.trim()}
+                  className="rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 disabled:opacity-50 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300"
+                >
+                  {isValidatingCoupon ? '…' : 'Apply'}
+                </button>
+              </div>
+              {couponError && (
+                <p className="flex items-center gap-1 text-xs text-rose-500">
+                  <span>✕</span> {couponError}
+                </p>
+              )}
+              {appliedCoupon && (
+                <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs dark:border-emerald-900 dark:bg-emerald-950/30">
+                  <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                    <span className="font-mono font-bold">{appliedCoupon.code}</span> applied — saves {appliedCoupon.discountAmount} {settlementCurrency}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setAppliedCoupon(null); setCouponCode(''); }}
+                    className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Pay Button styled with custom brandColor */}
             <button
               type="button"
@@ -305,7 +500,12 @@ export default function HostedPayPage() {
               ) : isPathPayment && quoteExpired ? (
                 <span>Quote Expired — Click to Refresh</span>
               ) : isPathPayment && quote ? (
-                <span>Pay {quote.sourceAmount} {selectedAsset} (${targetAmount} {settlementCurrency})</span>
+                <span>
+                  Pay {quote.sourceAmount} {selectedAsset}
+                  {appliedCoupon ? ` (${appliedCoupon.finalAmount} ${settlementCurrency} after discount)` : ` ($${targetAmount} ${settlementCurrency})`}
+                </span>
+              ) : appliedCoupon ? (
+                <span>Pay ${appliedCoupon.finalAmount} {settlementCurrency} (was ${targetAmount})</span>
               ) : (
                 <span>Pay ${targetAmount} {settlementCurrency}</span>
               )}
@@ -326,10 +526,31 @@ export default function HostedPayPage() {
                     Settled ${targetAmount} {settlementCurrency} (paid {quote.sourceAmount} {selectedAsset}) into the merchant wallet.
                   </span>
                 ) : (
-                  <span>${targetAmount} {settlementCurrency} has settled into the merchant wallet.</span>
+                  <span>${appliedCoupon ? appliedCoupon.finalAmount : targetAmount} {settlementCurrency} has settled into the merchant wallet.</span>
                 )}
               </p>
             </div>
+
+            {/* Applied coupon summary on success (#110) */}
+            {appliedCoupon && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300 text-left space-y-0.5">
+                <p className="font-semibold">Coupon applied: {appliedCoupon.code}</p>
+                <p>Discount: −{appliedCoupon.discountAmount} {settlementCurrency} &nbsp;•&nbsp; Final: {appliedCoupon.finalAmount} {settlementCurrency}</p>
+              </div>
+            )}
+
+            {/* Captured custom field values (#125) */}
+            {Object.keys(fieldValues).some((k) => fieldValues[k]?.trim()) && (
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left space-y-1 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-[10px] font-semibold uppercase text-zinc-400">Customer details</p>
+                {customFields.map((f) => fieldValues[f.id]?.trim() ? (
+                  <div key={f.id} className="flex justify-between text-xs">
+                    <span className="text-zinc-500">{f.label}:</span>
+                    <span className="text-zinc-800 dark:text-zinc-200 font-mono">{fieldValues[f.id]}</span>
+                  </div>
+                ) : null)}
+              </div>
+            )}
 
             <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] font-semibold uppercase text-zinc-400">

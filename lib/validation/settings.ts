@@ -49,6 +49,16 @@ export const brandingSchema = z.object({
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a 6-digit hex colour, e.g. #20A7EE"),
   logo: z.string().nullable(),
   logoFileName: z.string().optional(),
+  receiptFooterText: z.string().trim().max(280, "Keep the footer to 280 characters").optional(),
+  receiptSupportContact: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) => value === "" || /^\S+@\S+\.\S+$/.test(value) || /^[0-9+()\-.\s]{6,}$/.test(value),
+      "Enter a support email or phone number"
+    )
+    .optional(),
 });
 
 export const paymentPreferencesSchema = z.object({

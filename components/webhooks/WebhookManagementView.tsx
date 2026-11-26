@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { AuthProvider } from '@/lib/auth-context';
-import { WebhookEndpoint, WebhookDelivery } from '@/types/webhooks';
+import { Webhook, WebhookDelivery } from '@/lib/types';
 import {
   getStoredEndpoints,
   toggleEndpointStatus,
@@ -21,16 +21,16 @@ import TestEndpointModal from './TestEndpointModal';
 import SignatureVerificationModal from './SignatureVerificationModal';
 
 export default function WebhookManagementView() {
-  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
+  const [endpoints, setEndpoints] = useState<Webhook[]>([]);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
 
   // Modal states
   const [isEndpointModalOpen, setIsEndpointModalOpen] = useState(false);
-  const [editingEndpoint, setEditingEndpoint] = useState<WebhookEndpoint | null>(null);
+  const [editingEndpoint, setEditingEndpoint] = useState<Webhook | null>(null);
 
   const [secretCreatedState, setSecretCreatedState] = useState<{
     isOpen: boolean;
-    endpoint: WebhookEndpoint | null;
+    endpoint: Webhook | null;
     secret: string;
   }>({
     isOpen: false,
@@ -38,9 +38,9 @@ export default function WebhookManagementView() {
     secret: '',
   });
 
-  const [rollSecretTarget, setRollSecretTarget] = useState<WebhookEndpoint | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<WebhookEndpoint | null>(null);
-  const [testTarget, setTestTarget] = useState<WebhookEndpoint | null>(null);
+  const [rollSecretTarget, setRollSecretTarget] = useState<Webhook | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Webhook | null>(null);
+  const [testTarget, setTestTarget] = useState<Webhook | null>(null);
   const [signatureGuideState, setSignatureGuideState] = useState<{
     isOpen: boolean;
     secret?: string;
@@ -87,13 +87,13 @@ export default function WebhookManagementView() {
     setIsEndpointModalOpen(true);
   };
 
-  const handleOpenEditModal = (ep: WebhookEndpoint) => {
+  const handleOpenEditModal = (ep: Webhook) => {
     setEditingEndpoint(ep);
     setIsEndpointModalOpen(true);
   };
 
   const handleEndpointSuccess = (
-    savedEndpoint: WebhookEndpoint,
+    savedEndpoint: Webhook,
     generatedSecret?: string
   ) => {
     reloadData();
@@ -122,16 +122,16 @@ export default function WebhookManagementView() {
     }
   };
 
-  const handleRollSecret = (ep: WebhookEndpoint) => {
+  const handleRollSecret = (ep: Webhook) => {
     setRollSecretTarget(ep);
   };
 
-  const handleSecretRolled = (updatedEndpoint: WebhookEndpoint, _newSecret: string) => {
+  const handleSecretRolled = (updatedEndpoint: Webhook, _newSecret: string) => {
     reloadData();
     showToast(`✓ Signing secret rolled for ${updatedEndpoint.url}`);
   };
 
-  const handleDeletePrompt = (ep: WebhookEndpoint) => {
+  const handleDeletePrompt = (ep: Webhook) => {
     setDeleteTarget(ep);
   };
 
@@ -141,7 +141,7 @@ export default function WebhookManagementView() {
     showToast('✓ Webhook endpoint deleted successfully.');
   };
 
-  const handleTestPrompt = (ep: WebhookEndpoint) => {
+  const handleTestPrompt = (ep: Webhook) => {
     setTestTarget(ep);
   };
 

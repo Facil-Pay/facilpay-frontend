@@ -1,4 +1,4 @@
-import { ExportColumn, ExportProgress } from './types';
+import { ExportColumn, ExportProgress } from '@/lib/types';
 import { getPaymentTax, toAssetAmountString, type PaymentTaxFields, type TaxBreakdown } from './tax';
 
 /**

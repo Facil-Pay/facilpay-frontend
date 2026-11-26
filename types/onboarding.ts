@@ -44,6 +44,12 @@ export interface PaymentLinkData {
    * customer pays; links created without tax omit this field.
    */
   tax?: TaxBreakdown;
+  /** Maximum number of times this link can be paid. null = unlimited. */
+  maxUses?: number | null;
+  /** Current number of times this link has been successfully paid. */
+  useCount?: number;
+  /** ISO 8601 datetime after which this link stops accepting payments. null = never expires. */
+  expiresAt?: string | null;
 }
 
 export interface OnboardingState {

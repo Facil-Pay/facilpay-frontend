@@ -65,7 +65,7 @@ npm test
 npm run build
 ```
 
-`npm test` runs the Vitest unit and component suite in jsdom. You can run one test file with:
+`npm test` runs the Vitest unit and component suite in jsdom. `tests/setup.ts` fills in the `NEXT_PUBLIC_*` values from `.env.example` when they are not set, so tests run without a `.env.local`. Tests that check environment validation set or delete those variables themselves. You can run one test file with:
 
 ```bash
 npx vitest run tests/payouts.test.ts
@@ -76,6 +76,11 @@ npx vitest run tests/payouts.test.ts
 This repository does not currently define an automated browser E2E runner or an `e2e` package script. Do not treat `npm test` as an E2E run. For a manual browser smoke check, start the app with mock mode enabled (`NEXT_PUBLIC_USE_MOCKS=true`), then verify the affected user flow in the browser, including its loading, empty/error, success, and narrow-screen states where applicable. For flows that require signing or network access, use Stellar Testnet and a test wallet only.
 
 If you add an automated E2E suite, include the runner, a documented setup command, and a package script (such as `npm run e2e`) in the same change.
+
+## Guides
+
+- [Testing guide](docs/testing.md): where tests go, how to run one, watch mode, MSW setup and Playwright debugging.
+- [Adding API endpoints](docs/adding-api-endpoints.md): types, query keys, hooks, MSW mocks and error handling for a new resource.
 
 ## Pull Requests
 

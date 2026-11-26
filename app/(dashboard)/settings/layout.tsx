@@ -15,9 +15,12 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     { href: "/settings/branding", label: t("branding") },
     { href: "/settings/preferences", label: t("paymentPreferences") },
     { href: "/settings/tax", label: t("tax") },
+    { href: "/settings/checkout-fields", label: "Checkout fields" },
     { href: "/settings/security", label: t("security") },
     { href: "/settings/team", label: t("team") },
     { href: "/settings/notifications", label: t("notifications") },
+    { href: "/settings/risk", label: "Risk settings" },
+    { href: "/settings/danger-zone", label: "Danger zone" },
   ];
 
   return (

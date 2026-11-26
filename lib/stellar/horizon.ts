@@ -5,6 +5,9 @@
 
 import { roundTo, toDecimalString } from "@/lib/i18n/format";
 
+/**
+ * Native (XLM) entry in a Horizon account's `balances` array.
+ */
 export interface HorizonBalanceNative {
   asset_type: 'native';
   balance: string;
@@ -12,6 +15,9 @@ export interface HorizonBalanceNative {
   selling_liabilities?: string;
 }
 
+/**
+ * Issued-asset (trustline) entry in a Horizon account's `balances` array.
+ */
 export interface HorizonBalanceCredit {
   asset_type: 'credit_alphanum4' | 'credit_alphanum12';
   asset_code: string;
@@ -22,8 +28,14 @@ export interface HorizonBalanceCredit {
   selling_liabilities?: string;
 }
 
+/**
+ * Any balance entry Horizon returns for an account: native XLM or an issued asset.
+ */
 export type HorizonBalance = HorizonBalanceNative | HorizonBalanceCredit;
 
+/**
+ * Subset of the Horizon `/accounts/{id}` response used by the dashboard.
+ */
 export interface HorizonAccountResponse {
   id: string;
   sequence: string;
@@ -31,6 +43,9 @@ export interface HorizonAccountResponse {
   balances: HorizonBalance[];
 }
 
+/**
+ * Result of {@link calculateXlmReserve}: total XLM, the protocol minimum reserve and what is spendable.
+ */
 export interface XlmReserveCalculation {
   total: number;
   minReserve: number;
@@ -41,6 +56,9 @@ export interface XlmReserveCalculation {
   formulaExplanation: string;
 }
 
+/**
+ * Display-ready balance for one asset, with a Stellar Expert link and optional reserve details for XLM.
+ */
 export interface FormattedBalance {
   assetCode: string;
   assetIssuer?: string;
@@ -53,6 +71,9 @@ export interface FormattedBalance {
   stellarExpertUrl: string;
 }
 
+/**
+ * Human-readable account operation, as returned by {@link fetchAccountOperations}.
+ */
 export interface HorizonOperation {
   id: string;
   type: string;
@@ -73,6 +94,9 @@ export interface HorizonOperation {
   };
 }
 
+/**
+ * Curated asset offered in the trustline and path-payment pickers.
+ */
 export interface SupportedAssetOption {
   code: string;
   name: string;
@@ -81,9 +105,15 @@ export interface SupportedAssetOption {
   iconName: string;
 }
 
+/**
+ * Horizon base URL from `NEXT_PUBLIC_STELLAR_HORIZON_URL`, falling back to the public testnet endpoint.
+ */
 export const HORIZON_TESTNET_URL =
   process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org';
 
+/**
+ * Protocol base reserve in XLM charged per account subentry (trustlines, offers, signers).
+ */
 export const STELLAR_BASE_RESERVE = 0.5; // Protocol 20+ base reserve per subentry
 
 // Canonical Circle & Anchor Testnet/Public Issuers
@@ -284,6 +314,11 @@ export async function fetchAccountOperations(
   }
 }
 
+/**
+ * Quote for a strict-receive path payment returned by {@link findStrictReceiveQuote}.
+ *
+ * @property expiresAt - Unix time in milliseconds after which the quote should be refreshed.
+ */
 export interface StrictReceiveQuote {
   sourceAsset: string;
   destinationAsset: string;
@@ -381,4 +416,42 @@ export async function findStrictReceiveQuote(params: {
     path: sourceAsset === 'XLM' && destinationAsset === 'USDC' ? [] : ['XLM'],
     expiresAt,
   };
+}
+
+// ─── Network Status (#123) ────────────────────────────────────────────────────
+
+export type HorizonHealthStatus = 'healthy' | 'degraded' | 'down';
+
+export interface HorizonNetworkStatus {
+  status: HorizonHealthStatus;
+  latestLedger: number | null;
+  baseFee: number | null;
+  lastCheckedAt: number; // Date.now()
+  error?: string;
+}
+
+/** Fetches /fee_stats from Horizon to get base fee and latest ledger sequence. */
+export async function fetchHorizonStatus(
+  horizonUrl = HORIZON_TESTNET_URL
+): Promise<HorizonNetworkStatus> {
+  const lastCheckedAt = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
+    const res = await fetch(`${horizonUrl}/fee_stats`, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      return { status: 'degraded', latestLedger: null, baseFee: null, lastCheckedAt, error: `HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    const baseFee = Number(data.last_ledger_base_fee ?? data.fee_charged?.min ?? 100);
+    const latestLedger = Number(data.last_ledger ?? null);
+    return { status: 'healthy', latestLedger, baseFee, lastCheckedAt };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Network error';
+    return { status: 'down', latestLedger: null, baseFee: null, lastCheckedAt, error: msg };
+  }
 }

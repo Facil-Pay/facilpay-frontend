@@ -60,6 +60,9 @@ export function assetIcon(code: string): string {
 export const configuredNetwork: "mainnet" | "testnet" =
   process.env.NEXT_PUBLIC_STELLAR_NETWORK === "mainnet" ? "mainnet" : "testnet";
 
+/**
+ * True when the app is configured for the Stellar public network.
+ */
 export const isMainnet = configuredNetwork === "mainnet";
 
 /** Stellar Expert only indexes the two public networks. */
@@ -69,10 +72,22 @@ export function stellarExplorerBase(): string {
     : "https://stellar.expert/explorer/testnet";
 }
 
+/**
+ * Stellar Expert link to a transaction on the configured network.
+ *
+ * @example
+ * ```ts
+ * stellarExplorerTxUrl("abc123"); // https://stellar.expert/explorer/testnet/tx/abc123
+ * ```
+ */
 export function stellarExplorerTxUrl(transactionHash: string): string {
   return `${stellarExplorerBase()}/tx/${transactionHash}`;
 }
 
+/**
+ * Stellar Expert link to an issued asset, built from its code and issuer.
+ * Native XLM has no issuer, so the link carries an empty issuer segment.
+ */
 export function stellarExplorerAssetUrl(balance: FormattedBalance): string {
   const issuer = balance.assetIssuer ?? "";
   return `${stellarExplorerBase()}/asset/${balance.assetCode}-${issuer}`;
@@ -131,6 +146,10 @@ function buildCuratedAssets(): CuratedTrustlineAsset[] {
   return curated;
 }
 
+/**
+ * Assets offered in the add-trustline flow, computed once at module load.
+ * Entries whose issuer fails StrKey validation are dropped, and duplicates by code and issuer are removed.
+ */
 export const CURATED_TRUSTLINE_ASSETS: CuratedTrustlineAsset[] = buildCuratedAssets();
 
 // ─── Read helpers ─────────────────────────────────────────────────────────────

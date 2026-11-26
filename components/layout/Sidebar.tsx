@@ -9,6 +9,7 @@ import { cn } from "@/components/ui/utils";
 import logoHorizontal from "@/app/branding/logo/horizontal/facilpay-horizontal-logo-white.svg";
 import logoIcon from "@/app/branding/logo/icon/facilpay-icon.svg";
 import { DASHBOARD_NAV_ITEMS, isNavItemActive } from "./nav-items";
+import { useUnmatchedPayments, pendingCount } from "@/lib/unmatched-payments";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -20,6 +21,8 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("navigation");
+  const unmatchedItems = useUnmatchedPayments();
+  const unmatchedBadge = pendingCount(unmatchedItems);
 
   return (
     <>
@@ -74,9 +77,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
 
         <nav aria-label={t("dashboard")} className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
-            {DASHBOARD_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+            {DASHBOARD_NAV_ITEMS.map(({ label, href, icon: Icon, badge }) => {
               const active = isNavItemActive(pathname, href);
               const translatedLabel = t(label);
+              const badgeCount = badge === "unmatched_count" ? unmatchedBadge : 0;
               return (
                 <li key={href}>
                   <Link
@@ -92,8 +96,23 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
                         : "text-zinc-300 hover:bg-white/10 hover:text-white",
                     )}
                   >
-                    <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <span className={cn("truncate", collapsed && "md:sr-only")}>{translatedLabel}</span>
+                    <span className="relative shrink-0">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                      {badgeCount > 0 && collapsed && (
+                        <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold text-white">
+                          {badgeCount > 9 ? "9+" : badgeCount}
+                        </span>
+                      )}
+                    </span>
+                    <span className={cn("truncate flex-1", collapsed && "md:sr-only")}>{translatedLabel}</span>
+                    {badgeCount > 0 && !collapsed && (
+                      <span
+                        className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white"
+                        aria-label={`${badgeCount} unmatched payments`}
+                      >
+                        {badgeCount > 9 ? "9+" : badgeCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
